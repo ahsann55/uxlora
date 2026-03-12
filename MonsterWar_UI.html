@@ -1,0 +1,2556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Monster War: Survival — UI Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #FF6B00;
+  --primary-dark: #CC4400;
+  --secondary: #FFD700;
+  --accent: #00E5FF;
+  --accent2: #FF3D77;
+  --green: #39FF14;
+  --purple: #BF5FFF;
+  --bg-dark: #0A0E1A;
+  --bg-mid: #111827;
+  --bg-card: #1A2235;
+  --bg-card2: #212C42;
+  --text: #F0F4FF;
+  --text-dim: #8899BB;
+  --border: #2A3A5C;
+  --common: #64B5F6;
+  --uncommon: #66BB6A;
+  --rare: #AB47BC;
+  --epic: #FF7043;
+  --legendary: #FFD700;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text);
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* PHONE FRAME */
+.phone {
+  width: 390px;
+  height: 844px;
+  background: var(--bg-dark);
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 80px rgba(255,107,0,0.3), 0 0 0 2px #2A3A5C, inset 0 0 0 1px #3A4A6C;
+}
+
+/* SCREENS */
+.screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+.screen.active { opacity: 1; pointer-events: all; }
+
+/* ── BACKGROUND EFFECTS ── */
+.bg-stars {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(0,229,255,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(255,107,0,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 50%, rgba(10,14,26,1) 0%, rgba(5,8,18,1) 100%);
+  z-index: 0;
+}
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(42,58,92,0.3) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(42,58,92,0.3) 1px, transparent 1px);
+  background-size: 30px 30px;
+  z-index: 0;
+}
+
+/* ── SHARED COMPONENTS ── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 10px;
+  position: relative;
+  z-index: 10;
+}
+.top-bar-title {
+  font-family: 'Bangers', cursive;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: var(--secondary);
+  text-shadow: 0 2px 8px rgba(255,215,0,0.5);
+}
+.back-btn {
+  width: 38px; height: 38px;
+  background: var(--bg-card2);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.back-btn:active { transform: scale(0.9); background: var(--primary); }
+
+.currency-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.currency-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+.currency-pill .icon { font-size: 15px; }
+.plus-btn {
+  width: 20px; height: 20px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; color: white;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.plus-btn:active { transform: scale(0.85); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  border: none; cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  border-radius: var(--radius);
+  transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background 0.15s;
+}
+.btn:active::after { background: rgba(255,255,255,0.15); }
+.btn:active { transform: scale(0.95) translateY(2px); box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important; }
+
+.btn-primary {
+  background: linear-gradient(135deg, #FF8C00, #FF4500);
+  color: white;
+  box-shadow: 0 6px 20px rgba(255,107,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+  border-bottom: 3px solid #CC3000;
+}
+.btn-secondary {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #1A0A00;
+  box-shadow: 0 6px 20px rgba(255,215,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  border-bottom: 3px solid #CC8800;
+}
+.btn-blue {
+  background: linear-gradient(135deg, #00BFFF, #0080FF);
+  color: white;
+  box-shadow: 0 6px 16px rgba(0,191,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  border-bottom: 3px solid #0060CC;
+}
+.btn-green {
+  background: linear-gradient(135deg, #39FF14, #00CC44);
+  color: #001A08;
+  box-shadow: 0 6px 16px rgba(57,255,20,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  border-bottom: 3px solid #009922;
+}
+.btn-ghost {
+  background: var(--bg-card2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+.btn-sm { padding: 8px 16px; font-size: 13px; border-radius: 10px; }
+.btn-md { padding: 12px 22px; font-size: 15px; }
+.btn-lg { padding: 16px 28px; font-size: 18px; width: 100%; }
+.btn-xl { padding: 20px; font-size: 22px; width: 100%; border-radius: 20px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+/* ── RARITY COLORS ── */
+.rarity-common { color: var(--common); border-color: var(--common) !important; }
+.rarity-uncommon { color: var(--uncommon); border-color: var(--uncommon) !important; }
+.rarity-rare { color: var(--rare); border-color: var(--rare) !important; }
+.rarity-epic { color: var(--epic); border-color: var(--epic) !important; }
+.rarity-legendary { color: var(--legendary); border-color: var(--legendary) !important; }
+
+/* ── PROGRESS BAR ── */
+.progress-wrap { background: rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; height: 8px; }
+.progress-fill { height: 100%; border-radius: 10px; transition: width 0.6s ease; }
+
+/* ── BADGE ── */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 8px; border-radius: 20px;
+  font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ── SECTION LABEL ── */
+.section-label {
+  font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 2px;
+  color: var(--text-dim); margin-bottom: 10px;
+}
+
+/* ── SCROLL CONTAINER ── */
+.scroll-content { flex: 1; overflow-y: auto; scrollbar-width: none; }
+.scroll-content::-webkit-scrollbar { display: none; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 1: SPLASH
+═══════════════════════════════════════════════ */
+#screen-splash {
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1A0A00 0%, #0A0E1A 100%);
+}
+.splash-logo {
+  font-family: 'Bangers', cursive;
+  font-size: 52px;
+  letter-spacing: 4px;
+  text-align: center;
+  line-height: 1;
+  animation: splashPop 0.6s ease 0.2s both;
+}
+.splash-logo span { display: block; }
+.splash-logo .war { color: var(--accent2); text-shadow: 0 0 40px rgba(255,61,119,0.8); font-size: 72px; }
+.splash-logo .monster { color: var(--secondary); text-shadow: 0 0 30px rgba(255,215,0,0.6); }
+.splash-logo .survival { color: var(--text-dim); font-size: 28px; letter-spacing: 8px; }
+.splash-subtitle { color: var(--text-dim); font-size: 13px; margin-top: 16px; animation: fadeIn 1s 0.8s both; }
+.splash-tap { color: var(--accent); font-weight: 800; font-size: 15px; margin-top: 40px; animation: pulse 1.5s infinite; }
+
+@keyframes splashPop { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.1); } 80% { transform: scale(0.95); } 100% { transform: scale(1); opacity: 1; } }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 2: MAIN MENU
+═══════════════════════════════════════════════ */
+#screen-menu {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255,107,0,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(0,229,255,0.08) 0%, transparent 60%),
+    var(--bg-dark);
+}
+.menu-logo {
+  text-align: center;
+  padding: 24px 0 10px;
+  position: relative; z-index: 2;
+}
+.menu-logo-text {
+  font-family: 'Bangers', cursive;
+  font-size: 42px;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, #FF8C00, #FFD700, #FF4500);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 4px 12px rgba(255,150,0,0.5));
+  line-height: 1;
+  animation: float 3s ease-in-out infinite;
+}
+.menu-logo-sub {
+  font-family: 'Bangers', cursive;
+  font-size: 18px;
+  letter-spacing: 6px;
+  color: var(--accent2);
+  text-shadow: 0 0 16px rgba(255,61,119,0.6);
+}
+.menu-stats-row {
+  display: flex; gap: 8px; padding: 0 16px; margin-bottom: 10px;
+  position: relative; z-index: 2;
+}
+.stat-pill {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+.stat-pill .val { font-family: 'Bangers', cursive; font-size: 22px; color: var(--secondary); }
+.stat-pill .lbl { font-size: 10px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 16px 16px;
+  position: relative; z-index: 2;
+}
+.menu-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.menu-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background 0.15s;
+}
+.menu-btn:active::after { background: rgba(255,255,255,0.08); }
+.menu-btn:active { transform: scale(0.96) translateY(2px); }
+.menu-btn .mb-icon { font-size: 36px; display: block; margin-bottom: 6px; }
+.menu-btn .mb-label { font-size: 13px; font-weight: 800; color: var(--text); }
+.menu-btn .mb-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+.menu-btn.featured {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(255,107,0,0.2), rgba(255,61,119,0.1));
+  border-color: rgba(255,107,0,0.4);
+}
+.menu-btn .notif {
+  position: absolute; top: 8px; right: 8px;
+  width: 18px; height: 18px;
+  background: var(--accent2);
+  border-radius: 50%;
+  font-size: 10px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 3: LEVEL SELECT
+═══════════════════════════════════════════════ */
+#screen-levels { background: var(--bg-dark); }
+.world-header {
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+  position: relative; z-index: 2;
+}
+.world-badge {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+}
+.world-info .name { font-family: 'Bangers', cursive; font-size: 20px; letter-spacing: 1px; }
+.world-info .sub { font-size: 11px; color: var(--text-dim); font-weight: 700; }
+
+.world-selector {
+  display: flex; gap: 8px;
+  padding: 0 16px 12px;
+  overflow-x: auto; scrollbar-width: none;
+  position: relative; z-index: 2;
+}
+.world-selector::-webkit-scrollbar { display: none; }
+.world-chip {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 12px; font-weight: 800;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: var(--bg-card);
+  transition: all 0.15s;
+  display: flex; align-items: center; gap: 5px;
+}
+.world-chip.active { border-color: var(--primary); color: var(--primary); background: rgba(255,107,0,0.1); }
+.world-chip:active { transform: scale(0.95); }
+
+.levels-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 4px 16px 16px;
+  position: relative; z-index: 2;
+}
+.level-btn {
+  aspect-ratio: 1;
+  border-radius: 14px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.level-btn:active { transform: scale(0.9); }
+.level-btn.unlocked { border-color: rgba(255,107,0,0.5); }
+.level-btn.completed { border-color: rgba(57,255,20,0.5); background: rgba(57,255,20,0.05); }
+.level-btn.locked { opacity: 0.4; cursor: not-allowed; }
+.level-btn.milestone { border-color: var(--secondary); background: rgba(255,215,0,0.08); }
+.level-btn .lnum { font-family: 'Bangers', cursive; font-size: 22px; line-height: 1; }
+.level-btn .stars { font-size: 9px; letter-spacing: -1px; }
+.level-btn .lock { font-size: 18px; }
+.level-btn.milestone .crown { position: absolute; top: 3px; right: 3px; font-size: 10px; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 4: PRE-LEVEL
+═══════════════════════════════════════════════ */
+#screen-prelevel { background: var(--bg-dark); }
+.prelevel-hero {
+  position: relative;
+  margin: 16px 16px 0;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255,107,0,0.2), rgba(255,61,119,0.1));
+  border: 1px solid rgba(255,107,0,0.3);
+  padding: 20px;
+  display: flex; align-items: center; gap: 16px;
+}
+.prelevel-hero .hero-icon { font-size: 64px; animation: float 3s infinite; }
+.prelevel-hero .hero-info { flex: 1; }
+.prelevel-hero .hero-title { font-family: 'Bangers', cursive; font-size: 26px; letter-spacing: 2px; color: var(--secondary); }
+.prelevel-hero .hero-world { font-size: 12px; color: var(--text-dim); font-weight: 700; }
+.prelevel-hero .hero-kills { font-size: 13px; font-weight: 800; color: var(--accent); margin-top: 6px; }
+
+.diff-selector { padding: 16px 16px 0; }
+.diff-row { display: flex; gap: 8px; }
+.diff-btn {
+  flex: 1;
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.diff-btn:active { transform: scale(0.94); }
+.diff-btn.selected { border-color: var(--primary); background: rgba(255,107,0,0.12); }
+.diff-btn .diff-stars { font-size: 16px; }
+.diff-btn .diff-name { font-size: 12px; font-weight: 800; margin-top: 3px; }
+.diff-btn .diff-reward { font-size: 10px; color: var(--secondary); font-weight: 700; }
+
+.prelevel-section { padding: 16px 16px 0; }
+.soldier-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 8px;
+}
+.soldier-card:active { transform: scale(0.98); border-color: var(--primary); }
+.soldier-card.selected { border-color: var(--primary); background: rgba(255,107,0,0.08); }
+.soldier-card.iap { border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.05); }
+.soldier-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+.soldier-info { flex: 1; }
+.soldier-info .sname { font-weight: 800; font-size: 14px; }
+.soldier-info .sdesc { font-size: 11px; color: var(--text-dim); }
+.soldier-info .sbadge { margin-top: 4px; }
+
+.ad-banner {
+  margin: 12px 16px 0;
+  background: linear-gradient(135deg, rgba(57,255,20,0.1), rgba(0,229,255,0.05));
+  border: 1px solid rgba(57,255,20,0.3);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ad-banner:active { transform: scale(0.98); }
+.ad-icon { font-size: 28px; }
+.ad-text { flex: 1; }
+.ad-text .at { font-weight: 800; font-size: 13px; color: var(--green); }
+.ad-text .as { font-size: 11px; color: var(--text-dim); }
+.ad-play { font-size: 22px; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 5: GAMEPLAY HUD
+═══════════════════════════════════════════════ */
+#screen-game {
+  background: linear-gradient(180deg, #87CEEB 0%, #4A90E2 30%, #8B6914 60%, #6B5B2A 100%);
+}
+.game-bg-road {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(135,206,235,0.3) 0%, transparent 20%),
+    repeating-linear-gradient(180deg, #555 0px, #555 2px, #666 2px, #666 60px, #555 60px, #555 62px),
+    #666;
+  z-index: 0;
+}
+.game-road-lines {
+  position: absolute;
+  left: 50%; top: 0; bottom: 0; width: 6px;
+  transform: translateX(-50%);
+  background: repeating-linear-gradient(180deg, #FFD700 0px, #FFD700 30px, transparent 30px, transparent 60px);
+  z-index: 1;
+  animation: roadScroll 0.5s linear infinite;
+}
+@keyframes roadScroll { to { background-position: 0 60px; } }
+
+.hud {
+  position: relative; z-index: 10;
+  padding: 14px 16px 0;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.hud-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.hud-kills {
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 8px 14px;
+}
+.hud-kills .kval { font-family: 'Bangers', cursive; font-size: 24px; color: var(--secondary); line-height: 1; }
+.hud-kills .klbl { font-size: 10px; color: rgba(255,255,255,0.6); font-weight: 700; }
+.hud-soldiers {
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 8px 14px;
+  text-align: right;
+}
+.hud-soldiers .sval { font-family: 'Bangers', cursive; font-size: 24px; color: var(--accent); line-height: 1; }
+.hud-soldiers .slbl { font-size: 10px; color: rgba(255,255,255,0.6); font-weight: 700; }
+
+.hud-wave {
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 5px 16px;
+  text-align: center;
+  font-size: 12px; font-weight: 800;
+  align-self: center;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.ability-bar {
+  position: absolute;
+  bottom: 24px; left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+}
+.ability-slot {
+  width: 60px; height: 60px;
+  border-radius: 16px;
+  background: rgba(0,0,0,0.75);
+  border: 2px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.ability-slot:active { transform: scale(0.9); border-color: var(--accent); }
+.ability-slot .aicon { font-size: 26px; }
+.ability-slot .acooldown {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.7);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 900; color: white;
+}
+.ability-slot.ready { border-color: var(--green); box-shadow: 0 0 12px rgba(57,255,20,0.4); }
+
+/* Simulated game scene */
+.game-scene {
+  position: absolute;
+  inset: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.zombie-row {
+  position: absolute;
+  top: 120px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+  justify-content: center;
+  width: 200px;
+  left: 50%; transform: translateX(-50%);
+  animation: float 2s infinite;
+}
+.zombie-emoji { font-size: 24px; animation: float 1.5s infinite; }
+.soldier-circle {
+  position: absolute;
+  bottom: 140px;
+  left: 50%; transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  animation: float 2s infinite 0.3s;
+}
+.soldier-emoji { font-size: 16px; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 6: LEVEL WIN
+═══════════════════════════════════════════════ */
+#screen-win {
+  background: radial-gradient(ellipse at center, rgba(57,255,20,0.15) 0%, var(--bg-dark) 70%);
+  align-items: center;
+}
+.win-crown { font-size: 80px; text-align: center; animation: bounceIn 0.6s ease; margin-top: 40px; }
+.win-title {
+  font-family: 'Bangers', cursive;
+  font-size: 52px;
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, #FFD700, #FF8C00);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  animation: bounceIn 0.6s 0.2s both;
+}
+.win-stars {
+  font-size: 44px; text-align: center;
+  animation: bounceIn 0.6s 0.4s both;
+  margin: 8px 0;
+}
+.win-stats {
+  width: calc(100% - 32px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 16px;
+  animation: slideUp 0.5s 0.5s both;
+}
+.win-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.win-stat-row:last-child { border-bottom: none; }
+.win-stat-row .wlbl { font-size: 13px; color: var(--text-dim); font-weight: 700; }
+.win-stat-row .wval { font-family: 'Bangers', cursive; font-size: 20px; }
+.win-rewards {
+  display: flex; gap: 12px;
+  width: calc(100% - 32px);
+  animation: slideUp 0.5s 0.6s both;
+}
+.reward-box {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  text-align: center;
+}
+.reward-box .ricon { font-size: 28px; margin-bottom: 4px; }
+.reward-box .rval { font-family: 'Bangers', cursive; font-size: 22px; color: var(--secondary); }
+.reward-box .rlbl { font-size: 10px; color: var(--text-dim); font-weight: 700; }
+.double-btn {
+  width: calc(100% - 32px);
+  animation: slideUp 0.5s 0.7s both;
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 7: GAME OVER
+═══════════════════════════════════════════════ */
+#screen-gameover {
+  background: radial-gradient(ellipse at center, rgba(255,61,119,0.12) 0%, var(--bg-dark) 70%);
+  align-items: center;
+}
+.go-skull { font-size: 80px; text-align: center; animation: bounceIn 0.6s ease; margin-top: 40px; }
+.go-title {
+  font-family: 'Bangers', cursive;
+  font-size: 52px;
+  letter-spacing: 4px;
+  color: var(--accent2);
+  text-shadow: 0 0 30px rgba(255,61,119,0.6);
+  text-align: center;
+  animation: bounceIn 0.6s 0.2s both;
+}
+.revive-box {
+  width: calc(100% - 32px);
+  background: linear-gradient(135deg, rgba(57,255,20,0.1), rgba(0,229,255,0.05));
+  border: 2px solid rgba(57,255,20,0.4);
+  border-radius: 20px;
+  padding: 18px;
+  text-align: center;
+  animation: slideUp 0.5s 0.4s both;
+}
+.revive-box .rt { font-family: 'Bangers', cursive; font-size: 22px; color: var(--green); letter-spacing: 1px; }
+.revive-box .rs { font-size: 12px; color: var(--text-dim); margin: 4px 0 12px; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 8: UPGRADES (BUFFS)
+═══════════════════════════════════════════════ */
+#screen-upgrades { background: var(--bg-dark); }
+.upgrade-filter {
+  display: flex; gap: 6px;
+  padding: 0 16px 12px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.upgrade-filter::-webkit-scrollbar { display: none; }
+.filter-chip {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px; font-weight: 800;
+  cursor: pointer;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.filter-chip.active { background: rgba(255,107,0,0.15); border-color: var(--primary); color: var(--primary); }
+.filter-chip:active { transform: scale(0.95); }
+
+.buff-card {
+  margin: 0 16px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.buff-card:active { transform: scale(0.98); }
+.buff-card .buff-top { display: flex; align-items: center; gap: 12px; }
+.buff-icon-wrap {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+  position: relative;
+}
+.buff-card .buff-details { flex: 1; }
+.buff-card .bname { font-weight: 900; font-size: 15px; }
+.buff-card .bdesc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.buff-card .btier { font-size: 11px; font-weight: 800; margin-top: 4px; }
+.buff-tier-row { display: flex; gap: 4px; margin-top: 10px; }
+.tier-dot {
+  flex: 1; height: 6px; border-radius: 3px;
+  background: var(--border);
+  transition: background 0.3s;
+}
+.tier-dot.filled { background: var(--primary); }
+.buff-card .upgrade-cost { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.buff-card .locked-overlay {
+  position: absolute; inset: 0;
+  background: rgba(10,14,26,0.7);
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 16px;
+}
+.dep-badge {
+  background: rgba(255,215,0,0.15); border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 8px; padding: 3px 8px;
+  font-size: 10px; color: var(--secondary); font-weight: 800;
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 9: COSMETICS
+═══════════════════════════════════════════════ */
+#screen-cosmetics { background: var(--bg-dark); }
+.cosmetics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+.cosm-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.cosm-card:active { transform: scale(0.95); }
+.cosm-card.equipped { border-color: var(--green); }
+.cosm-card .cosm-icon { font-size: 40px; margin-bottom: 6px; }
+.cosm-card .cname { font-weight: 800; font-size: 13px; }
+.cosm-card .cbuff { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+.cosm-card .cbadge { margin-top: 6px; }
+.cosm-card .equipped-badge {
+  position: absolute; top: 6px; right: 6px;
+  background: var(--green); color: #001A08;
+  font-size: 9px; font-weight: 900;
+  padding: 2px 6px; border-radius: 6px;
+}
+.cosm-card.locked-cosm { opacity: 0.5; }
+.cosm-card.legendary-glow { border-color: var(--legendary); box-shadow: 0 0 16px rgba(255,215,0,0.25); }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 10: SHOP
+═══════════════════════════════════════════════ */
+#screen-shop { background: var(--bg-dark); }
+.shop-section { padding: 0 16px 16px; }
+.shop-featured {
+  background: linear-gradient(135deg, rgba(255,107,0,0.25), rgba(255,61,119,0.15));
+  border: 2px solid rgba(255,107,0,0.5);
+  border-radius: 20px;
+  padding: 18px;
+  margin: 0 16px 12px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.shop-featured:active { transform: scale(0.97); }
+.shop-featured .sf-icon { font-size: 52px; }
+.shop-featured .sf-info { flex: 1; }
+.shop-featured .sfname { font-family: 'Bangers', cursive; font-size: 22px; letter-spacing: 1px; }
+.shop-featured .sfdesc { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+.shop-featured .sftimer { font-size: 12px; color: var(--accent2); font-weight: 800; }
+
+.bundle-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+.bundle-row::-webkit-scrollbar { display: none; }
+.bundle-card {
+  flex-shrink: 0;
+  width: 100px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.bundle-card:active { transform: scale(0.95) translateY(2px); }
+.bundle-card .bc-icon { font-size: 30px; margin-bottom: 6px; }
+.bundle-card .bc-amount { font-family: 'Bangers', cursive; font-size: 18px; color: var(--secondary); }
+.bundle-card .bc-price { font-size: 12px; font-weight: 800; color: var(--green); margin-top: 6px; }
+.bundle-card.best-val { border-color: var(--accent2); }
+.bundle-card .best-tag {
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  background: var(--accent2); color: white;
+  font-size: 9px; font-weight: 900;
+  padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+}
+.iap-row {
+  display: flex; gap: 8px; margin-bottom: 8px;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.iap-row:active { transform: scale(0.98); border-color: var(--primary); }
+.iap-row .ir-icon { font-size: 32px; }
+.iap-row .ir-info { flex: 1; }
+.iap-row .irname { font-weight: 800; font-size: 14px; }
+.iap-row .irdesc { font-size: 11px; color: var(--text-dim); }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 11: SOLDIERS
+═══════════════════════════════════════════════ */
+#screen-soldiers { background: var(--bg-dark); }
+.soldier-detail-card {
+  margin: 0 16px 12px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.soldier-detail-card:active { transform: scale(0.98); }
+.soldier-detail-card.active-soldier { border-color: var(--primary); background: rgba(255,107,0,0.06); }
+.soldier-detail-card.iap-soldier { border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.03); }
+.sdc-top { display: flex; gap: 14px; align-items: center; }
+.sdc-icon { width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 36px; flex-shrink: 0; }
+.sdc-info { flex: 1; }
+.sdc-info .sdname { font-family: 'Bangers', cursive; font-size: 20px; letter-spacing: 1px; }
+.sdc-info .sdunlock { font-size: 11px; color: var(--text-dim); font-weight: 700; }
+.sdc-info .sdweapon { font-size: 12px; color: var(--accent); font-weight: 800; margin-top: 3px; }
+.stat-bars { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.stat-bar-row { display: flex; align-items: center; gap: 8px; }
+.stat-bar-row .sbl { font-size: 10px; color: var(--text-dim); font-weight: 700; width: 60px; flex-shrink: 0; }
+.stat-bar-row .sbw { flex: 1; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 12: SETTINGS
+═══════════════════════════════════════════════ */
+#screen-settings { background: var(--bg-dark); }
+.settings-section { padding: 0 16px 16px; }
+.setting-row {
+  display: flex; align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 8px;
+}
+.setting-row .sr-icon { font-size: 22px; margin-right: 12px; }
+.setting-row .sr-info { flex: 1; }
+.setting-row .srname { font-weight: 800; font-size: 14px; }
+.setting-row .srdesc { font-size: 11px; color: var(--text-dim); }
+.toggle {
+  width: 44px; height: 24px;
+  border-radius: 12px;
+  background: var(--border);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle.on { background: var(--primary); }
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: white;
+  top: 3px; left: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.toggle.on::after { transform: translateX(20px); }
+.slider-wrap { width: 120px; }
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%; height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--primary) 70%, var(--border) 70%);
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN 13: DAILY BONUS
+═══════════════════════════════════════════════ */
+#screen-daily {
+  background: radial-gradient(ellipse at center, rgba(255,215,0,0.12) 0%, var(--bg-dark) 70%);
+  align-items: center;
+}
+.daily-streak { text-align: center; padding: 20px 16px 0; position: relative; z-index: 2; }
+.daily-streak .ds-title { font-family: 'Bangers', cursive; font-size: 28px; letter-spacing: 2px; color: var(--secondary); }
+.daily-streak .ds-sub { font-size: 13px; color: var(--text-dim); font-weight: 700; }
+.streak-row { display: flex; gap: 6px; padding: 16px; overflow-x: auto; scrollbar-width: none; }
+.streak-row::-webkit-scrollbar { display: none; }
+.streak-day {
+  flex-shrink: 0;
+  width: 46px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 4px;
+  text-align: center;
+  transition: all 0.15s;
+}
+.streak-day.claimed { border-color: rgba(57,255,20,0.5); background: rgba(57,255,20,0.08); }
+.streak-day.today { border-color: var(--secondary); background: rgba(255,215,0,0.1); animation: pulse 1.5s infinite; }
+.streak-day.locked { opacity: 0.4; }
+.streak-day .sd-day { font-size: 9px; color: var(--text-dim); font-weight: 800; text-transform: uppercase; }
+.streak-day .sd-icon { font-size: 20px; margin: 3px 0; }
+.streak-day .sd-val { font-size: 10px; font-weight: 800; color: var(--secondary); }
+
+.daily-big {
+  width: 140px; height: 140px;
+  background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,107,0,0.1));
+  border: 2px solid rgba(255,215,0,0.5);
+  border-radius: 30px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  margin: 8px auto;
+  animation: float 3s infinite;
+  position: relative; z-index: 2;
+}
+.daily-big .di-icon { font-size: 56px; }
+.daily-big .di-val { font-family: 'Bangers', cursive; font-size: 24px; color: var(--secondary); }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 14: ACHIEVEMENTS / TROPHY
+═══════════════════════════════════════════════ */
+#screen-achievements { background: var(--bg-dark); }
+.achieve-card {
+  margin: 0 16px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.achieve-card:active { transform: scale(0.98); }
+.achieve-card.complete { border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.04); }
+.achieve-card .ac-icon { font-size: 36px; flex-shrink: 0; }
+.achieve-card .ac-info { flex: 1; }
+.achieve-card .acname { font-weight: 800; font-size: 14px; }
+.achieve-card .acdesc { font-size: 11px; color: var(--text-dim); }
+.achieve-card .ac-reward { text-align: right; flex-shrink: 0; }
+.achieve-card .acr-val { font-family: 'Bangers', cursive; font-size: 16px; color: var(--secondary); }
+
+/* ══════════════════════════
+   BOTTOM NAV (in-screen)
+══════════════════════════ */
+.bottom-nav {
+  display: flex;
+  background: rgba(17,24,39,0.95);
+  border-top: 1px solid var(--border);
+  padding: 8px 0 4px;
+  backdrop-filter: blur(16px);
+  flex-shrink: 0;
+  position: sticky; bottom: 0;
+  z-index: 100;
+}
+.nav-item {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: all 0.15s;
+  position: relative;
+}
+.nav-item:active { transform: scale(0.9); }
+.nav-item .ni-icon { font-size: 22px; }
+.nav-item .ni-label { font-size: 9px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+.nav-item.active .ni-label { color: var(--primary); }
+.nav-item.active .ni-icon { filter: drop-shadow(0 0 6px rgba(255,107,0,0.8)); }
+.nav-dot { position: absolute; top: 2px; right: calc(50% - 14px); width: 6px; height: 6px; background: var(--accent2); border-radius: 50%; }
+
+/* ══════════════════════════
+   POPUP / MODAL
+══════════════════════════ */
+.popup-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 200;
+  display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+}
+.popup-overlay.open { opacity: 1; pointer-events: all; }
+.popup-sheet {
+  width: 100%;
+  background: var(--bg-mid);
+  border-top: 1px solid var(--border);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 16px 32px;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.34,1.3,0.64,1);
+  max-height: 80%;
+  overflow-y: auto;
+}
+.popup-overlay.open .popup-sheet { transform: translateY(0); }
+.popup-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+.popup-title { font-family: 'Bangers', cursive; font-size: 24px; letter-spacing: 2px; margin-bottom: 12px; }
+
+/* ══════════════════════════
+   NOTIFICATION TOAST
+══════════════════════════ */
+.toast {
+  position: absolute;
+  top: -80px; left: 16px; right: 16px;
+  background: linear-gradient(135deg, rgba(57,255,20,0.2), rgba(0,229,255,0.1));
+  border: 1px solid rgba(57,255,20,0.4);
+  border-radius: 14px;
+  padding: 12px 16px;
+  z-index: 300;
+  display: flex; align-items: center; gap: 10px;
+  transition: top 0.4s cubic-bezier(0.34,1.3,0.64,1);
+  backdrop-filter: blur(8px);
+}
+.toast.show { top: 10px; }
+.toast .ticon { font-size: 22px; }
+.toast .ttext { font-size: 13px; font-weight: 800; }
+
+/* ══════════════════════════
+   SCREEN TRANSITION
+══════════════════════════ */
+.screen { transition: opacity 0.3s ease, transform 0.3s ease; transform: scale(1); }
+.screen.slide-out { opacity: 0; transform: scale(0.97); }
+.screen.slide-in { opacity: 0; transform: scale(1.02); }
+
+/* ══════════════════════════
+   RIPPLE EFFECT
+══════════════════════════ */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: rippleAnim 0.5s linear;
+  background: rgba(255,255,255,0.3);
+  pointer-events: none;
+}
+@keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+/* ══════════════════════════
+   SHIMMER ANIMATION
+══════════════════════════ */
+.shimmer-text {
+  background: linear-gradient(90deg, var(--secondary) 0%, #fff 50%, var(--secondary) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ══════════════════════════
+   COIN/GEM PARTICLE
+══════════════════════════ */
+.particle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 500;
+  font-size: 20px;
+  animation: particleFly 0.8s ease-out forwards;
+}
+@keyframes particleFly {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-60px) scale(0.5); opacity: 0; }
+}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <!-- TOAST -->
+  <div class="toast" id="toast">
+    <span class="ticon">✅</span>
+    <span class="ttext" id="toast-text">Buff unlocked!</span>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: SPLASH
+  ════════════════════════════════ -->
+  <div class="screen active" id="screen-splash">
+    <div class="bg-stars"></div>
+    <div class="bg-grid"></div>
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:center;">
+      <div style="font-size:80px;animation:float 3s infinite;">🧟</div>
+      <div class="splash-logo">
+        <span class="monster">MONSTER</span>
+        <span class="war">WAR</span>
+        <span class="survival">SURVIVAL</span>
+      </div>
+      <p class="splash-subtitle">Grow your army. Crush the horde.</p>
+      <div class="splash-tap" onclick="navigate('screen-menu')">TAP TO START ▶</div>
+    </div>
+    <!-- floating particles -->
+    <div style="position:absolute;top:10%;left:10%;font-size:24px;animation:float 2.5s infinite;opacity:0.4;">💀</div>
+    <div style="position:absolute;top:20%;right:15%;font-size:18px;animation:float 3.5s infinite 0.5s;opacity:0.3;">🔫</div>
+    <div style="position:absolute;bottom:20%;left:20%;font-size:22px;animation:float 2s infinite 1s;opacity:0.3;">💥</div>
+    <div style="position:absolute;bottom:30%;right:10%;font-size:16px;animation:float 4s infinite;opacity:0.25;">⭐</div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: MAIN MENU
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-menu">
+    <div class="bg-stars"></div>
+    <!-- Top currency bar -->
+    <div style="padding:14px 16px 0;display:flex;justify-content:flex-end;gap:8px;position:relative;z-index:2;">
+      <div class="currency-pill">
+        <span class="icon">🪙</span>
+        <span id="coin-count">12,450</span>
+        <div class="plus-btn" onclick="navigate('screen-shop')">+</div>
+      </div>
+      <div class="currency-pill">
+        <span class="icon">💎</span>
+        <span id="gem-count">87</span>
+        <div class="plus-btn" onclick="navigate('screen-shop')">+</div>
+      </div>
+    </div>
+    <!-- Logo -->
+    <div class="menu-logo">
+      <div class="menu-logo-text">MONSTER WAR</div>
+      <div class="menu-logo-sub">SURVIVAL</div>
+    </div>
+    <!-- Stats -->
+    <div class="menu-stats-row">
+      <div class="stat-pill"><div class="val">23</div><div class="lbl">Level</div></div>
+      <div class="stat-pill"><div class="val" style="color:var(--accent);">8,432</div><div class="lbl">Kills</div></div>
+      <div class="stat-pill"><div class="val" style="color:var(--accent2);">3★</div><div class="lbl">Best</div></div>
+    </div>
+    <!-- Grid buttons -->
+    <div class="menu-grid" style="flex:1;">
+      <div class="menu-btn featured" onclick="navigate('screen-levels')">
+        <span class="mb-icon">⚔️</span>
+        <div class="mb-label" style="font-size:18px;font-family:'Bangers',cursive;letter-spacing:2px;">PLAY</div>
+        <div class="mb-sub">Level 6 — Jungle Bridge</div>
+      </div>
+      <div class="menu-btn" onclick="navigate('screen-upgrades')">
+        <span class="notif">3</span>
+        <span class="mb-icon">⚡</span>
+        <div class="mb-label">Buffs</div>
+        <div class="mb-sub">Upgrade powers</div>
+      </div>
+      <div class="menu-btn" onclick="navigate('screen-soldiers')">
+        <span class="mb-icon">🪖</span>
+        <div class="mb-label">Soldiers</div>
+        <div class="mb-sub">Manage army</div>
+      </div>
+      <div class="menu-btn" onclick="navigate('screen-cosmetics')">
+        <span class="mb-icon">✨</span>
+        <div class="mb-label">Skins</div>
+        <div class="mb-sub">Cosmetics</div>
+      </div>
+      <div class="menu-btn" onclick="navigate('screen-shop')">
+        <span class="mb-icon">🛒</span>
+        <div class="mb-label">Shop</div>
+        <div class="mb-sub">Coins & Gems</div>
+      </div>
+      <div class="menu-btn" onclick="navigate('screen-daily')">
+        <span class="notif">!</span>
+        <span class="mb-icon">🎁</span>
+        <div class="mb-label">Daily</div>
+        <div class="mb-sub">Claim reward</div>
+      </div>
+      <div class="menu-btn" onclick="navigate('screen-achievements')">
+        <span class="mb-icon">🏆</span>
+        <div class="mb-label">Trophies</div>
+        <div class="mb-sub">Achievements</div>
+      </div>
+      <div class="menu-btn" onclick="navigate('screen-settings')">
+        <span class="mb-icon">⚙️</span>
+        <div class="mb-label">Settings</div>
+        <div class="mb-sub">Options</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: LEVEL SELECT
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-levels">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%, rgba(0,229,255,0.06) 0%, transparent 60%);pointer-events:none;z-index:0;"></div>
+    <div class="top-bar">
+      <div class="back-btn" onclick="navigate('screen-menu')">←</div>
+      <div class="top-bar-title">SELECT LEVEL</div>
+      <div class="currency-pill"><span class="icon">🪙</span><span>12,450</span></div>
+    </div>
+    <!-- World selector -->
+    <div class="world-selector" id="world-selector">
+      <div class="world-chip active" data-world="0" onclick="selectWorld(0)">🌉 Highway</div>
+      <div class="world-chip" data-world="1" onclick="selectWorld(1)">🌴 Jungle</div>
+      <div class="world-chip" data-world="2" onclick="selectWorld(2)">🏙️ City</div>
+      <div class="world-chip" data-world="3" onclick="selectWorld(3)">🏜️ Desert</div>
+      <div class="world-chip" data-world="4" onclick="selectWorld(4)">🌿 Swamp</div>
+      <div class="world-chip" data-world="5" onclick="selectWorld(5)">❄️ Snow</div>
+      <div class="world-chip" data-world="6" onclick="selectWorld(6)">⛏️ Tunnel</div>
+      <div class="world-chip" data-world="7" onclick="selectWorld(7)">🧊 Arctic</div>
+      <div class="world-chip" data-world="8" onclick="selectWorld(8)">🌋 Volcano</div>
+      <div class="world-chip" data-world="9" onclick="selectWorld(9)">🏚️ Ruins</div>
+    </div>
+    <!-- World header -->
+    <div class="world-header">
+      <div class="world-badge" id="world-badge" style="background:rgba(255,107,0,0.15);border:1px solid rgba(255,107,0,0.3);">🌉</div>
+      <div class="world-info">
+        <div class="name" id="world-name">Highway Bridge</div>
+        <div class="sub" id="world-sub">Levels 1–5 • 2/5 Completed</div>
+      </div>
+    </div>
+    <div class="scroll-content" style="padding:0 16px 16px;">
+      <div class="levels-grid" id="levels-grid"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: PRE-LEVEL
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-prelevel">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%, rgba(255,107,0,0.08) 0%, transparent 60%);pointer-events:none;z-index:0;"></div>
+    <div class="top-bar">
+      <div class="back-btn" onclick="navigate('screen-levels')">←</div>
+      <div class="top-bar-title" id="prelevel-title">LEVEL 1</div>
+      <div class="currency-pill"><span class="icon">💎</span><span>87</span></div>
+    </div>
+    <div class="scroll-content">
+      <!-- Hero card -->
+      <div class="prelevel-hero">
+        <div class="hero-icon" id="prelevel-icon">🌉</div>
+        <div class="hero-info">
+          <div class="hero-world">World 1 · Highway Bridge</div>
+          <div class="hero-title" id="prelevel-name">FIRST STEPS</div>
+          <div class="hero-kills">🎯 Target: ~1,357 kills</div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <div class="badge" style="background:rgba(57,255,20,0.15);color:var(--green);">⏱ ~3 min</div>
+            <div class="badge" style="background:rgba(0,229,255,0.15);color:var(--accent);">4 Waves</div>
+          </div>
+        </div>
+      </div>
+      <!-- Difficulty -->
+      <div class="diff-selector">
+        <div class="section-label" style="margin-bottom:8px;">SELECT DIFFICULTY</div>
+        <div class="diff-row">
+          <div class="diff-btn selected" onclick="selectDiff(this,1)">
+            <div class="diff-stars">⭐</div>
+            <div class="diff-name" style="color:var(--common);">Easy</div>
+            <div class="diff-reward">× 1.0</div>
+          </div>
+          <div class="diff-btn" onclick="selectDiff(this,2)">
+            <div class="diff-stars">⭐⭐</div>
+            <div class="diff-name" style="color:var(--uncommon);">Normal</div>
+            <div class="diff-reward">× 1.75</div>
+          </div>
+          <div class="diff-btn" onclick="selectDiff(this,3)">
+            <div class="diff-stars">⭐⭐⭐</div>
+            <div class="diff-name" style="color:var(--epic);">Hard</div>
+            <div class="diff-reward">× 3.0</div>
+          </div>
+        </div>
+      </div>
+      <!-- Soldier select -->
+      <div class="prelevel-section">
+        <div class="section-label">ACTIVE SOLDIER</div>
+        <div class="soldier-card selected" onclick="selectSoldier(this)">
+          <div class="soldier-icon" style="background:rgba(0,229,255,0.1);">🪖</div>
+          <div class="soldier-info">
+            <div class="sname">Rifleman</div>
+            <div class="sdesc">Pistol · Single shot · Standard</div>
+            <div class="sbadge"><span class="badge" style="background:rgba(100,181,246,0.2);color:var(--common);">COMMON · T1</span></div>
+          </div>
+          <div style="font-size:20px;color:var(--green);">✓</div>
+        </div>
+        <div class="soldier-card" onclick="selectSoldier(this)">
+          <div class="soldier-icon" style="background:rgba(255,107,0,0.1);">🎯</div>
+          <div class="soldier-info">
+            <div class="sname">Shotgunner</div>
+            <div class="sdesc">Shotgun · 5 bullets · Crowd clear</div>
+            <div class="sbadge"><span class="badge" style="background:rgba(66,186,74,0.2);color:var(--uncommon);">UNLOCKED · T2</span></div>
+          </div>
+          <div style="font-size:20px;color:var(--border);">○</div>
+        </div>
+        <div class="soldier-card iap" onclick="openPopup('popup-iap')">
+          <div class="soldier-icon" style="background:rgba(255,215,0,0.1);">🥷</div>
+          <div class="soldier-info">
+            <div class="sname" style="color:var(--secondary);">Shadow Operative</div>
+            <div class="sdesc">Stealth · 2× damage · IAP only</div>
+            <div class="sbadge"><span class="badge" style="background:rgba(255,215,0,0.2);color:var(--legendary);">👑 PREMIUM</span></div>
+          </div>
+          <div style="font-size:13px;font-weight:800;color:var(--secondary);">TRY</div>
+        </div>
+      </div>
+      <!-- Rewarded ad options -->
+      <div class="prelevel-section">
+        <div class="section-label">BOOST OPTIONS</div>
+        <div class="ad-banner" onclick="showToast('2× reward activated! 🎉')">
+          <div class="ad-icon">📺</div>
+          <div class="ad-text">
+            <div class="at">Watch Ad → Double Rewards</div>
+            <div class="as">Earn 2× coins and gems this level</div>
+          </div>
+          <div class="ad-play">▶</div>
+        </div>
+        <div class="ad-banner" style="margin-top:8px;border-color:rgba(191,95,255,0.3);background:linear-gradient(135deg,rgba(191,95,255,0.08),rgba(0,229,255,0.05));" onclick="showToast('Bonus buff unlocked! ⚡')">
+          <div class="ad-icon">⚡</div>
+          <div class="ad-text">
+            <div class="at" style="color:var(--purple);">Watch Ad → Bonus Buff Tile</div>
+            <div class="as">Extra Airstrike buff spawns in level</div>
+          </div>
+          <div class="ad-play">▶</div>
+        </div>
+      </div>
+      <div style="padding:16px;">
+        <button class="btn btn-primary btn-xl" onclick="navigate('screen-game')">⚔️ LAUNCH MISSION</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: GAMEPLAY
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-game">
+    <div class="game-bg-road"></div>
+    <div class="game-road-lines"></div>
+    <!-- Scene -->
+    <div class="game-scene">
+      <div class="zombie-row">
+        <span class="zombie-emoji" style="animation-delay:0s">🧟</span>
+        <span class="zombie-emoji" style="animation-delay:0.3s">🧟</span>
+        <span class="zombie-emoji" style="animation-delay:0.6s">🧟</span>
+        <span class="zombie-emoji" style="animation-delay:0.9s">🧟</span>
+        <span class="zombie-emoji" style="animation-delay:0.2s">🧟</span>
+        <span class="zombie-emoji" style="animation-delay:0.5s">🧟</span>
+        <span class="zombie-emoji" style="animation-delay:0.8s">🧟</span>
+        <span class="zombie-emoji" style="font-size:42px;animation-delay:0.4s">👾</span>
+      </div>
+      <!-- Buff tiles -->
+      <div style="position:absolute;top:260px;left:60px;font-size:13px;font-weight:900;background:rgba(0,150,255,0.85);color:white;border-radius:8px;padding:5px 10px;border:1px solid rgba(0,229,255,0.6);animation:float 2s infinite;">+3</div>
+      <div style="position:absolute;top:300px;right:50px;font-size:13px;font-weight:900;background:rgba(255,0,100,0.8);color:white;border-radius:8px;padding:5px 10px;border:1px solid rgba(255,61,119,0.6);animation:float 2s infinite 0.7s;">💥</div>
+      <div style="position:absolute;top:360px;left:80px;font-size:13px;font-weight:900;background:rgba(0,150,255,0.85);color:white;border-radius:8px;padding:5px 10px;border:1px solid rgba(0,229,255,0.6);animation:float 2s infinite 0.3s;">+1</div>
+      <!-- Soldier group -->
+      <div class="soldier-circle">
+        <span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span>
+        <span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span>
+        <span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span><span class="soldier-emoji">🪖</span>
+      </div>
+    </div>
+    <!-- HUD -->
+    <div class="hud">
+      <div class="hud-top">
+        <div class="hud-kills">
+          <div class="kval" id="kill-counter">0</div>
+          <div class="klbl">KILLS</div>
+        </div>
+        <div class="hud-wave" id="wave-display">Wave 1 of 3</div>
+        <div class="hud-soldiers">
+          <div class="sval" id="soldier-counter">15</div>
+          <div class="slbl">SOLDIERS</div>
+        </div>
+      </div>
+    </div>
+    <!-- Ability bar -->
+    <div class="ability-bar">
+      <div class="ability-slot ready" onclick="showToast('❄️ Freeze activated!')">
+        <div class="aicon">❄️</div>
+      </div>
+      <div class="ability-slot ready" onclick="showToast('✈️ Airstrike incoming!')">
+        <div class="aicon">✈️</div>
+      </div>
+      <div class="ability-slot" onclick="showToast('☢️ Nuke on cooldown...')">
+        <div class="aicon">☢️</div>
+        <div class="acooldown">5s</div>
+      </div>
+      <div class="ability-slot" onclick="showToast('🛡️ Shield active!')">
+        <div class="aicon">🛡️</div>
+      </div>
+    </div>
+    <!-- Game controls -->
+    <div style="position:absolute;bottom:104px;left:0;right:0;display:flex;justify-content:space-between;padding:0 16px;z-index:10;">
+      <button class="btn btn-ghost btn-sm" style="font-size:12px;" onclick="navigate('screen-gameover')">💀 Fail (test)</button>
+      <button class="btn btn-green btn-sm" style="font-size:12px;" onclick="navigate('screen-win')">🏆 Win (test)</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: WIN
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-win">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%, rgba(57,255,20,0.12) 0%, var(--bg-dark) 70%);pointer-events:none;"></div>
+    <div class="scroll-content" style="display:flex;flex-direction:column;align-items:center;padding:0 0 24px;">
+      <div class="win-crown">🏆</div>
+      <div class="win-title">VICTORY!</div>
+      <div class="win-stars">⭐⭐⭐</div>
+      <!-- Stats -->
+      <div class="win-stats" style="margin:0 16px 12px;">
+        <div class="win-stat-row">
+          <span class="wlbl">🎯 Total Kills</span>
+          <span class="wval" style="color:var(--accent);">1,357</span>
+        </div>
+        <div class="win-stat-row">
+          <span class="wlbl">🪖 Soldiers Remaining</span>
+          <span class="wval" style="color:var(--green);">89</span>
+        </div>
+        <div class="win-stat-row">
+          <span class="wlbl">⏱ Time</span>
+          <span class="wval">2:34</span>
+        </div>
+        <div class="win-stat-row">
+          <span class="wlbl">💥 Best Wave</span>
+          <span class="wval" style="color:var(--secondary);">Wave 3</span>
+        </div>
+      </div>
+      <!-- Rewards -->
+      <div class="win-rewards">
+        <div class="reward-box">
+          <div class="ricon">🪙</div>
+          <div class="rval">200</div>
+          <div class="rlbl">COINS</div>
+        </div>
+        <div class="reward-box">
+          <div class="ricon">💎</div>
+          <div class="rval">15</div>
+          <div class="rlbl">GEMS</div>
+        </div>
+        <div class="reward-box" style="border-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.05);">
+          <div class="ricon">🎁</div>
+          <div class="rval" style="font-size:16px;color:var(--legendary);">BONUS</div>
+          <div class="rlbl">MILESTONE</div>
+        </div>
+      </div>
+      <!-- Double reward ad -->
+      <div class="double-btn">
+        <div class="ad-banner" style="margin:0 16px;" onclick="showToast('2× reward collected! 🎉')">
+          <div class="ad-icon">📺</div>
+          <div class="ad-text">
+            <div class="at">Watch Ad → 2× Rewards!</div>
+            <div class="as">400 Coins + 30 Gems</div>
+          </div>
+          <div class="ad-play">▶</div>
+        </div>
+      </div>
+      <!-- Unlock notice -->
+      <div style="margin:12px 16px 0;width:calc(100%-32px);background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:14px;padding:12px;display:flex;gap:10px;align-items:center;">
+        <div style="font-size:28px;">🌴</div>
+        <div style="flex:1;">
+          <div style="font-weight:800;font-size:13px;color:var(--secondary);">Jungle World Unlocked!</div>
+          <div style="font-size:11px;color:var(--text-dim);">New enemies, environment, and rewards await</div>
+        </div>
+      </div>
+      <div style="padding:16px;width:100%;display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-primary btn-lg" onclick="navigate('screen-prelevel')">▶ NEXT LEVEL</button>
+        <button class="btn btn-ghost btn-lg" onclick="navigate('screen-menu')">🏠 Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: GAME OVER
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-gameover">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%, rgba(255,61,119,0.1) 0%, var(--bg-dark) 70%);pointer-events:none;"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:0 0 24px;">
+      <div class="go-skull">💀</div>
+      <div class="go-title">DEFEATED</div>
+      <p style="color:var(--text-dim);font-size:13px;font-weight:700;margin:4px 0 16px;">Your army was overwhelmed...</p>
+      <!-- Revive box -->
+      <div class="revive-box">
+        <div class="rt">🎯 CONTINUE YOUR RUN?</div>
+        <div class="rs">Watch an ad to revive with 50% of your soldiers</div>
+        <button class="btn btn-green btn-md" style="width:100%;font-size:15px;" onclick="showToast('Reviving with 50% soldiers! 💪')">
+          📺 WATCH AD — REVIVE
+        </button>
+      </div>
+      <!-- Stats -->
+      <div class="win-stats" style="margin:12px 16px 0;width:calc(100% - 32px);">
+        <div class="win-stat-row">
+          <span class="wlbl">💀 Kills Before Fall</span>
+          <span class="wval" style="color:var(--accent2);">741</span>
+        </div>
+        <div class="win-stat-row">
+          <span class="wlbl">📍 Reached</span>
+          <span class="wval">Wave 3</span>
+        </div>
+        <div class="win-stat-row">
+          <span class="wlbl">💡 Tip</span>
+          <span class="wval" style="font-size:12px;color:var(--text-dim);">Try Freeze + Airstrike!</span>
+        </div>
+      </div>
+      <div style="padding:16px;width:100%;display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-primary btn-lg" onclick="navigate('screen-prelevel')">🔄 TRY AGAIN</button>
+        <button class="btn btn-ghost btn-lg" onclick="navigate('screen-menu')">🏠 Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: UPGRADES / BUFFS
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-upgrades">
+    <div class="top-bar">
+      <div class="back-btn" onclick="navigate('screen-menu')">←</div>
+      <div class="top-bar-title">BUFF UPGRADES</div>
+      <div class="currency-pill"><span class="icon">🪙</span><span>12,450</span></div>
+    </div>
+    <!-- Rarity filter -->
+    <div class="upgrade-filter">
+      <div class="filter-chip active" onclick="filterBuff(this,'all')">All</div>
+      <div class="filter-chip" onclick="filterBuff(this,'common')">🔵 Common</div>
+      <div class="filter-chip" onclick="filterBuff(this,'uncommon')">🟢 Uncommon</div>
+      <div class="filter-chip" onclick="filterBuff(this,'rare')">🟣 Rare</div>
+      <div class="filter-chip" onclick="filterBuff(this,'epic')">🟠 Epic</div>
+      <div class="filter-chip" onclick="filterBuff(this,'legendary')">🟡 Legendary</div>
+    </div>
+    <div class="scroll-content" id="buff-list">
+      <!-- Buffs rendered by JS -->
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: COSMETICS
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-cosmetics">
+    <div class="top-bar">
+      <div class="back-btn" onclick="navigate('screen-menu')">←</div>
+      <div class="top-bar-title">SOLDIER SKINS</div>
+      <div class="currency-pill"><span class="icon">💎</span><span>87</span></div>
+    </div>
+    <!-- Active skin bonus -->
+    <div style="margin:0 16px 12px;background:linear-gradient(135deg,rgba(57,255,20,0.1),rgba(0,229,255,0.05));border:1px solid rgba(57,255,20,0.3);border-radius:14px;padding:12px;display:flex;gap:10px;align-items:center;">
+      <div style="font-size:32px;">🎖️</div>
+      <div>
+        <div style="font-weight:800;font-size:13px;color:var(--green);">Active: Desert Ranger</div>
+        <div style="font-size:11px;color:var(--text-dim);">Passive: +2% bullet range always active</div>
+      </div>
+    </div>
+    <div class="scroll-content">
+      <div class="cosmetics-grid" id="cosm-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: SHOP
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-shop">
+    <div class="top-bar">
+      <div class="back-btn" onclick="navigate('screen-menu')">←</div>
+      <div class="top-bar-title">SHOP</div>
+      <div class="currency-pill"><span class="icon">💎</span><span>87</span></div>
+    </div>
+    <div class="scroll-content">
+      <!-- Featured -->
+      <div class="shop-section">
+        <div class="section-label">⏰ LIMITED OFFER</div>
+        <div class="shop-featured" onclick="openPopup('popup-starter')">
+          <div class="sf-icon">🎁</div>
+          <div class="sf-info">
+            <div class="sfname" style="color:var(--secondary);">STARTER PACK</div>
+            <div class="sfdesc">500 Coins + 20 Gems + Iron Knight Skin</div>
+            <div class="sftimer">⏰ Expires in 47:23:11</div>
+          </div>
+          <div>
+            <div style="font-size:11px;text-decoration:line-through;color:var(--text-dim);">$4.99</div>
+            <div class="badge" style="background:var(--green);color:#001A08;font-size:14px;padding:4px 10px;">$0.99</div>
+          </div>
+        </div>
+      </div>
+      <!-- Remove ads -->
+      <div class="shop-section">
+        <div class="section-label">🚫 REMOVE ADS</div>
+        <div class="iap-row" onclick="showToast('Ads removed! Enjoy the game 🎮')">
+          <div class="ir-icon">🚫</div>
+          <div class="ir-info">
+            <div class="irname">Remove All Ads</div>
+            <div class="irdesc">No more interruptions, ever. Rewarded ads still optional.</div>
+          </div>
+          <button class="btn btn-secondary btn-sm">$2.99</button>
+        </div>
+      </div>
+      <!-- Coin bundles -->
+      <div class="shop-section">
+        <div class="section-label">🪙 COIN BUNDLES</div>
+        <div class="bundle-row">
+          <div class="bundle-card" onclick="spawnParticles('🪙');showToast('800 Coins added! 🪙')">
+            <div class="bc-icon">🪙</div>
+            <div class="bc-amount">800</div>
+            <div class="bc-price">$0.99</div>
+          </div>
+          <div class="bundle-card" onclick="spawnParticles('🪙');showToast('2,500 Coins added! 🪙')">
+            <div class="bc-icon">🪙</div>
+            <div class="bc-amount">2,500</div>
+            <div class="bc-price">$2.99</div>
+          </div>
+          <div class="bundle-card best-val" onclick="spawnParticles('🪙');showToast('6,000 Coins added! 🪙')">
+            <div class="best-tag">BEST VALUE</div>
+            <div class="bc-icon">💰</div>
+            <div class="bc-amount">6,000</div>
+            <div class="bc-price">$4.99</div>
+          </div>
+        </div>
+      </div>
+      <!-- Gem bundles -->
+      <div class="shop-section">
+        <div class="section-label">💎 GEM BUNDLES</div>
+        <div class="bundle-row">
+          <div class="bundle-card" onclick="spawnParticles('💎');showToast('25 Gems added! 💎')">
+            <div class="bc-icon">💎</div>
+            <div class="bc-amount" style="color:var(--accent);">25</div>
+            <div class="bc-price">$1.99</div>
+          </div>
+          <div class="bundle-card" onclick="spawnParticles('💎');showToast('70 Gems added! 💎')">
+            <div class="bc-icon">💎</div>
+            <div class="bc-amount" style="color:var(--accent);">70</div>
+            <div class="bc-price">$4.99</div>
+          </div>
+          <div class="bundle-card best-val" onclick="spawnParticles('💎');showToast('160 Gems added! 💎')">
+            <div class="best-tag">BEST VALUE</div>
+            <div class="bc-icon" style="font-size:36px;">💎</div>
+            <div class="bc-amount" style="color:var(--accent);">160</div>
+            <div class="bc-price">$9.99</div>
+          </div>
+        </div>
+      </div>
+      <!-- Premium soldiers -->
+      <div class="shop-section">
+        <div class="section-label">👑 PREMIUM SOLDIERS</div>
+        <div class="iap-row" onclick="openPopup('popup-iap')">
+          <div class="ir-icon">🥷</div>
+          <div class="ir-info">
+            <div class="irname" style="color:var(--secondary);">Shadow Operative</div>
+            <div class="irdesc">Stealth + 2× damage during invisibility</div>
+          </div>
+          <button class="btn btn-secondary btn-sm">$2.99</button>
+        </div>
+        <div class="iap-row" onclick="openPopup('popup-iap')">
+          <div class="ir-icon">🤖</div>
+          <div class="ir-info">
+            <div class="irname" style="color:var(--secondary);">Mech Trooper</div>
+            <div class="irdesc">Personal energy shield absorbs 5 hits</div>
+          </div>
+          <button class="btn btn-secondary btn-sm">$3.99</button>
+        </div>
+        <div class="iap-row" onclick="openPopup('popup-iap')">
+          <div class="ir-icon">🦾</div>
+          <div class="ir-info">
+            <div class="irname" style="color:var(--secondary);">Cyborg Marksman</div>
+            <div class="irdesc">Auto-targets highest HP enemy, never misses</div>
+          </div>
+          <button class="btn btn-secondary btn-sm">$4.99</button>
+        </div>
+        <div class="iap-row" style="border-color:rgba(255,107,0,0.5);background:rgba(255,107,0,0.05);" onclick="openPopup('popup-iap')">
+          <div class="ir-icon">💥</div>
+          <div class="ir-info">
+            <div class="irname" style="color:var(--primary);">Ultimate Bundle</div>
+            <div class="irdesc">All 3 soldiers + 200 Gems + 5000 Coins + Omega Skin</div>
+          </div>
+          <div>
+            <div style="font-size:10px;text-decoration:line-through;color:var(--text-dim);">$14.96</div>
+            <button class="btn btn-primary btn-sm">$9.99</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: SOLDIERS
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-soldiers">
+    <div class="top-bar">
+      <div class="back-btn" onclick="navigate('screen-menu')">←</div>
+      <div class="top-bar-title">SOLDIERS</div>
+      <div></div>
+    </div>
+    <div class="scroll-content" id="soldier-list">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: SETTINGS
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-settings">
+    <div class="top-bar">
+      <div class="back-btn" onclick="navigate('screen-menu')">←</div>
+      <div class="top-bar-title">SETTINGS</div>
+      <div></div>
+    </div>
+    <div class="scroll-content">
+      <div class="settings-section">
+        <div class="section-label">AUDIO</div>
+        <div class="setting-row">
+          <div class="sr-icon">🎵</div>
+          <div class="sr-info"><div class="srname">Music</div><div class="srdesc">Background music volume</div></div>
+          <div class="slider-wrap"><input type="range" value="70" min="0" max="100"></div>
+        </div>
+        <div class="setting-row">
+          <div class="sr-icon">💥</div>
+          <div class="sr-info"><div class="srname">Sound FX</div><div class="srdesc">In-game effects volume</div></div>
+          <div class="slider-wrap"><input type="range" value="90" min="0" max="100"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="section-label">GAMEPLAY</div>
+        <div class="setting-row">
+          <div class="sr-icon">📳</div>
+          <div class="sr-info"><div class="srname">Vibration</div><div class="srdesc">Haptic feedback on hits</div></div>
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row">
+          <div class="sr-icon">🎮</div>
+          <div class="sr-info"><div class="srname">Sensitivity</div><div class="srdesc">Drag movement speed</div></div>
+          <div class="slider-wrap"><input type="range" value="50" min="0" max="100"></div>
+        </div>
+        <div class="setting-row">
+          <div class="sr-icon">📊</div>
+          <div class="sr-info"><div class="srname">Show FPS</div><div class="srdesc">Display frame rate counter</div></div>
+          <div class="toggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="section-label">ACCESSIBILITY</div>
+        <div class="setting-row">
+          <div class="sr-icon">🌐</div>
+          <div class="sr-info"><div class="srname">Language</div><div class="srdesc">English</div></div>
+          <button class="btn btn-ghost btn-sm">Change</button>
+        </div>
+        <div class="setting-row">
+          <div class="sr-icon">📺</div>
+          <div class="sr-info"><div class="srname">Ads Removed</div><div class="srdesc">No interstitial ads</div></div>
+          <div style="color:var(--green);font-size:20px;">✅</div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="section-label">ACCOUNT</div>
+        <div class="setting-row" onclick="showToast('Progress saved to cloud ☁️')">
+          <div class="sr-icon">☁️</div>
+          <div class="sr-info"><div class="srname">Cloud Save</div><div class="srdesc">Sync progress across devices</div></div>
+          <div class="toggle on" onclick="event.stopPropagation();this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-row" onclick="showToast('Support contacted 📧')">
+          <div class="sr-icon">📧</div>
+          <div class="sr-info"><div class="srname">Contact Support</div><div class="srdesc">Report issues or feedback</div></div>
+          <div style="color:var(--text-dim);font-size:18px;">›</div>
+        </div>
+        <div class="setting-row" onclick="showToast('Terms opened 📄')">
+          <div class="sr-icon">📄</div>
+          <div class="sr-info"><div class="srname">Terms & Privacy</div><div class="srdesc">Legal information</div></div>
+          <div style="color:var(--text-dim);font-size:18px;">›</div>
+        </div>
+      </div>
+      <div style="padding:0 16px 24px;">
+        <div style="text-align:center;font-size:11px;color:var(--text-dim);">Monster War: Survival v1.0.0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: DAILY BONUS
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-daily">
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%, rgba(255,215,0,0.1) 0%, var(--bg-dark) 70%);pointer-events:none;z-index:0;"></div>
+    <div class="top-bar" style="position:relative;z-index:2;">
+      <div class="back-btn" onclick="navigate('screen-menu')">←</div>
+      <div class="top-bar-title">DAILY REWARD</div>
+      <div></div>
+    </div>
+    <div class="daily-streak">
+      <div class="ds-title">🔥 7-DAY STREAK!</div>
+      <div class="ds-sub">Keep logging in for bigger rewards</div>
+    </div>
+    <!-- Streak days -->
+    <div class="streak-row">
+      <div class="streak-day claimed"><div class="sd-day">MON</div><div class="sd-icon">🪙</div><div class="sd-val">+50</div></div>
+      <div class="streak-day claimed"><div class="sd-day">TUE</div><div class="sd-icon">🪙</div><div class="sd-val">+75</div></div>
+      <div class="streak-day claimed"><div class="sd-day">WED</div><div class="sd-icon">💎</div><div class="sd-val">+5</div></div>
+      <div class="streak-day claimed"><div class="sd-day">THU</div><div class="sd-icon">🪙</div><div class="sd-val">+100</div></div>
+      <div class="streak-day claimed"><div class="sd-day">FRI</div><div class="sd-icon">💎</div><div class="sd-val">+10</div></div>
+      <div class="streak-day claimed"><div class="sd-day">SAT</div><div class="sd-icon">🪙</div><div class="sd-val">+150</div></div>
+      <div class="streak-day today"><div class="sd-day">SUN</div><div class="sd-icon">💎</div><div class="sd-val">+20</div></div>
+    </div>
+    <!-- Today's reward -->
+    <div class="daily-big">
+      <div class="di-icon">💎</div>
+      <div class="di-val">+20 GEMS</div>
+    </div>
+    <p style="color:var(--text-dim);font-size:13px;font-weight:700;text-align:center;margin-bottom:16px;position:relative;z-index:2;">Day 7 bonus · Special reward!</p>
+    <!-- Ad bonus -->
+    <div style="padding:0 16px;position:relative;z-index:2;">
+      <div class="ad-banner" style="margin-bottom:12px;" onclick="showToast('Random Common buff unlocked! ⚡')">
+        <div class="ad-icon">📺</div>
+        <div class="ad-text">
+          <div class="at">Watch Ad → Free Random Buff</div>
+          <div class="as">Unlock a Common buff for free (24hr)</div>
+        </div>
+        <div class="ad-play">▶</div>
+      </div>
+      <button class="btn btn-secondary btn-xl" onclick="spawnParticles('💎');showToast('20 Gems claimed! 💎');navigate('screen-menu');">
+        🎁 CLAIM TODAY'S REWARD
+      </button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN: ACHIEVEMENTS
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-achievements">
+    <div class="top-bar">
+      <div class="back-btn" onclick="navigate('screen-menu')">←</div>
+      <div class="top-bar-title">TROPHIES</div>
+      <div class="currency-pill"><span style="font-size:16px;">🏆</span><span>12/50</span></div>
+    </div>
+    <!-- Summary -->
+    <div style="padding:0 16px 12px;">
+      <div class="progress-wrap"><div class="progress-fill" style="width:24%;background:linear-gradient(90deg,var(--secondary),var(--primary));"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text-dim);font-weight:700;">
+        <span>12 completed</span><span>38 remaining</span>
+      </div>
+    </div>
+    <div class="scroll-content" id="achieve-list">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+  <!-- ═══════════════
+       POPUPS
+  ═══════════════ -->
+
+  <!-- IAP Popup -->
+  <div class="popup-overlay" id="popup-iap" onclick="closePopup('popup-iap')">
+    <div class="popup-sheet" onclick="event.stopPropagation()">
+      <div class="popup-handle"></div>
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:64px;animation:float 3s infinite;">🥷</div>
+        <div class="popup-title" style="text-align:center;color:var(--secondary);">SHADOW OPERATIVE</div>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Every 10 seconds, becomes invisible to enemies for 3 seconds dealing 2× damage during that window.</p>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <div style="flex:1;background:rgba(255,107,0,0.1);border:1px solid rgba(255,107,0,0.3);border-radius:12px;padding:10px;text-align:center;">
+            <div style="font-size:20px;">⚔️</div>
+            <div style="font-size:10px;color:var(--text-dim);font-weight:700;">PASSIVE</div>
+            <div style="font-size:11px;font-weight:800;margin-top:2px;">+10% Bullet Damage</div>
+          </div>
+          <div style="flex:1;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);border-radius:12px;padding:10px;text-align:center;">
+            <div style="font-size:20px;">🥷</div>
+            <div style="font-size:10px;color:var(--text-dim);font-weight:700;">ABILITY</div>
+            <div style="font-size:11px;font-weight:800;margin-top:2px;">3s Stealth / 10s</div>
+          </div>
+        </div>
+      </div>
+      <div class="ad-banner" style="margin-bottom:12px;" onclick="closePopup('popup-iap');showToast('Shadow Operative trial started! 🥷')">
+        <div class="ad-icon">📺</div>
+        <div class="ad-text">
+          <div class="at">Try for FREE this level</div>
+          <div class="as">Watch a short ad to try</div>
+        </div>
+        <div class="ad-play">▶</div>
+      </div>
+      <button class="btn btn-secondary btn-lg" onclick="closePopup('popup-iap');showToast('Shadow Operative unlocked! 🥷')">
+        👑 UNLOCK PERMANENTLY — $2.99
+      </button>
+    </div>
+  </div>
+
+  <!-- Starter Pack Popup -->
+  <div class="popup-overlay" id="popup-starter" onclick="closePopup('popup-starter')">
+    <div class="popup-sheet" onclick="event.stopPropagation()">
+      <div class="popup-handle"></div>
+      <div class="popup-title" style="color:var(--secondary);">🎁 STARTER PACK</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:12px;background:var(--bg-card2);border-radius:12px;padding:12px;">
+          <span style="font-size:28px;">🪙</span>
+          <div><div style="font-weight:800;">500 Coins</div><div style="font-size:11px;color:var(--text-dim);">Soft currency</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:var(--bg-card2);border-radius:12px;padding:12px;">
+          <span style="font-size:28px;">💎</span>
+          <div><div style="font-weight:800;">20 Gems</div><div style="font-size:11px;color:var(--text-dim);">Hard currency</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.3);border-radius:12px;padding:12px;">
+          <span style="font-size:28px;">🎖️</span>
+          <div><div style="font-weight:800;color:var(--secondary);">Iron Knight Skin</div><div style="font-size:11px;color:var(--text-dim);">Rare cosmetic + +8% crowd HP</div></div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-bottom:12px;">
+        <span style="font-size:14px;text-decoration:line-through;color:var(--text-dim);">$4.99</span>
+        <span style="font-family:'Bangers',cursive;font-size:36px;color:var(--green);margin-left:8px;">$0.99</span>
+      </div>
+      <button class="btn btn-primary btn-xl" onclick="closePopup('popup-starter');spawnParticles('🎁');showToast('Starter Pack claimed! 🎁')">
+        🛒 PURCHASE NOW
+      </button>
+    </div>
+  </div>
+
+  <!-- Buff Detail Popup -->
+  <div class="popup-overlay" id="popup-buff" onclick="closePopup('popup-buff')">
+    <div class="popup-sheet" onclick="event.stopPropagation()">
+      <div class="popup-handle"></div>
+      <div id="popup-buff-content"></div>
+    </div>
+  </div>
+
+</div><!-- /phone -->
+
+<script>
+// ════════════════════════════════════
+// STATE
+// ════════════════════════════════════
+let currentScreen = 'screen-splash';
+let selectedLevel = 1;
+let selectedWorld = 0;
+let coins = 12450;
+let gems = 87;
+let killCount = 0;
+let killInterval = null;
+
+// ════════════════════════════════════
+// DATA
+// ════════════════════════════════════
+const worlds = [
+  { name:'Highway Bridge', icon:'🌉', sub:'Levels 1–5', color:'rgba(255,107,0,0.15)' },
+  { name:'Jungle Bridge', icon:'🌴', sub:'Levels 6–10', color:'rgba(57,255,20,0.1)' },
+  { name:'City Overpass', icon:'🏙️', sub:'Levels 11–15', color:'rgba(0,229,255,0.1)' },
+  { name:'Desert Canyon', icon:'🏜️', sub:'Levels 16–20', color:'rgba(255,200,50,0.1)' },
+  { name:'Swamp Crossing', icon:'🌿', sub:'Levels 21–25', color:'rgba(0,200,100,0.1)' },
+  { name:'Snowy Mountain', icon:'❄️', sub:'Levels 26–30', color:'rgba(150,220,255,0.1)' },
+  { name:'Underground Tunnel', icon:'⛏️', sub:'Levels 31–35', color:'rgba(150,100,50,0.1)' },
+  { name:'Arctic Ice Bridge', icon:'🧊', sub:'Levels 36–40', color:'rgba(100,200,255,0.1)' },
+  { name:'Volcanic Zone', icon:'🌋', sub:'Levels 41–45', color:'rgba(255,80,0,0.12)' },
+  { name:'Ruined City', icon:'🏚️', sub:'Levels 46–50', color:'rgba(191,95,255,0.1)' },
+];
+
+const levelNames = [
+  'First Steps','Picking Up Pace','Hold the Line','Breaking Point','Bridge Boss',
+  'Into the Jungle','Swarm Season','The Gorillas','Ambush','Jungle King',
+  'Downtown Chaos','Rush Hour','Gridlock','Skyscraper Shadow','Chief of Police',
+  'Desert March','Dune Raiders','Sandstorm','Ancient Curse','The Sphinx Rises',
+  'The Murk','Crocodile Run','Toxic Swamp','Giant Surge','Swamp King',
+  'Blizzard March','Ice Giants','Frozen Tiles','Double Boss','Ice Golem',
+  'Into the Dark','Drill Squad','Cave-In','Darkness Falls','The Excavator',
+  'Frozen Frontier','Polar Bears','Cracking Ice','Twin Lanes','Arctic Commander',
+  'Magma March','Molten Giants','Floor of Fire','Eruption Event','Volcanic Titan',
+  'Cyber Streets','Hack Attack','Signal Lost','Final Approach','THE OMEGA'
+];
+
+const buffs = [
+  { id:1, name:'+Soldiers', icon:'👥', rarity:'common', category:'army', desc:'Add soldiers to your crowd', tier:3, maxTier:5, unlocked:true, cost:4000, gemCost:0, effect:'Adds +3 soldiers per tile', dep:null },
+  { id:2, name:'Airstrike', icon:'✈️', rarity:'common', category:'destroy', desc:'Call in a bombing run', tier:2, maxTier:5, unlocked:true, cost:1500, gemCost:5, effect:'2 bombs, 40 damage each', dep:null },
+  { id:3, name:'Freeze', icon:'❄️', rarity:'common', category:'control', desc:'Slow all zombies', tier:2, maxTier:5, unlocked:true, cost:1500, gemCost:5, effect:'Slow 50%, duration 3s', dep:null },
+  { id:4, name:'Nuke', icon:'☢️', rarity:'common', category:'destroy', desc:'Clear enemies from screen', tier:1, maxTier:5, unlocked:true, cost:500, gemCost:0, effect:'Clears 10% of enemies', dep:'Airstrike T2' },
+  { id:5, name:'Shield', icon:'🛡️', rarity:'common', category:'defence', desc:'Absorb soldier losses', tier:1, maxTier:5, unlocked:true, cost:500, gemCost:0, effect:'Absorbs 2 soldier losses', dep:null },
+  { id:6, name:'Tesla Tower', icon:'⚡', rarity:'common', category:'control', desc:'Electric bridge towers', tier:2, maxTier:5, unlocked:true, cost:1500, gemCost:5, effect:'2 towers, 10 dmg/s', dep:'Freeze T2' },
+  { id:7, name:'Chemical Attack', icon:'🧪', rarity:'common', category:'destroy', desc:'Toxic cloud damage', tier:1, maxTier:5, unlocked:true, cost:500, gemCost:0, effect:'Toxic cloud 3s, 3 dmg/s', dep:'Nuke T1' },
+  { id:8, name:'Speed Boost', icon:'⚡', rarity:'common', category:'army', desc:'Increase fire rate', tier:1, maxTier:5, unlocked:true, cost:500, gemCost:0, effect:'+10% fire rate for 5s', dep:null },
+  { id:9, name:'Rapid Recruit', icon:'🏃', rarity:'common', category:'army', desc:'Faster soldier spawning', tier:0, maxTier:5, unlocked:false, cost:500, gemCost:0, effect:'2× soldiers from next tile', dep:null },
+  { id:10, name:'Army Shield', icon:'🧱', rarity:'uncommon', category:'defence', desc:'All soldiers gain HP', tier:1, maxTier:5, unlocked:true, cost:2000, gemCost:10, effect:'+1 HP per soldier this wave', dep:'Shield T1 + Soldiers T1' },
+  { id:11, name:'Incendiary Strike', icon:'🔥', rarity:'uncommon', category:'destroy', desc:'Airstrike leaves fire', tier:1, maxTier:5, unlocked:false, cost:2000, gemCost:10, effect:'Fire patches for 3s, 5dmg/s', dep:'Airstrike T2' },
+  { id:12, name:'Chain Lightning', icon:'🌩️', rarity:'uncommon', category:'control', desc:'Tesla chains to enemies', tier:0, maxTier:5, unlocked:false, cost:2000, gemCost:10, effect:'Chains to 1 extra zombie', dep:'Tesla T2' },
+  { id:13, name:'Clone Soldier', icon:'👥', rarity:'rare', category:'army', desc:'Duplicate your army', tier:0, maxTier:5, unlocked:false, cost:8000, gemCost:40, effect:'5% of army as clones 10s', dep:'Rapid Recruit T3 + Speed Boost T2' },
+  { id:14, name:'Orbital Strike', icon:'🛸', rarity:'rare', category:'destroy', desc:'Precision laser from orbit', tier:0, maxTier:5, unlocked:false, cost:8000, gemCost:40, effect:'100 damage single target', dep:'Airstrike T3 + Nuke T2' },
+  { id:15, name:'Nova Bomb', icon:'💫', rarity:'epic', category:'destroy', desc:'Massive shockwave', tier:0, maxTier:5, unlocked:false, cost:25000, gemCost:100, effect:'Clears 50% screen + stun boss 3s', dep:'Orbital T2 + Cryo T2' },
+  { id:16, name:'APOCALYPSE', icon:'🌋', rarity:'legendary', category:'destroy', desc:'Everything dies', tier:0, maxTier:5, unlocked:false, cost:0, gemCost:0, effect:'5% instant kill chance all enemies', dep:'Nova T3 + Time Warp T2 + Level 30' },
+];
+
+const cosmetics = [
+  { name:'Desert Ranger', icon:'🎖️', rarity:'common', buff:'+2% bullet range', equipped:true, owned:true, cost:'Free', costType:'free' },
+  { name:'Jungle Ghost', icon:'🌿', rarity:'common', buff:'+2% fire rate', equipped:false, owned:true, cost:'Free', costType:'free' },
+  { name:'Arctic Wolf', icon:'🐺', rarity:'uncommon', buff:'+5% move speed', equipped:false, owned:true, cost:'2000 🪙', costType:'coin' },
+  { name:'Neon Enforcer', icon:'⚡', rarity:'uncommon', buff:'+5% bullet damage', equipped:false, owned:false, cost:'5000 🪙', costType:'coin' },
+  { name:'Iron Knight', icon:'⚔️', rarity:'rare', buff:'+8% crowd HP', equipped:false, owned:true, cost:'25 💎', costType:'gem' },
+  { name:'Cyberpunk Merc', icon:'🤖', rarity:'rare', buff:'+8% fire rate', equipped:false, owned:false, cost:'25 💎', costType:'gem' },
+  { name:'Volcanic Berserker', icon:'🔥', rarity:'epic', buff:'+12% dmg + fire bullets', equipped:false, owned:false, cost:'60 💎', costType:'gem' },
+  { name:'Shadow Master', icon:'🥷', rarity:'epic', buff:'+12% dodge chance', equipped:false, owned:false, cost:'60 💎', costType:'gem' },
+  { name:'Omega Commander', icon:'👑', rarity:'legendary', buff:'+20% all stats', equipped:false, owned:false, cost:'150 💎', costType:'gem' },
+  { name:'Zombie Slayer', icon:'💀', rarity:'legendary', buff:'+20% dmg vs giants', equipped:false, owned:false, cost:'150 💎', costType:'gem' },
+];
+
+const soldiers = [
+  { name:'Rifleman', icon:'🪖', unlock:'Start', weapon:'Pistol', role:'Basic all-rounder', tier:'T1', dmg:1, speed:4, range:3, active:true, iap:false },
+  { name:'Shotgunner', icon:'🎯', unlock:'Level 6', weapon:'Shotgun', role:'Crowd clear', tier:'T2', dmg:3, speed:3, range:2, active:false, iap:false },
+  { name:'SMG Trooper', icon:'🔫', unlock:'Level 11', weapon:'SMG', role:'Rapid fire horde killer', tier:'T3', dmg:2, speed:5, range:3, active:false, iap:false },
+  { name:'Sniper', icon:'🎖️', unlock:'Level 16', weapon:'Sniper Rifle', role:'High damage single target', tier:'T4', dmg:5, speed:2, range:5, active:false, iap:false, locked:true },
+  { name:'Grenadier', icon:'💣', unlock:'Level 21', weapon:'Grenade Launcher', role:'AoE damage', tier:'T5', dmg:4, speed:3, range:4, active:false, iap:false, locked:true },
+  { name:'Flamethrower', icon:'🔥', unlock:'Level 26', weapon:'Flamethrower', role:'Continuous stream', tier:'T6', dmg:3, speed:4, range:2, active:false, iap:false, locked:true },
+  { name:'Rocketeer', icon:'🚀', unlock:'Level 31', weapon:'Rocket Launcher', role:'Massive AoE boss killer', tier:'T7', dmg:5, speed:2, range:4, active:false, iap:false, locked:true },
+  { name:'Minigunner', icon:'⚙️', unlock:'Level 36', weapon:'Minigun', role:'Maximum DPS', tier:'T8', dmg:4, speed:5, range:3, active:false, iap:false, locked:true },
+  { name:'Shadow Operative', icon:'🥷', unlock:'IAP $2.99', weapon:'Silenced Pistol', role:'Stealth + 2× damage', tier:'PREM', dmg:4, speed:4, range:4, active:false, iap:true, locked:true },
+  { name:'Mech Trooper', icon:'🤖', unlock:'IAP $3.99', weapon:'Mech Cannon', role:'Personal energy shield', tier:'PREM', dmg:4, speed:3, range:3, active:false, iap:true, locked:true },
+  { name:'Cyborg Marksman', icon:'🦾', unlock:'IAP $4.99', weapon:'Precision Rifle', role:'Auto-targets high HP', tier:'PREM', dmg:5, speed:3, range:5, active:false, iap:true, locked:true },
+];
+
+const achievements = [
+  { icon:'🎯', name:'First Blood', desc:'Complete Level 1', reward:'100 🪙', done:true },
+  { icon:'🧟', name:'Zombie Slayer I', desc:'Kill 1,000 zombies total', reward:'200 🪙', done:true },
+  { icon:'🧟', name:'Zombie Slayer II', desc:'Kill 10,000 zombies total', reward:'500 🪙 + 10 💎', done:true },
+  { icon:'🧟', name:'Zombie Slayer III', desc:'Kill 100,000 zombies total', reward:'2000 🪙 + 50 💎', done:false, progress:42 },
+  { icon:'⭐', name:'Perfectionist', desc:'Complete any level on 3 Stars', reward:'150 🪙', done:true },
+  { icon:'🌍', name:'World Explorer', desc:'Unlock all 10 worlds', reward:'500 🪙 + 25 💎', done:false, progress:20 },
+  { icon:'💎', name:'Gem Hoarder', desc:'Collect 500 gems total', reward:'Omega Skin Discount', done:false, progress:17 },
+  { icon:'🪖', name:'Full Roster', desc:'Unlock all 8 base soldiers', reward:'1000 🪙 + 30 💎', done:false, progress:25 },
+  { icon:'👑', name:'Legend', desc:'Complete Level 50 (Final Boss)', reward:'Omega Commander Skin', done:false, progress:0 },
+  { icon:'💥', name:'Overkill', desc:'Win a level with 500+ soldiers', reward:'250 🪙', done:true },
+  { icon:'⚡', name:'Power Up', desc:'Upgrade any buff to T5', reward:'300 🪙 + 5 💎', done:false, progress:60 },
+  { icon:'🛡️', name:'Untouchable', desc:'Complete a level without losing soldiers', reward:'500 🪙', done:false, progress:0 },
+];
+
+// ════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════
+function navigate(screenId) {
+  const prev = document.getElementById(currentScreen);
+  const next = document.getElementById(screenId);
+  if (!next || screenId === currentScreen) return;
+
+  prev.classList.remove('active');
+  next.classList.add('active');
+  currentScreen = screenId;
+
+  // Screen-specific init
+  if (screenId === 'screen-game') startKillCounter();
+  else stopKillCounter();
+
+  if (screenId === 'screen-levels') renderLevels(selectedWorld);
+  if (screenId === 'screen-upgrades') renderBuffs('all');
+  if (screenId === 'screen-cosmetics') renderCosmetics();
+  if (screenId === 'screen-soldiers') renderSoldiers();
+  if (screenId === 'screen-achievements') renderAchievements();
+}
+
+// ════════════════════════════════════
+// KILL COUNTER
+// ════════════════════════════════════
+function startKillCounter() {
+  killCount = 0;
+  document.getElementById('kill-counter').textContent = '0';
+  killInterval = setInterval(() => {
+    killCount += Math.floor(Math.random() * 8) + 1;
+    document.getElementById('kill-counter').textContent = killCount.toLocaleString();
+    // Update wave display
+    if (killCount > 200) document.getElementById('wave-display').textContent = 'Wave 2 of 3';
+    if (killCount > 600) document.getElementById('wave-display').textContent = 'Wave 3 of 3';
+  }, 300);
+}
+function stopKillCounter() {
+  clearInterval(killInterval);
+}
+
+// ════════════════════════════════════
+// WORLD / LEVEL SELECT
+// ════════════════════════════════════
+function selectWorld(idx) {
+  selectedWorld = idx;
+  document.querySelectorAll('.world-chip').forEach((c,i) => c.classList.toggle('active', i === idx));
+  const w = worlds[idx];
+  document.getElementById('world-badge').textContent = w.icon;
+  document.getElementById('world-badge').style.background = w.color;
+  document.getElementById('world-name').textContent = w.name;
+  document.getElementById('world-sub').textContent = w.sub + ' • ' + (idx < 1 ? '2/5' : idx < 2 ? '0/5' : '0/5') + ' Completed';
+  renderLevels(idx);
+}
+
+function renderLevels(worldIdx) {
+  const grid = document.getElementById('levels-grid');
+  grid.innerHTML = '';
+  const startLevel = worldIdx * 5 + 1;
+  for (let i = 0; i < 5; i++) {
+    const lvl = startLevel + i;
+    const isMilestone = lvl % 5 === 0;
+    const isCompleted = lvl <= 2 && worldIdx === 0;
+    const isUnlocked = lvl <= 6 && worldIdx <= 1;
+    const isLocked = !isUnlocked;
+
+    const div = document.createElement('div');
+    div.className = 'level-btn ' + (isCompleted ? 'completed' : isUnlocked ? 'unlocked' : 'locked') + (isMilestone ? ' milestone' : '');
+
+    const starsStr = isCompleted ? '⭐⭐⭐' : isUnlocked ? '☆☆☆' : '';
+
+    div.innerHTML = `
+      ${isMilestone ? '<div class="crown">👑</div>' : ''}
+      <div class="lnum" style="color:${isCompleted ? 'var(--green)' : isMilestone ? 'var(--secondary)' : 'var(--text)'}">${lvl}</div>
+      ${isLocked ? '<div class="lock">🔒</div>' : `<div class="stars">${starsStr}</div>`}
+    `;
+    if (!isLocked) {
+      div.onclick = () => openLevel(lvl, worldIdx);
+    }
+    grid.appendChild(div);
+  }
+}
+
+function openLevel(lvl, worldIdx) {
+  selectedLevel = lvl;
+  const w = worlds[worldIdx];
+  document.getElementById('prelevel-title').textContent = 'LEVEL ' + lvl;
+  document.getElementById('prelevel-icon').textContent = w.icon;
+  document.getElementById('prelevel-name').textContent = levelNames[lvl - 1].toUpperCase();
+  navigate('screen-prelevel');
+}
+
+// ════════════════════════════════════
+// DIFFICULTY
+// ════════════════════════════════════
+function selectDiff(el, stars) {
+  document.querySelectorAll('.diff-btn').forEach(d => d.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ════════════════════════════════════
+// SOLDIER SELECT
+// ════════════════════════════════════
+function selectSoldier(el) {
+  document.querySelectorAll('.soldier-card:not(.iap)').forEach(c => {
+    c.classList.remove('selected');
+    c.querySelector('div:last-child').textContent = '○';
+    c.querySelector('div:last-child').style.color = 'var(--border)';
+  });
+  if (!el.classList.contains('iap')) {
+    el.classList.add('selected');
+    el.querySelector('div:last-child').textContent = '✓';
+    el.querySelector('div:last-child').style.color = 'var(--green)';
+  }
+}
+
+// ════════════════════════════════════
+// BUFF RENDERING
+// ════════════════════════════════════
+const rarityColors = {
+  common: { bg:'rgba(100,181,246,0.1)', border:'rgba(100,181,246,0.3)', text:'var(--common)', label:'COMMON' },
+  uncommon: { bg:'rgba(102,187,106,0.1)', border:'rgba(102,187,106,0.3)', text:'var(--uncommon)', label:'UNCOMMON' },
+  rare: { bg:'rgba(171,71,188,0.1)', border:'rgba(171,71,188,0.3)', text:'var(--rare)', label:'RARE' },
+  epic: { bg:'rgba(255,112,67,0.1)', border:'rgba(255,112,67,0.3)', text:'var(--epic)', label:'EPIC' },
+  legendary: { bg:'rgba(255,215,0,0.1)', border:'rgba(255,215,0,0.4)', text:'var(--legendary)', label:'LEGENDARY' },
+};
+
+function renderBuffs(filter) {
+  const list = document.getElementById('buff-list');
+  list.innerHTML = '';
+  const filtered = filter === 'all' ? buffs : buffs.filter(b => b.rarity === filter);
+
+  filtered.forEach(b => {
+    const rc = rarityColors[b.rarity];
+    const tierDots = Array.from({length:b.maxTier}, (_,i) =>
+      `<div class="tier-dot ${i < b.tier ? 'filled' : ''}"></div>`).join('');
+    const canUpgrade = b.tier < b.maxTier && b.unlocked;
+    const isMaxed = b.tier >= b.maxTier;
+
+    const card = document.createElement('div');
+    card.className = 'buff-card';
+    card.style.borderColor = rc.border;
+    card.style.background = `var(--bg-card)`;
+
+    card.innerHTML = `
+      <div class="buff-top">
+        <div class="buff-icon-wrap" style="background:${rc.bg};border:1px solid ${rc.border};">
+          <span style="font-size:26px;">${b.icon}</span>
+        </div>
+        <div class="buff-details">
+          <div class="bname">${b.name}</div>
+          <div class="bdesc">${b.desc}</div>
+          <div class="btier" style="color:${rc.text};">
+            <span class="badge" style="background:${rc.bg};color:${rc.text};">${rc.label}</span>
+            ${b.tier > 0 ? `<span style="margin-left:6px;font-size:11px;">T${b.tier} — ${b.effect}</span>` : ''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          ${isMaxed ? '<div class="badge" style="background:rgba(57,255,20,0.2);color:var(--green);">MAX</div>' :
+            b.unlocked ? `<div style="font-size:11px;color:var(--text-dim);">T${b.tier}/${b.maxTier}</div>` :
+            '<div style="font-size:18px;">🔒</div>'}
+        </div>
+      </div>
+      <div class="buff-tier-row">${tierDots}</div>
+      ${b.dep && !b.unlocked ? `<div style="margin-top:8px;"><span class="dep-badge">⚠️ Requires: ${b.dep}</span></div>` : ''}
+      ${b.unlocked && !isMaxed ? `
+        <div class="upgrade-cost">
+          <span style="font-size:20px;">🪙</span>
+          <span style="font-weight:800;font-size:14px;">${b.cost.toLocaleString()}</span>
+          ${b.gemCost > 0 ? `<span style="font-size:18px;margin-left:6px;">💎</span><span style="font-weight:800;font-size:14px;">${b.gemCost}</span>` : ''}
+          <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="upgradeBuff(${b.id},event)">
+            ⬆ UPGRADE
+          </button>
+        </div>
+      ` : ''}
+      ${!b.unlocked && !b.dep ? `
+        <div style="margin-top:10px;">
+          <button class="btn btn-blue btn-sm" onclick="unlockBuff(${b.id},event)">🔓 UNLOCK — ${b.cost} 🪙</button>
+        </div>
+      ` : ''}
+    `;
+    list.appendChild(card);
+  });
+}
+
+function filterBuff(el, filter) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderBuffs(filter);
+}
+
+function upgradeBuff(id, e) {
+  e.stopPropagation();
+  const b = buffs.find(x => x.id === id);
+  if (!b || b.tier >= b.maxTier) return;
+  if (coins < b.cost) { showToast('Not enough coins! 🪙'); return; }
+  coins -= b.cost;
+  b.tier++;
+  b.cost = Math.floor(b.cost * 2.5);
+  updateCurrencyDisplay();
+  spawnParticles('⚡');
+  showToast(`${b.name} upgraded to T${b.tier}! ⚡`);
+  renderBuffs(document.querySelector('.filter-chip.active').dataset.filter || 'all');
+}
+
+function unlockBuff(id, e) {
+  e.stopPropagation();
+  const b = buffs.find(x => x.id === id);
+  if (!b) return;
+  if (coins < b.cost) { showToast('Not enough coins! 🪙'); return; }
+  coins -= b.cost;
+  b.unlocked = true;
+  b.tier = 1;
+  updateCurrencyDisplay();
+  spawnParticles('⚡');
+  showToast(`${b.name} unlocked! ⚡`);
+  renderBuffs('all');
+}
+
+// ════════════════════════════════════
+// COSMETICS
+// ════════════════════════════════════
+function renderCosmetics() {
+  const grid = document.getElementById('cosm-grid');
+  grid.innerHTML = '';
+  cosmetics.forEach((c, idx) => {
+    const rc = rarityColors[c.rarity];
+    const div = document.createElement('div');
+    div.className = 'cosm-card ' +
+      (c.equipped ? 'equipped ' : '') +
+      (!c.owned ? 'locked-cosm ' : '') +
+      (c.rarity === 'legendary' ? 'legendary-glow ' : '');
+    div.style.borderColor = rc.border;
+    div.innerHTML = `
+      ${c.equipped ? '<div class="equipped-badge">✓ ON</div>' : ''}
+      <div class="cosm-icon">${c.icon}</div>
+      <div class="cname">${c.name}</div>
+      <div class="cbuff" style="color:${rc.text};">${c.buff}</div>
+      <div class="cbadge">
+        <span class="badge" style="background:${rc.bg};color:${rc.text};font-size:9px;">${c.rarity.toUpperCase()}</span>
+      </div>
+      <div style="margin-top:8px;">
+        ${c.owned
+          ? (c.equipped
+              ? '<div style="font-size:11px;color:var(--green);font-weight:800;">EQUIPPED</div>'
+              : `<button class="btn btn-blue btn-sm" onclick="equipCosmetic(${idx},event)" style="font-size:11px;padding:5px 10px;">EQUIP</button>`)
+          : `<button class="btn btn-secondary btn-sm" onclick="buyCosmetic(${idx},event)" style="font-size:11px;padding:5px 10px;">${c.cost}</button>`
+        }
+      </div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function equipCosmetic(idx, e) {
+  e.stopPropagation();
+  cosmetics.forEach(c => c.equipped = false);
+  cosmetics[idx].equipped = true;
+  showToast(`${cosmetics[idx].name} equipped! ✨`);
+  renderCosmetics();
+}
+
+function buyCosmetic(idx, e) {
+  e.stopPropagation();
+  const c = cosmetics[idx];
+  if (c.costType === 'gem' && gems < parseInt(c.cost)) { showToast('Not enough gems! 💎'); return; }
+  if (c.costType === 'coin' && coins < parseInt(c.cost)) { showToast('Not enough coins! 🪙'); return; }
+  if (c.costType === 'gem') gems -= parseInt(c.cost);
+  if (c.costType === 'coin') coins -= parseInt(c.cost);
+  cosmetics[idx].owned = true;
+  updateCurrencyDisplay();
+  spawnParticles('✨');
+  showToast(`${c.name} unlocked! ✨`);
+  renderCosmetics();
+}
+
+// ════════════════════════════════════
+// SOLDIERS
+// ════════════════════════════════════
+function renderSoldiers() {
+  const list = document.getElementById('soldier-list');
+  list.innerHTML = '';
+
+  const sectionHeader = (title) => {
+    const d = document.createElement('div');
+    d.className = 'section-label';
+    d.style.cssText = 'padding:12px 16px 6px;';
+    d.textContent = title;
+    list.appendChild(d);
+  };
+
+  sectionHeader('BASE SOLDIERS');
+  soldiers.filter(s => !s.iap).forEach((s, idx) => renderSoldierCard(s, idx, list));
+  sectionHeader('👑 PREMIUM SOLDIERS (IAP)');
+  soldiers.filter(s => s.iap).forEach((s, idx) => renderSoldierCard(s, idx + 8, list));
+}
+
+function renderSoldierCard(s, idx, parent) {
+  const barColor = s.iap ? 'var(--secondary)' : 'var(--primary)';
+  const card = document.createElement('div');
+  card.className = 'soldier-detail-card ' + (s.active ? 'active-soldier ' : '') + (s.iap ? 'iap-soldier' : '');
+  card.innerHTML = `
+    <div class="sdc-top">
+      <div class="sdc-icon" style="background:${s.iap ? 'rgba(255,215,0,0.12)' : 'rgba(255,107,0,0.1)'};">${s.icon}</div>
+      <div class="sdc-info">
+        <div class="sdname" style="color:${s.iap ? 'var(--secondary)' : 'var(--text)'}">${s.name}</div>
+        <div class="sdunlock">${s.locked ? '🔒 ' : '✅ '}${s.unlock}</div>
+        <div class="sdweapon">🔫 ${s.weapon} · ${s.role}</div>
+      </div>
+      <div>
+        ${s.active ? '<div class="badge" style="background:rgba(57,255,20,0.2);color:var(--green);">ACTIVE</div>' :
+          s.locked ? `<button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="event.stopPropagation();${s.iap ? `openPopup('popup-iap')` : `showToast('Reach ${s.unlock} to unlock!')`}">
+            ${s.iap ? '💰' : '🔒'}
+          </button>` :
+          `<button class="btn btn-primary btn-sm" style="font-size:11px;" onclick="setSoldierActive(${idx})">SELECT</button>`
+        }
+      </div>
+    </div>
+    <div class="stat-bars">
+      <div class="stat-bar-row">
+        <div class="sbl">DAMAGE</div>
+        <div class="sbw"><div class="progress-wrap"><div class="progress-fill" style="width:${s.dmg*20}%;background:linear-gradient(90deg,#FF4500,#FF8C00);"></div></div></div>
+      </div>
+      <div class="stat-bar-row">
+        <div class="sbl">SPEED</div>
+        <div class="sbw"><div class="progress-wrap"><div class="progress-fill" style="width:${s.speed*20}%;background:linear-gradient(90deg,#00BFFF,#0080FF);"></div></div></div>
+      </div>
+      <div class="stat-bar-row">
+        <div class="sbl">RANGE</div>
+        <div class="sbw"><div class="progress-wrap"><div class="progress-fill" style="width:${s.range*20}%;background:linear-gradient(90deg,var(--green),#00AA00);"></div></div></div>
+      </div>
+    </div>
+  `;
+  parent.appendChild(card);
+}
+
+function setSoldierActive(idx) {
+  soldiers.forEach(s => s.active = false);
+  soldiers[idx].active = true;
+  showToast(`${soldiers[idx].name} selected! 🪖`);
+  renderSoldiers();
+}
+
+// ════════════════════════════════════
+// ACHIEVEMENTS
+// ════════════════════════════════════
+function renderAchievements() {
+  const list = document.getElementById('achieve-list');
+  list.innerHTML = '';
+  achievements.forEach(a => {
+    const card = document.createElement('div');
+    card.className = 'achieve-card ' + (a.done ? 'complete' : '');
+    card.innerHTML = `
+      <div class="ac-icon" style="opacity:${a.done ? 1 : 0.6};">${a.icon}</div>
+      <div class="ac-info">
+        <div class="acname" style="color:${a.done ? 'var(--secondary)' : 'var(--text)'};">${a.name}</div>
+        <div class="acdesc">${a.desc}</div>
+        ${!a.done && a.progress !== undefined ? `
+          <div style="margin-top:6px;">
+            <div class="progress-wrap"><div class="progress-fill" style="width:${a.progress}%;background:linear-gradient(90deg,var(--primary),var(--secondary));"></div></div>
+            <div style="font-size:10px;color:var(--text-dim);margin-top:3px;font-weight:700;">${a.progress}% complete</div>
+          </div>
+        ` : ''}
+      </div>
+      <div class="ac-reward">
+        ${a.done
+          ? '<div style="font-size:22px;">✅</div>'
+          : `<div class="acr-val">${a.reward}</div><div style="font-size:10px;color:var(--text-dim);font-weight:700;margin-top:2px;">REWARD</div>`
+        }
+      </div>
+    `;
+    if (a.done) {
+      card.onclick = () => showToast('Achievement already claimed! ✅');
+    } else {
+      card.onclick = () => showToast(`Keep going! ${a.progress || 0}% done 💪`);
+    }
+    list.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════
+// POPUP
+// ════════════════════════════════════
+function openPopup(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closePopup(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// ════════════════════════════════════
+// TOAST
+// ════════════════════════════════════
+let toastTimeout;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  const text = document.getElementById('toast-text');
+  text.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ════════════════════════════════════
+// PARTICLES
+// ════════════════════════════════════
+function spawnParticles(emoji) {
+  const phone = document.getElementById('phone');
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emoji;
+    p.style.left = (80 + Math.random() * 230) + 'px';
+    p.style.top = (300 + Math.random() * 200) + 'px';
+    p.style.animationDelay = (Math.random() * 0.3) + 's';
+    phone.appendChild(p);
+    setTimeout(() => p.remove(), 1200);
+  }
+}
+
+// ════════════════════════════════════
+// CURRENCY DISPLAY
+// ════════════════════════════════════
+function updateCurrencyDisplay() {
+  document.querySelectorAll('#coin-count').forEach(el => el.textContent = coins.toLocaleString());
+  document.querySelectorAll('#gem-count').forEach(el => el.textContent = gems.toLocaleString());
+}
+
+// ════════════════════════════════════
+// RIPPLE EFFECT
+// ════════════════════════════════════
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn, .menu-btn, .level-btn, .world-chip, .filter-chip, .iap-row, .bundle-card');
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const phoneRect = document.getElementById('phone').getBoundingClientRect();
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple';
+  const size = Math.max(btn.offsetWidth, btn.offsetHeight);
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+  ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+  btn.style.position = 'relative';
+  btn.style.overflow = 'hidden';
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+});
+
+// ════════════════════════════════════
+// INIT
+// ════════════════════════════════════
+window.addEventListener('load', () => {
+  // Filter chip data attribute
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.dataset.filter = c.textContent.toLowerCase().replace(/[^a-z]/g,'') || 'all';
+  });
+  renderLevels(0);
+});
+</script>
+</body>
+</html>

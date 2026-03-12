@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UXLora — Your Complete UI Kit in 60 Seconds</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+:root {
+  --bg:        #07070f;
+  --bg-2:      #0c0c18;
+  --bg-3:      #101022;
+  --card:      #0e0e1d;
+  --border:    rgba(139,92,246,0.12);
+  --border-2:  rgba(139,92,246,0.25);
+  --purple:    #8B5CF6;
+  --purple-2:  #A78BFA;
+  --purple-3:  #C4B5FD;
+  --white:     #FAFAFA;
+  --white-60:  rgba(250,250,250,0.6);
+  --white-30:  rgba(250,250,250,0.3);
+  --green:     #34D399;
+  --red:       #F87171;
+  --r:         20px;
+  --r-lg:      28px;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 48px; height: 64px;
+  background: rgba(7,7,15,0.8);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo { font-size: 17px; font-weight: 700; color: var(--white); }
+.logo em { font-style: normal; color: var(--purple-2); }
+
+.nav-right { display: flex; align-items: center; gap: 32px; }
+.nav-link { font-size: 14px; color: var(--white-60); text-decoration: none; font-weight: 500; transition: color .2s; }
+.nav-link:hover { color: var(--white); }
+
+.btn-nav {
+  background: var(--purple); color: #fff; border: none; cursor: pointer;
+  padding: 9px 22px; border-radius: 100px;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  transition: all .2s; text-decoration: none; display: inline-block;
+}
+.btn-nav:hover { background: var(--purple-2); box-shadow: 0 0 24px rgba(139,92,246,.4); transform: translateY(-1px); }
+
+/* HERO */
+.hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 140px 24px 100px;
+  position: relative; overflow: hidden;
+}
+
+.hero::before {
+  content: ''; position: absolute; top: -10%; left: 50%;
+  transform: translateX(-50%);
+  width: 900px; height: 700px;
+  background: radial-gradient(ellipse at 50% 30%, rgba(139,92,246,.18) 0%, rgba(109,40,217,.06) 45%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(139,92,246,.12) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black, transparent);
+  pointer-events: none;
+}
+
+.hero-inner { position: relative; z-index: 1; max-width: 760px; }
+
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.28);
+  border-radius: 100px; padding: 5px 16px 5px 10px;
+  font-size: 12px; font-weight: 600; letter-spacing: .05em;
+  color: var(--purple-3); margin-bottom: 36px; text-transform: uppercase;
+}
+
+.eyebrow span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--purple-2); animation: blink 2.4s ease-in-out infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+h1 {
+  font-size: clamp(24px, 3.8vw, 64px); font-weight: 800;
+  letter-spacing: -2px; line-height: 1.02; margin-bottom: 24px;
+  white-space: nowrap;
+}
+
+h1 .accent {
+  background: linear-gradient(120deg, var(--purple-2) 0%, #c084fc 50%, var(--purple-3) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+@media(max-width: 860px) {
+  h1 { white-space: normal; font-size: clamp(28px, 6.5vw, 44px); letter-spacing: -1.5px; }
+}
+
+.hero-sub {
+  font-size: clamp(14px, 1.5vw, 16px); color: var(--white-60);
+  font-weight: 400; line-height: 1.7; max-width: 640px; margin: 0 auto 52px;
+}
+.hero-sub strong { color: var(--white); font-weight: 600; }
+
+.form-row {
+  display: flex; gap: 10px; max-width: 460px;
+  margin: 0 auto 20px; flex-wrap: wrap; justify-content: center;
+}
+
+.email-input {
+  flex: 1; min-width: 220px;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 100px; padding: 13px 22px;
+  color: var(--white); font-family: inherit; font-size: 14.5px; outline: none;
+  transition: border-color .2s, background .2s;
+}
+.email-input::placeholder { color: var(--white-30); }
+.email-input:focus { border-color: var(--purple); background: rgba(139,92,246,.06); }
+
+.btn-primary {
+  background: var(--purple); color: #fff; border: none; cursor: pointer;
+  padding: 13px 30px; border-radius: 100px;
+  font-family: inherit; font-size: 14.5px; font-weight: 700; white-space: nowrap;
+  box-shadow: 0 8px 28px rgba(139,92,246,.35);
+  transition: all .2s;
+}
+.btn-primary:hover { background: var(--purple-2); box-shadow: 0 12px 36px rgba(139,92,246,.5); transform: translateY(-2px); }
+.btn-primary.off { opacity:.6; cursor:not-allowed; pointer-events:none; }
+
+.success-pill {
+  display: none; background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.25);
+  color: var(--green); border-radius: 100px; padding: 10px 24px;
+  font-size: 14px; font-weight: 500; max-width: 460px; margin: 0 auto;
+}
+
+.counter-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+.counter-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(248,113,113,.07); border: 1px solid rgba(248,113,113,.2);
+  border-radius: 100px; padding: 7px 18px;
+  font-size: 13.5px; font-weight: 500; color: #FCA5A5;
+}
+
+.counter-pill .num { font-size: 15px; font-weight: 800; color: var(--red); min-width: 30px; text-align: center; }
+.counter-note { font-size: 12.5px; color: var(--white-30); text-align: center; margin-top: 10px; }
+.counter-note strong { color: var(--white-60); font-weight: 600; }
+.hero-audience {
+  font-size: 13.5px; color: var(--white-30); margin-bottom: 36px;
+  font-weight: 500; letter-spacing: .01em;
+}
+.hero-audience span {
+  color: var(--purple-3); font-weight: 600;
+}
+.social-proof-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 100px; padding: 7px 16px;
+  font-size: 13px; font-weight: 500; color: var(--white-60);
+}
+.social-proof-pill span { color: var(--white); font-weight: 700; }
+
+/* SECTIONS */
+.divider { height: 1px; background: var(--border); }
+.section { padding: 110px 24px; }
+.section.alt { background: var(--bg-2); }
+.wrap { max-width: 1080px; margin: 0 auto; }
+
+.label {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--purple-2); margin-bottom: 14px;
+}
+
+h2 {
+  font-size: clamp(34px, 4.5vw, 54px); font-weight: 800;
+  letter-spacing: -1.8px; line-height: 1.08; color: var(--white); margin-bottom: 18px;
+}
+
+.sub { font-size: 17px; color: var(--white-60); font-weight: 400; line-height: 1.65; max-width: 520px; }
+
+/* STATS */
+.stats-row {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 16px; margin-top: 72px;
+}
+
+.stat {
+  padding: 52px 44px; 
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  transition: background .3s, border-color .3s, transform .2s;
+  position: relative; overflow: hidden;
+}
+.stat::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139,92,246,.5), transparent);
+  opacity: 0; transition: opacity .3s;
+}
+.stat:hover { background: #101024; border-color: var(--border-2); transform: translateY(-4px); }
+.stat:hover::before { opacity: 1; }
+
+.stat-num {
+  font-size: clamp(48px, 5vw, 64px); font-weight: 800;
+  letter-spacing: -2.5px; color: var(--white); line-height: 1; margin-bottom: 8px;
+}
+.stat-unit {
+  font-size: 12px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--purple-2);
+  margin-bottom: 16px;
+}
+.stat-title { font-size: 16px; font-weight: 600; color: var(--white); margin-bottom: 6px; }
+.stat-desc { font-size: 14px; color: var(--white-60); line-height: 1.55; }
+
+/* COMPARE */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 60px; max-width: 780px; }
+
+.compare-card { border: 1px solid var(--border); border-radius: var(--r-lg); padding: 36px 40px; background: var(--card); }
+.compare-card.hi { border-color: var(--border-2); background: linear-gradient(145deg, rgba(139,92,246,.1) 0%, var(--card) 100%); }
+
+.compare-head { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+.compare-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.compare-card:not(.hi) .compare-icon { background: rgba(248,113,113,.1); }
+.compare-card.hi .compare-icon { background: rgba(139,92,246,.18); }
+.compare-title { font-size: 15px; font-weight: 700; }
+
+.compare-list { list-style: none; }
+.compare-list li {
+  display: flex; gap: 10px; align-items: flex-start; padding: 9px 0;
+  border-bottom: 1px solid var(--border); font-size: 14px; color: var(--white-60); line-height: 1.45;
+}
+.compare-list li:last-child { border-bottom: none; }
+.compare-list li b { flex-shrink: 0; margin-top: 1px; }
+
+/* DEMO */
+.demo-layout { display: flex; align-items: center; gap: 96px; margin-top: 72px; }
+.demo-copy { flex: 1; }
+.demo-copy p { font-size: 16px; color: var(--white-60); line-height: 1.7; margin-bottom: 14px; }
+.demo-copy p strong { color: var(--white); font-weight: 600; }
+.demo-hint { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 13px; color: var(--purple-3); font-weight: 600; }
+
+.phone-outer { flex-shrink: 0; position: relative; }
+.phone-glow {
+  position: absolute; inset: -60px;
+  background: radial-gradient(ellipse at center, rgba(139,92,246,.22) 0%, transparent 65%);
+  pointer-events: none; border-radius: 50%;
+}
+.phone {
+  width: 270px; height: 585px; background: #08080f;
+  border-radius: 44px; border: 1.5px solid rgba(255,255,255,.1);
+  overflow: hidden; position: relative; z-index: 1;
+  box-shadow: 0 2px 0 rgba(255,255,255,.08) inset, 0 40px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04);
+}
+.phone iframe {
+  width: 390px; height: 844px;
+  border: none; transform-origin: top left;
+  transform: scale(0.6923);
+  pointer-events: all; display: block;
+}
+
+/* HOW IT WORKS */
+.steps-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 2px; background: var(--border); border-radius: var(--r-lg);
+  overflow: hidden; border: 1px solid var(--border); margin-top: 72px;
+}
+.step { background: var(--bg-2); padding: 52px 44px; transition: background .25s; }
+.step:hover { background: var(--bg-3); }
+.step-n { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--purple); margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
+.step-n::after { content: ''; flex: 1; height: 1px; background: var(--border-2); }
+.step h3 { font-size: 20px; font-weight: 700; letter-spacing: -.4px; margin-bottom: 12px; }
+.step p { font-size: 14.5px; color: var(--white-60); line-height: 1.65; }
+
+/* PRICING */
+.pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+
+.plan {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg);
+  padding: 40px 36px 36px; position: relative;
+  transition: border-color .25s, transform .2s;
+  display: flex; flex-direction: column;
+}
+.plan:hover { transform: translateY(-4px); border-color: var(--border-2); }
+.plan.hi { border-color: var(--purple); background: linear-gradient(160deg, rgba(139,92,246,.1) 0%, var(--card) 60%); }
+
+.plan-badge {
+  position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+  background: var(--purple); color: #fff; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; padding: 4px 18px; border-radius: 100px; white-space: nowrap;
+}
+
+.plan-tier { font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--white-60); margin-bottom: 28px; }
+
+.price-now { font-size: 52px; font-weight: 800; letter-spacing: -2.5px; line-height: 1; color: var(--white); margin-bottom: 6px; }
+.price-now sup { font-size: 22px; font-weight: 700; vertical-align: top; margin-top: 10px; display: inline-block; color: var(--white-60); }
+.price-now sub { font-size: 15px; font-weight: 400; vertical-align: baseline; color: var(--white-60); letter-spacing: 0; }
+
+.price-was { font-size: 14px; color: var(--white-60); margin-bottom: 10px; margin-top: 4px; font-weight: 500; }
+.price-was s { color: #F87171; text-decoration-color: #F87171; font-weight: 600; }
+.price-was strong { color: var(--purple-3); font-weight: 700; }
+
+.price-save {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.22);
+  color: var(--green); font-size: 12px; font-weight: 700;
+  padding: 4px 12px; border-radius: 100px; margin-bottom: 28px;
+}
+
+.plan-line { height: 1px; background: var(--border); margin: 24px 0; }
+
+.plan-features { list-style: none; flex: 1; margin-bottom: 32px; }
+.plan-features li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 14px; color: var(--white-60); }
+.plan-features li:last-child { border-bottom: none; }
+.chk { width: 18px; height: 18px; flex-shrink: 0; background: rgba(139,92,246,.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--purple-2); }
+
+.plan-btn {
+  width: 100%; padding: 14px; border-radius: 12px;
+  font-family: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  transition: all .2s; border: 1px solid var(--border-2); background: transparent; color: var(--white);
+}
+.plan-btn:hover { background: rgba(255,255,255,.05); border-color: var(--purple); }
+.plan.hi .plan-btn { background: var(--purple); border-color: transparent; box-shadow: 0 8px 24px rgba(139,92,246,.3); }
+.plan.hi .plan-btn:hover { background: var(--purple-2); box-shadow: 0 12px 32px rgba(139,92,246,.5); }
+
+.urgency-box {
+  margin-top: 40px; padding: 28px 36px;
+  background: rgba(248,113,113,.05); border: 1px solid rgba(248,113,113,.15);
+  border-radius: var(--r-lg); display: flex; align-items: center;
+  justify-content: space-between; gap: 20px; flex-wrap: wrap;
+}
+.urgency-box p { font-size: 15px; color: #FCA5A5; line-height: 1.6; }
+.urgency-box p strong { color: var(--red); font-weight: 700; }
+.big-num { font-size: 52px; font-weight: 800; letter-spacing: -2px; color: var(--red); line-height: 1; display: block; }
+.big-label { font-size: 12px; color: var(--white-30); margin-top: 4px; text-align: center; }
+
+/* FINAL CTA */
+.final { text-align: center; padding: 140px 24px; position: relative; overflow: hidden; }
+.final::before {
+  content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+  width: 700px; height: 700px;
+  background: radial-gradient(ellipse at center, rgba(139,92,246,.14) 0%, transparent 65%);
+  pointer-events: none;
+}
+.final-inner { position: relative; z-index: 1; max-width: 660px; margin: 0 auto; }
+.final h2 { font-size: clamp(38px, 5.5vw, 64px); letter-spacing: -2.5px; margin-bottom: 20px; }
+.final h2 em { font-style: normal; background: linear-gradient(120deg, var(--purple-2), var(--purple-3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.final p { font-size: 17px; color: var(--white-60); line-height: 1.65; margin-bottom: 52px; }
+.final-note { margin-top: 18px; font-size: 13px; color: var(--white-30); }
+
+footer { padding: 36px 48px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.footer-logo { font-size: 15px; font-weight: 700; color: var(--white-60); }
+.footer-right { font-size: 13px; color: var(--white-30); }
+
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .65s ease, transform .65s ease; }
+.reveal.in { opacity: 1; transform: translateY(0); }
+
+@media(max-width:960px) {
+  nav { padding: 0 20px; }
+  .nav-right .nav-link { display: none; }
+  .nav-right .btn-nav { display: none; }
+  .hamburger { display: flex !important; }
+  .stats-row { grid-template-columns: 1fr; }
+  .stat { border-right: none; border-bottom: 1px solid var(--border); }
+  .stat:last-child { border-bottom: none; }
+  .compare-grid, .demo-layout { flex-direction: column; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .steps-grid, .pricing-grid, .usecases-grid { grid-template-columns: 1fr; }
+  .urgency-box { flex-direction: column; align-items: flex-start; }
+  .demo-layout { gap: 56px; }
+}
+
+@media(max-width:540px) {
+  .phone { width: 240px; height: 519px; }
+  .phone iframe { transform: scale(0.6154); }
+  footer { flex-direction: column; text-align: center; }
+}
+
+/* USE CASE CARDS */
+.usecases-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.usecase-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 40px 40px 36px;
+  transition: border-color .3s, transform .2s, background .3s;
+  position: relative; overflow: hidden;
+}
+.usecase-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139,92,246,.5), transparent);
+  opacity: 0; transition: opacity .3s;
+}
+.usecase-card:hover { border-color: var(--border-2); transform: translateY(-4px); background: #101024; }
+.usecase-card:hover::before { opacity: 1; }
+.usecase-icon {
+  font-size: 22px; margin-bottom: 20px;
+  width: 52px; height: 52px; border-radius: 14px;
+  background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.2);
+  display: flex; align-items: center; justify-content: center;
+}
+.usecase-title {
+  font-size: 17px; font-weight: 700; color: var(--white);
+  margin-bottom: 12px; letter-spacing: -.3px;
+}
+.usecase-desc { font-size: 14px; color: var(--white-60); line-height: 1.7; }
+
+/* FOUNDER QUOTE */
+.founder-quote {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 56px 64px;
+  position: relative;
+  text-align: left;
+}
+.fq-mark {
+  font-size: 80px; font-weight: 800;
+  color: var(--purple); line-height: .8;
+  margin-bottom: 24px; font-family: Georgia, serif;
+  opacity: .6;
+}
+.fq-text {
+  font-size: 18px; color: var(--white);
+  line-height: 1.75; font-weight: 400;
+  margin-bottom: 36px; font-style: italic;
+  opacity: .9;
+}
+.fq-author {
+  display: flex; align-items: center; gap: 14px;
+}
+.fq-dot {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-3) 100%);
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; color: #fff;
+}
+.fq-dot::after { content: "A"; }
+.fq-name { font-size: 15px; font-weight: 700; color: var(--white); }
+.fq-role { font-size: 13px; color: var(--white-60); margin-top: 2px; }
+
+@media(max-width:640px) {
+  .founder-quote { padding: 36px 28px; }
+  .fq-text { font-size: 16px; }
+}
+
+/* LAUNCH PILL */
+.launch-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(139,92,246,.08); border: 1px solid rgba(139,92,246,.25);
+  border-radius: 100px; padding: 8px 20px;
+  font-size: 13px; font-weight: 500; color: var(--purple-3);
+  margin-top: 14px;
+}
+.launch-pill strong { color: var(--white); font-weight: 700; }
+
+/* PHONE LOADER */
+.phone-loader {
+  position: absolute; inset: 0; z-index: 5;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: #08080f; gap: 14px;
+}
+.loader-text {
+  font-size: 12px; font-weight: 600; color: var(--white-30);
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.loader-dots {
+  display: flex; gap: 6px; align-items: center;
+}
+.loader-dots span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--purple-2);
+  animation: dotpulse 1.4s ease-in-out infinite;
+}
+.loader-dots span:nth-child(2) { animation-delay: .2s; }
+.loader-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes dotpulse {
+  0%, 80%, 100% { opacity: .15; transform: scale(.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* FAQ */
+.faq-list { display: flex; flex-direction: column; gap: 0; }
+
+.faq-item {
+  border-bottom: 1px solid var(--border);
+}
+.faq-item:first-child { border-top: 1px solid var(--border); }
+
+.faq-q {
+  width: 100%; display: flex; align-items: center;
+  justify-content: space-between; gap: 16px;
+  padding: 22px 0; background: none; border: none;
+  cursor: pointer; text-align: left;
+  font-family: inherit; font-size: 16px; font-weight: 600;
+  color: var(--white); transition: color .2s;
+}
+.faq-q:hover { color: var(--purple-2); }
+.faq-q:hover .faq-icon { border-color: var(--purple); }
+.faq-q:hover .faq-icon svg { stroke: var(--purple-2); }
+
+.faq-icon {
+  flex-shrink: 0; width: 28px; height: 28px;
+  border-radius: 50%; border: 1px solid var(--border-2);
+  display: flex; align-items: center; justify-content: center;
+  transition: all .25s;
+}
+.faq-icon svg {
+  width: 12px; height: 12px; display: block;
+  stroke: var(--white-60); stroke-width: 2.5;
+  fill: none; overflow: visible;
+  transition: stroke .25s;
+}
+.faq-icon.open {
+  transform: rotate(45deg);
+  border-color: var(--purple);
+}
+.faq-icon.open svg { stroke: var(--purple-2); }
+
+.faq-a {
+  display: none; padding: 0 0 22px;
+}
+.faq-a p {
+  font-size: 15px; color: var(--white-60);
+  line-height: 1.75; font-weight: 400;
+}
+.faq-a.open { display: block; }
+
+/* REACTIONS SECTION */
+.reactions-section {
+  padding: 72px 24px;
+  background: var(--bg);
+}
+.reactions-wrap {
+  max-width: 780px; margin: 0 auto;
+}
+.reactions-header {
+  text-align: center; margin-bottom: 48px;
+}
+.reactions-header h2 {
+  font-size: clamp(26px, 3.5vw, 42px);
+  font-weight: 800; letter-spacing: -1.5px;
+  margin-bottom: 10px;
+}
+.reactions-header p {
+  font-size: 15px; color: var(--white-60); font-weight: 400;
+}
+
+/* Emoji reaction buttons */
+.reaction-btns {
+  display: flex; gap: 12px; justify-content: center;
+  flex-wrap: wrap; margin-bottom: 36px;
+}
+.rxn-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 16px; padding: 14px 20px; cursor: pointer;
+  transition: all .2s; font-family: inherit; min-width: 90px;
+  position: relative; overflow: hidden;
+}
+.rxn-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(139,92,246,.08); opacity: 0; transition: opacity .2s;
+}
+.rxn-btn:hover { border-color: var(--border-2); transform: translateY(-3px); }
+.rxn-btn:hover::before { opacity: 1; }
+.rxn-btn.selected {
+  border-color: var(--purple);
+  background: rgba(139,92,246,.1);
+}
+.rxn-btn.selected::before { opacity: 1; }
+.rxn-emoji { font-size: 26px; line-height: 1; }
+.rxn-label { font-size: 11px; font-weight: 600; color: var(--white-60); letter-spacing: .04em; text-transform: uppercase; }
+.rxn-count {
+  font-size: 13px; font-weight: 700; color: var(--purple-2);
+  min-width: 24px; text-align: center;
+}
+
+/* Comment input area */
+.comment-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 28px 32px; margin-bottom: 40px;
+  transition: border-color .2s;
+}
+.comment-box:focus-within { border-color: var(--border-2); }
+.comment-box-label {
+  font-size: 12px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--purple-2); margin-bottom: 14px;
+}
+.comment-textarea {
+  width: 100%; background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px; padding: 14px 18px;
+  color: var(--white); font-family: inherit; font-size: 14.5px;
+  line-height: 1.6; resize: none; outline: none; min-height: 88px;
+  transition: border-color .2s, background .2s;
+}
+.comment-textarea::placeholder { color: var(--white-30); }
+.comment-textarea:focus {
+  border-color: rgba(139,92,246,.4);
+  background: rgba(139,92,246,.04);
+}
+.comment-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-top: 14px; flex-wrap: wrap;
+}
+.comment-name-input {
+  flex: 1; min-width: 160px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 100px; padding: 10px 18px;
+  color: var(--white); font-family: inherit; font-size: 14px; outline: none;
+  transition: border-color .2s;
+}
+.comment-name-input::placeholder { color: var(--white-30); }
+.comment-name-input:focus { border-color: rgba(139,92,246,.4); }
+.btn-react {
+  background: var(--purple); color: #fff; border: none; cursor: pointer;
+  padding: 10px 26px; border-radius: 100px;
+  font-family: inherit; font-size: 14px; font-weight: 700; white-space: nowrap;
+  transition: all .2s; box-shadow: 0 6px 20px rgba(139,92,246,.3);
+}
+.btn-react:hover { background: var(--purple-2); transform: translateY(-1px); }
+.btn-react.off { opacity:.5; cursor:not-allowed; pointer-events:none; }
+.react-success {
+  display: none; font-size: 13.5px; font-weight: 600;
+  color: var(--green); margin-top: 10px;
+}
+
+/* Live comments feed */
+.comments-feed-label {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--white-30); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.comments-feed-label::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.comments-feed { display: flex; flex-direction: column; gap: 14px; }
+.comment-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 20px 24px;
+  animation: fadeSlideIn .4s ease;
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.comment-card-top {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.comment-avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-3) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: #fff;
+}
+.comment-author { font-size: 13.5px; font-weight: 700; color: var(--white); }
+.comment-rxn-badge {
+  font-size: 16px; margin-left: auto;
+}
+.comment-time { font-size: 12px; color: var(--white-30); margin-left: 4px; }
+.comment-text { font-size: 14px; color: var(--white-60); line-height: 1.65; }
+.comments-empty {
+  text-align: center; padding: 40px 24px;
+  font-size: 14px; color: var(--white-30); font-style: italic;
+}
+.comments-loading {
+  text-align: center; padding: 24px;
+  font-size: 13px; color: var(--white-30);
+}
+
+/* ── Mobile Nav Drawer ─────────────────────────── */
+.hamburger {
+  display: none; flex-direction: column; justify-content: center;
+  gap: 5px; width: 36px; height: 36px; cursor: pointer;
+  background: none; border: none; padding: 4px; z-index: 1001;
+}
+.hamburger span {
+  display: block; width: 22px; height: 2px;
+  background: var(--white); border-radius: 2px;
+  transition: all .3s cubic-bezier(0.4,0,0.2,1);
+  transform-origin: center;
+}
+.hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+.drawer-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6); z-index: 999;
+  backdrop-filter: blur(4px);
+  opacity: 0; transition: opacity .3s ease;
+}
+.drawer-overlay.open { display: block; opacity: 1; }
+
+.drawer {
+  position: fixed; top: 0; right: -280px; width: 280px; height: 100vh;
+  background: #0f0f1a; border-left: 1px solid var(--border);
+  z-index: 1000; display: flex; flex-direction: column;
+  padding: 80px 32px 40px;
+  transition: right .35s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+}
+.drawer.open { right: 0; }
+
+.drawer-logo {
+  font-size: 22px; font-weight: 800; color: var(--white);
+  margin-bottom: 40px; letter-spacing: -0.5px;
+}
+.drawer-logo em { color: var(--purple-2); font-style: normal; }
+
+.drawer-links {
+  display: flex; flex-direction: column; gap: 4px; flex: 1;
+}
+.drawer-link {
+  font-size: 17px; font-weight: 500; color: var(--white-60);
+  text-decoration: none; padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  transition: color .2s;
+}
+.drawer-link:hover { color: var(--white); }
+.drawer-link:last-of-type { border-bottom: none; }
+
+.drawer-cta {
+  margin-top: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 14px 24px; border-radius: 10px;
+  background: var(--purple); color: #fff;
+  font-weight: 600; font-size: 15px; text-decoration: none;
+  transition: background .2s, transform .2s;
+}
+.drawer-cta:hover { background: var(--purple-2); transform: translateY(-2px); }
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">UX<em>Lora</em></div>
+  <div class="nav-right">
+    <a href="#demo" class="nav-link">Demo</a>
+    <a href="#pricing" class="nav-link">Pricing</a>
+    <a href="#reactions" class="nav-link">Feedback</a>
+    <a href="#faq" class="nav-link">FAQ</a>
+    <a href="#final" class="btn-nav">Get Early Access</a>
+    <button class="hamburger" id="hamburger" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Drawer -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-logo">UX<em>Lora</em></div>
+  <div class="drawer-links">
+    <a href="#demo" class="drawer-link" onclick="closeDrawer()">Demo</a>
+    <a href="#pricing" class="drawer-link" onclick="closeDrawer()">Pricing</a>
+    <a href="#reactions" class="drawer-link" onclick="closeDrawer()">Feedback</a>
+    <a href="#faq" class="drawer-link" onclick="closeDrawer()">FAQ</a>
+  </div>
+  <a href="#final" class="drawer-cta" onclick="closeDrawer()">Get Early Access</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="hero-inner">
+    <div class="eyebrow"><span></span>Now accepting founding members</div>
+    <h1>Your UI Kit. <span class="accent">Built in 60 seconds.</span></h1>
+    <p class="hero-sub">
+      Describe your app, your game, or your product — UXLora generates every screen, fully consistent, developer-ready. No designer. No waiting. No costly invoices.
+    </p>
+    <p class="hero-audience">Built for <span>indie developers</span>, <span>UI designers</span>, and <span>mobile &amp; web studios</span> who ship fast.</p>
+    <div class="form-row" id="hf">
+      <input type="email" id="he" class="email-input" placeholder="Your email address" />
+      <button class="btn-primary" id="hb" onclick="join('h')">Claim Your Spot →</button>
+    </div>
+    <div class="success-pill" id="hs"></div>
+    <div class="counter-row">
+      <div class="counter-pill">
+        <span>●</span><span class="num" id="c1">300</span><span>founding spots remaining</span>
+      </div>
+      <div class="social-proof-pill">
+        🧑‍💻 <span id="joined-count">50</span> developers &amp; designers already joined
+      </div>
+    </div>
+    <p class="counter-note">When 350 founding member spots are gone, prices increase permanently. <strong>No exceptions.</strong></p>
+    <div class="launch-pill">
+      🚀 &nbsp;Launching <strong>before April 2026</strong> — founding members get access first
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- VALUE -->
+<section class="section reveal">
+  <div class="wrap">
+    <div class="label">Why UXLora</div>
+    <h2>The numbers speak for themselves.</h2>
+    <p class="sub">A professional UI designer charges thousands and takes weeks. UXLora delivers in seconds, for a fraction of the cost.</p>
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-num">$5,000</div>
+        <div class="stat-unit">average designer cost</div>
+        <div class="stat-title">What a designer charges</div>
+        <div class="stat-desc">That's for a mid-tier freelancer. Agencies charge two to three times more.</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">$25</div>
+        <div class="stat-unit">founding member price</div>
+        <div class="stat-title">What UXLora costs</div>
+        <div class="stat-desc">Lock in your founding member rate today. Same complete UI kit. A fraction of the cost.</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">60s</div>
+        <div class="stat-unit">to generate a complete UI kit</div>
+        <div class="stat-title">What UXLora takes</div>
+        <div class="stat-desc">Every screen, every state, fully consistent design language. Done before your designer replies to your email.</div>
+      </div>
+    </div>
+    <div style="margin-top:72px">
+      <div class="label">Who It's For</div>
+      <h2>Built for anyone who ships UI.</h2>
+      <p class="sub" style="margin-bottom:48px">Whether you are a solo developer or a full studio, UXLora fits directly into your workflow.</p>
+    </div>
+    <div class="usecases-grid">
+      <div class="usecase-card">
+        <div class="usecase-icon">🎮</div>
+        <div class="usecase-title">Indie Game Developers</div>
+        <p class="usecase-desc">Building a game solo or with a small team? Get your complete in-game UI — HUD, inventory, menus, shop screens — without hiring a UI designer. Works with Unity UI Toolkit out of the box.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">📱</div>
+        <div class="usecase-title">Mobile App Developers</div>
+        <p class="usecase-desc">Launch faster. Describe your app and get every screen — onboarding, dashboard, settings, profile — production-ready in seconds. Export straight to Figma or hand PNGs to your developer.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">🖥️</div>
+        <div class="usecase-title">Web Product Studios</div>
+        <p class="usecase-desc">From SaaS dashboards to landing pages, UXLora generates fully consistent web UI kits that match your product's brand, tone, and structure — ready to hand off or import into Figma.</p>
+      </div>
+      <div class="usecase-card">
+        <div class="usecase-icon">🎨</div>
+        <div class="usecase-title">UI Designers</div>
+        <p class="usecase-desc">Take on more clients without burning out. Use UXLora to generate the first complete draft in 60 seconds, then refine it with your expertise. Deliver faster. Bill more. Stay creative.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- DEMO -->
+<section class="section alt reveal" id="demo">
+  <div class="wrap">
+    <div class="demo-layout">
+      <div class="phone-outer">
+        <div class="phone-glow"></div>
+        <div class="phone">
+          <div class="phone-loader" id="phone-loader">
+            <div class="loader-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="loader-text">Loading demo</div>
+          </div>
+          <iframe src="MonsterWar_UI.html" title="UXLora Demo" onload="document.getElementById('phone-loader').style.display='none'"></iframe>
+        </div>
+      </div>
+      <div class="demo-copy">
+        <div class="label">Live Demo</div>
+        <h2>Real output. Zero designer.</h2>
+        <p><strong>This is not a mockup. This is not a concept. This is actual AI output</strong> — generated entirely by UXLora from a single written description.</p>
+        <p>What you see on the left is a complete UI kit for a mobile zombie survival game. 13 screens. Fully consistent design language. Production-ready. No designer involved at any stage.</p>
+        <p>Whether you are building a <strong>mobile game</strong>, a <strong>mobile app</strong>, or a <strong>web product</strong> — UXLora generates every screen your product needs, in one go.</p>
+        <div class="demo-hint">→ Interact with all 13 screens on the left</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- REACTIONS -->
+<section class="reactions-section reveal" id="reactions">
+  <div class="reactions-wrap">
+    <div class="reactions-header">
+      <div class="label">Your Reaction</div>
+      <h2>What developers are saying.</h2>
+      <p>We read every single response. Tell us what you think of UXLora.</p>
+    </div>
+
+    <!-- Emoji reactions -->
+    <div class="reaction-btns">
+      <button class="rxn-btn" onclick="selectReaction(this,'🔥')" data-emoji="🔥">
+        <span class="rxn-emoji">🔥</span>
+        <span class="rxn-label">Need This</span>
+        <span class="rxn-count" id="rxn-count-🔥">—</span>
+      </button>
+      <button class="rxn-btn" onclick="selectReaction(this,'👍')" data-emoji="👍">
+        <span class="rxn-emoji">👍</span>
+        <span class="rxn-label">Looks Good</span>
+        <span class="rxn-count" id="rxn-count-👍">—</span>
+      </button>
+      <button class="rxn-btn" onclick="selectReaction(this,'🤔')" data-emoji="🤔">
+        <span class="rxn-emoji">🤔</span>
+        <span class="rxn-label">Have a Question</span>
+        <span class="rxn-count" id="rxn-count-🤔">—</span>
+      </button>
+      <button class="rxn-btn" onclick="selectReaction(this,'🚀')" data-emoji="🚀">
+        <span class="rxn-emoji">🚀</span>
+        <span class="rxn-label">Take My Money</span>
+        <span class="rxn-count" id="rxn-count-🚀">—</span>
+      </button>
+    </div>
+
+    <!-- Comment box -->
+    <div class="comment-box">
+      <div class="comment-box-label">Leave a quick thought — optional</div>
+      <textarea class="comment-textarea" id="react-comment" placeholder="What caught your attention? What would you use this for? Any questions?" maxlength="300"></textarea>
+      <div class="comment-row">
+        <input type="text" class="comment-name-input" id="react-name" placeholder="Your name or handle (optional)" maxlength="40" />
+        <button class="btn-react" id="react-submit-btn" onclick="submitReaction()">Send Reaction →</button>
+      </div>
+      <div class="react-success" id="react-success">✓ Thanks — your reaction has been added below.</div>
+    </div>
+
+    <!-- Live feed -->
+    <div class="comments-feed-label">Live reactions from visitors</div>
+    <div class="comments-feed" id="comments-feed">
+      <div class="comments-loading">Loading reactions…</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- HOW IT WORKS -->
+<section class="section reveal">
+  <div class="wrap">
+    <div class="label">How It Works</div>
+    <h2>Three steps. One complete UI kit.</h2>
+    <p class="sub">No design experience needed. No tools to learn. Just describe what you are building.</p>
+    <div class="steps-grid">
+      <div class="step">
+        <div class="step-n">Step 01</div>
+        <h3>Describe Your App</h3>
+        <p>Tell UXLora about your app or game. Upload your design document, or answer a focused set of questions. The more detail you provide, the more precise your output.</p>
+      </div>
+      <div class="step">
+        <div class="step-n">Step 02</div>
+        <h3>UXLora Builds Your UI Kit</h3>
+        <p>Our AI builds your complete UI kit — every screen, every state, every component — with a fully consistent design language tailored specifically to your product. Not generic templates. A custom kit built around your product's genre, platform, and tone.</p>
+      </div>
+      <div class="step">
+        <div class="step-n">Step 03</div>
+        <h3>Download and Ship</h3>
+        <p>Export as high-resolution PNGs, an editable Figma file, or Unity-ready UXML files. Hand it straight to your developer and ship faster than ever.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PRICING -->
+<section class="section alt reveal" id="pricing">
+  <div class="wrap">
+    <div style="margin-bottom:72px">
+      <div class="label">Pricing</div>
+      <h2>Lock your rate today. It will not last.</h2>
+      <p class="sub">Founding member pricing is locked in forever for the first 350 people. After that, prices increase permanently with no exceptions.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="plan">
+        <div class="plan-tier">Starter</div>
+        <div class="price-now"><sup>$</sup>25<sub>/mo</sub></div>
+        <div class="price-was">Regular price after launch: <s>$50/mo</s> &nbsp;<strong>↑ doubles after 350 members</strong></div>
+        <div class="price-save">✓ 50% founding member discount</div>
+        <div class="plan-line"></div>
+        <ul class="plan-features">
+          <li><span class="chk">✓</span> 10 complete UI kits per month</li>
+          <li><span class="chk">✓</span> High-resolution PNG export</li>
+          <li><span class="chk">✓</span> All screen types included</li>
+          <li><span class="chk">✓</span> Mobile app, game &amp; web UI support</li>
+          <li><span class="chk">✓</span> Buy additional credits anytime</li>
+        </ul>
+        <button class="plan-btn" onclick="scrollUp()">Reserve My Spot →</button>
+      </div>
+      <div class="plan hi">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-tier">Pro</div>
+        <div class="price-now"><sup>$</sup>50<sub>/mo</sub></div>
+        <div class="price-was">Regular price after launch: <s>$100/mo</s> &nbsp;<strong>↑ doubles after 350 members</strong></div>
+        <div class="price-save">✓ 50% founding member discount</div>
+        <div class="plan-line"></div>
+        <ul class="plan-features">
+          <li><span class="chk">✓</span> Everything in Starter</li>
+          <li><span class="chk">✓</span> Editable Figma file export</li>
+          <li><span class="chk">✓</span> Full component library included</li>
+          <li><span class="chk">✓</span> Priority generation queue</li>
+          <li><span class="chk">✓</span> Early access to new features</li>
+        </ul>
+        <button class="plan-btn" onclick="scrollUp()">Reserve My Spot →</button>
+      </div>
+      <div class="plan">
+        <div class="plan-tier">Studio</div>
+        <div class="price-now"><sup>$</sup>125<sub>/mo</sub></div>
+        <div class="price-was">Regular price after launch: <s>$250/mo</s> &nbsp;<strong>↑ doubles after 350 members</strong></div>
+        <div class="price-save">✓ 50% founding member discount</div>
+        <div class="plan-line"></div>
+        <ul class="plan-features">
+          <li><span class="chk">✓</span> Everything in Pro</li>
+          <li><span class="chk">✓</span> Unity UI Toolkit — UXML &amp; USS export</li>
+          <li><span class="chk">✓</span> Works with Unity 2021.2 and above</li>
+          <li><span class="chk">✓</span> 3 team member seats</li>
+          <li><span class="chk">✓</span> Dedicated support channel</li>
+        </ul>
+        <button class="plan-btn" onclick="scrollUp()">Reserve My Spot →</button>
+      </div>
+    </div>
+    <div class="urgency-box">
+      <div>
+        <p><strong>When 350 founding member spots are gone, prices increase permanently.</strong><br>No exceptions. No grandfathering for late signups. No second chances at this price.</p>
+      </div>
+      <div style="text-align:center;flex-shrink:0">
+        <span class="big-num" id="c2">300</span>
+        <div class="big-label">spots remaining</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FAQ -->
+<section id="faq" class="section reveal">
+  <div class="wrap" style="max-width:720px">
+    <div class="label" style="font-size:13.5px">FAQ</div>
+    <h2>Questions we get asked.</h2>
+    <p class="sub" style="margin-bottom:56px">Everything you need to know before joining.</p>
+    <div class="faq-list">
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>What exactly do I receive when I generate a UI kit?</span>
+          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
+        </button>
+        <div class="faq-a">
+          <p>You receive a complete set of screens for your product — every view, every state, every component — all designed with a fully consistent visual language. Depending on your plan, you export as high-resolution PNGs ready to hand to a developer, an editable Figma file with a full component library, or Unity-ready UXML and USS files you can drop directly into your project.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>What if the output doesn't match my style or vision?</span>
+          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
+        </button>
+        <div class="faq-a">
+          <p>You can regenerate as many times as you need within your monthly kit allowance. The more detail you provide in your description — genre, tone, color preferences, reference products — the closer UXLora gets on the first attempt. Every kit is built specifically around your input, not from a generic template library.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>When does UXLora launch?</span>
+          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
+        </button>
+        <div class="faq-a">
+          <p>UXLora launches before April 2026 — at the end of Q1 or the very start of Q2. Founding members get access first, before the product opens to the public. You will receive an email with your access link the moment we go live.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>Is this just for games or does it work for apps and web products too?</span>
+          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
+        </button>
+        <div class="faq-a">
+          <p>UXLora works for mobile games, mobile apps, and web products equally. Whether you need a game HUD and inventory system, a mobile app onboarding flow, or a SaaS dashboard — UXLora understands the context and generates screens appropriate for that product type.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>Is the founding member price locked forever?</span>
+          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
+        </button>
+        <div class="faq-a">
+          <p>Yes. Your founding member rate is locked in for as long as you remain subscribed. When prices double after the first 350 members, your rate stays exactly where it is. This is not a limited-time discount — it is your permanent rate as a founding member.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          <span>Do I need any design experience to use UXLora?</span>
+          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
+        </button>
+        <div class="faq-a">
+          <p>None whatsoever. UXLora is built for developers and founders who are not designers. You describe what you are building in plain language. UXLora handles every design decision — layout, typography, colour, spacing, component states — and delivers something that looks like it came from a professional design studio.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FOUNDER QUOTE -->
+<section class="section reveal" style="padding: 80px 24px;">
+  <div class="wrap" style="max-width:720px; text-align:center;">
+    <div class="founder-quote">
+      <div class="fq-mark">"</div>
+      <p class="fq-text">In 7 years of building mobile apps, web products, and games, the one problem that never went away was UI. Not the skill to design it — the time, the cost, and the dependency on someone else to get it done. Every indie developer I have ever worked with or spoken to has faced the exact same wall. It is not a niche problem. It is the most common blocker in product development, and it has been quietly killing great ideas for years.</p>
+      <p class="fq-text" style="margin-top:20px">When generative AI arrived, I was certain someone would solve this. A tool purpose-built for developers — one that understands your product, generates every screen consistently, and hands you something developer-ready. I waited. Nothing came. The tools that existed were either generic image generators with no understanding of UI structure, or design tools that still required a designer to operate them.</p>
+      <p class="fq-text" style="margin-top:20px">So we built it ourselves. UXLora is the product I spent seven years wishing existed. We are not solving a $5,000 problem. We are solving the reason thousands of products ship with bad UI, miss their deadlines, or never ship at all.</p>
+      <div class="fq-author">
+        <div class="fq-dot"></div>
+        <div>
+          <div class="fq-name">Ahsan Raza</div>
+          <div class="fq-role">Founder, UXLora &amp; Ard</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FINAL CTA -->
+<section class="final reveal" id="final">
+  <div class="final-inner">
+    <h2>Stop waiting. <em>Start shipping.</em></h2>
+    <p>The first 350 people lock in founding member pricing — forever.<br>Everyone else pays full price. This is the only time we will say this.</p>
+    <div class="form-row" id="ff" style="justify-content:center">
+      <input type="email" id="fe" class="email-input" placeholder="Your email address" />
+      <button class="btn-primary" id="fb" onclick="join('f')">Claim Your Spot →</button>
+    </div>
+    <div class="success-pill" id="fs"></div>
+    <p class="final-note">No spam. One email when we launch. That is it.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">UXLora — by Ard</div>
+  <div class="footer-right">© 2026 Ard. All rights reserved.</div>
+</footer>
+
+<script>
+const SUPABASE_URL = 'https://zpadxwoaeepxgigfcjvb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_2tkoq4Nlv4OXweMyz7PDdQ_PA_fLs6k';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const TOTAL = 350;
+
+async function loadCounter() {
+  try {
+    const { count } = await db.from('waitlist').select('*', { count:'exact', head:true });
+    const BASE_JOINED = 50;
+    const real = count || 0;
+    const rem = Math.max(0, TOTAL - BASE_JOINED - real);
+    const joined = BASE_JOINED + real;
+    document.getElementById('c1').textContent = rem;
+    document.getElementById('c2').textContent = rem;
+    const jEl = document.getElementById('joined-count');
+    if (jEl) jEl.textContent = joined;
+  } catch(e) { console.warn(e); }
+}
+
+db.channel('wl').on('postgres_changes', { event:'INSERT', schema:'public', table:'waitlist' }, loadCounter).subscribe();
+loadCounter();
+setInterval(loadCounter, 30000);
+
+async function join(s) {
+  const eMap = { h:'he', f:'fe' };
+  const bMap = { h:'hb', f:'fb' };
+  const mMap = { h:'hs', f:'fs' };
+  const fMap = { h:'hf', f:'ff' };
+  const emailEl = document.getElementById(eMap[s]);
+  const btnEl = document.getElementById(bMap[s]);
+  const msgEl = document.getElementById(mMap[s]);
+  const email = emailEl.value.trim();
+
+  if (!email || !email.includes('@')) {
+    emailEl.focus(); emailEl.style.borderColor = 'var(--red)';
+    setTimeout(() => emailEl.style.borderColor = '', 1400); return;
+  }
+
+  btnEl.classList.add('off'); btnEl.textContent = 'Joining...';
+
+  try {
+    const { error } = await db.from('waitlist').insert([{ email }]);
+    if (error && error.code === '23505') {
+      msgEl.style.display = 'block';
+      msgEl.textContent = "✓ You're already on the list. We'll be in touch.";
+      msgEl.style.borderColor = 'rgba(139,92,246,.3)';
+      msgEl.style.color = 'var(--purple-3)';
+      msgEl.style.background = 'rgba(139,92,246,.07)';
+    } else if (error) { throw error; }
+    else {
+      document.getElementById(fMap[s]).style.display = 'none';
+      msgEl.style.display = 'block';
+      msgEl.textContent = '✓ Founding member spot secured. We will be in touch.';
+      loadCounter();
+    }
+  } catch(e) {
+    console.error(e);
+    btnEl.classList.remove('off'); btnEl.textContent = 'Try Again';
+  }
+}
+
+function scrollUp() {
+  document.getElementById('hero').scrollIntoView({ behavior:'smooth' });
+  setTimeout(() => document.getElementById('he').focus(), 600);
+}
+
+['he','fe'].forEach((id,i) => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('keydown', e => { if(e.key==='Enter') join(i===0?'h':'f'); });
+});
+
+function toggleFaq(btn) {
+  const icon = btn.querySelector('.faq-icon');
+  const answer = btn.nextElementSibling;
+  const isOpen = answer.classList.contains('open');
+  // close all
+  document.querySelectorAll('.faq-a.open').forEach(a => a.classList.remove('open'));
+  document.querySelectorAll('.faq-icon.open').forEach(i => i.classList.remove('open'));
+  // open clicked if it was closed
+  if (!isOpen) {
+    answer.classList.add('open');
+    icon.classList.add('open');
+  }
+}
+
+// ── REACTIONS ──────────────────────────────────────────────
+let selectedEmoji = null;
+
+function selectReaction(btn, emoji) {
+  document.querySelectorAll('.rxn-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedEmoji = emoji;
+}
+
+async function loadReactions() {
+  try {
+    // Load reaction counts
+    const emojis = ['🔥','👍','🤔','🚀'];
+    for (const emoji of emojis) {
+      const { count } = await db.from('reactions')
+        .select('*', { count:'exact', head:true })
+        .eq('emoji', emoji);
+      const el = document.getElementById('rxn-count-' + emoji);
+      if (el) el.textContent = count || 0;
+    }
+    // Load comments feed
+    const { data } = await db.from('reactions')
+      .select('*')
+      .not('comment', 'is', null)
+      .neq('comment', '')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    renderComments(data || []);
+  } catch(e) { console.warn('reactions load error', e); }
+}
+
+function renderComments(rows) {
+  const feed = document.getElementById('comments-feed');
+  if (!rows.length) {
+    feed.innerHTML = '<div class="comments-empty">No reactions yet — be the first to share your thoughts.</div>';
+    return;
+  }
+  feed.innerHTML = rows.map(r => {
+    const name = r.name ? r.name.trim() : 'Anonymous';
+    const initial = name.charAt(0).toUpperCase();
+    const time = timeAgo(r.created_at);
+    return `
+      <div class="comment-card">
+        <div class="comment-card-top">
+          <div class="comment-avatar">${initial}</div>
+          <div>
+            <div class="comment-author">${escHtml(name)}</div>
+            <div class="comment-time">${time}</div>
+          </div>
+          <div class="comment-rxn-badge">${r.emoji || ''}</div>
+        </div>
+        <div class="comment-text">${escHtml(r.comment)}</div>
+      </div>`;
+  }).join('');
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(iso) {
+  const diff = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return Math.floor(diff/86400) + 'd ago';
+}
+
+async function submitReaction() {
+  const btn = document.getElementById('react-submit-btn');
+  const comment = document.getElementById('react-comment').value.trim();
+  const name = document.getElementById('react-name').value.trim();
+  const success = document.getElementById('react-success');
+
+  if (!selectedEmoji && !comment) {
+    // nudge — highlight emoji row
+    document.querySelectorAll('.rxn-btn').forEach(b => {
+      b.style.borderColor = 'rgba(248,113,113,.5)';
+      setTimeout(() => b.style.borderColor = '', 1400);
+    });
+    return;
+  }
+
+  btn.classList.add('off'); btn.textContent = 'Sending…';
+
+  try {
+    await db.from('reactions').insert([{
+      emoji: selectedEmoji || null,
+      comment: comment || null,
+      name: name || null,
+    }]);
+    btn.style.display = 'none';
+    success.style.display = 'block';
+    document.getElementById('react-comment').value = '';
+    document.getElementById('react-name').value = '';
+    await loadReactions();
+  } catch(e) {
+    console.error(e);
+    btn.classList.remove('off'); btn.textContent = 'Try Again';
+  }
+}
+
+// Realtime new reactions
+db.channel('rxn').on('postgres_changes', { event:'INSERT', schema:'public', table:'reactions' }, loadReactions).subscribe();
+loadReactions();
+
+// ── END REACTIONS ───────────────────────────────────────────
+
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// ── Mobile Drawer ──────────────────────────────
+const hamburger = document.getElementById('hamburger');
+const drawer = document.getElementById('drawer');
+const drawerOverlay = document.getElementById('drawerOverlay');
+
+hamburger.addEventListener('click', () => {
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) closeDrawer(); else openDrawer();
+});
+
+function openDrawer() {
+  drawer.classList.add('open');
+  drawerOverlay.classList.add('open');
+  hamburger.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+  drawer.classList.remove('open');
+  drawerOverlay.classList.remove('open');
+  hamburger.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+</script>
+</body>
+</html>
