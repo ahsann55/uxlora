@@ -813,12 +813,12 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); display: flex;
         <span>●</span><span class="num" id="c1">350</span><span>founding spots remaining</span>
       </div>
       <div class="social-proof-pill">
-        🧑‍💻 <span id="joined-count"></span> developers &amp; designers already joined
+        🧑‍💻 <span id="joined-count">50</span> developers &amp; designers already joined
       </div>
     </div>
     <p class="counter-note">When 350 founding member spots are gone, prices increase permanently. <strong>No exceptions.</strong></p>
     <div class="launch-pill">
-      🚀 &nbsp;Launching <strong>in April 2026</strong> — founding members get access first
+      🚀 &nbsp;Launching<strong>in April 2026</strong> — founding members get access first
     </div>
   </div>
 </section>
@@ -1189,7 +1189,7 @@ const TOTAL = 350;
 async function loadCounter() {
   try {
     const { count } = await db.from('waitlist').select('*', { count:'exact', head:true });
-    const BASE_JOINED = 50;
+    const BASE_JOINED = 0;
     const real = count || 0;
     const rem = Math.max(0, TOTAL - BASE_JOINED - real);
     const joined = BASE_JOINED + real;
