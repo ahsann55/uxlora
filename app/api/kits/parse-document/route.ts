@@ -1,0 +1,135 @@
+import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { extractText } from "@/lib/parsers";
+import { isAllowedDocumentType } from "@/lib/utils";
+
+// Max file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+export async function POST(request: NextRequest) {
+  try {
+    // Authenticate
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check email verification — SEC-06
+    if (!user.email_confirmed_at) {
+      return NextResponse.json(
+        { error: "Please verify your email before uploading documents." },
+        { status: 403 }
+      );
+    }
+
+    // Parse form data
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+    const category = formData.get("category") as string | null;
+
+    if (!file) {
+      return NextResponse.json({ error: "No file provided." }, { status: 400 });
+    }
+
+    if (!category || !["game", "mobile", "web"].includes(category)) {
+      return NextResponse.json({ error: "Invalid category." }, { status: 400 });
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "File too large. Maximum size is 10MB." },
+        { status: 400 }
+      );
+    }
+
+    // Validate MIME type — SEC-04
+    if (!isAllowedDocumentType(file.type)) {
+      return NextResponse.json(
+        { error: "Invalid file type. Please upload a PDF or DOCX file." },
+        { status: 400 }
+      );
+    }
+
+    // Extract text from document
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const documentText = await extractText(buffer, file.type);
+
+    if (!documentText || documentText.trim().length < 50) {
+      return NextResponse.json(
+        { error: "Could not extract enough text from the document. Please try a different file." },
+        { status: 422 }
+      );
+    }
+
+    // Use Claude to parse the document into checklist data
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY!,
+    });
+
+    const systemPrompt = `You are an expert at extracting structured information from design documents.
+Extract UI kit information from the provided document.
+Return ONLY a valid JSON object with no explanation or markdown.
+Only extract information that is explicitly stated in the document.
+Do not invent or assume details not present in the document.`;
+
+    const userPrompt = `Extract UI kit information from this ${category} design document.
+
+Document content:
+${documentText.slice(0, 8000)}
+
+Return a JSON object with these fields (set to null if not found):
+{
+  "product_name": "string or null",
+  "product_description": "string or null", 
+  "target_audience": "string or null",
+  "visual_style": "string or null",
+  "color_preferences": "string or null",
+  "typography_preferences": "string or null",
+  "key_screens": ["array of screen names or empty array"],
+  "special_requirements": "string or null",
+  "platform": "string or null",
+  "genre_or_category": "string or null"
+}`;
+
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      messages: [{ role: "user", content: userPrompt }],
+      system: systemPrompt,
+    });
+
+    const responseText = message.content[0].type === "text"
+      ? message.content[0].text
+      : "";
+
+    // Parse JSON response
+    let checklistData: Record<string, unknown> = {};
+    try {
+      const cleaned = responseText.replace(/```json|```/g, "").trim();
+      checklistData = JSON.parse(cleaned);
+    } catch {
+      return NextResponse.json(
+        { error: "Failed to parse document information. Please try again." },
+        { status: 422 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      checklist_data: checklistData,
+      document_length: documentText.length,
+    });
+
+  } catch (error) {
+    console.error("parse-document error:", error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred. Please try again." },
+      { status: 500 }
+    );
+  }
+}
