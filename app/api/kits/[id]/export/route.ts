@@ -23,7 +23,7 @@ export async function POST(
     }
 
     // Parse export type
-    const body = await request.json() as { type: "png" | "uxml" | "all" };
+    const body = await request.json() as { type: "png" | "uxml" | "figma" | "all" };
     const { type } = body;
 
     if (!type || !["png", "uxml", "figma", "all"].includes(type)) {
