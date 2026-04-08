@@ -60,7 +60,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={plusJakartaSans.variable} suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon-512.png" type="image/png" sizes="512x512" />
         <link rel="apple-touch-icon" href="/favicon-512.png" />
       </head>
