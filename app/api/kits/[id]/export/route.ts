@@ -120,11 +120,24 @@ export async function POST(
         );
 
         urls.png_zip = zipUrl;
-      } catch (pngError) {
-        console.error("PNG export failed (may need Vercel deployment):", pngError);
-        // Don't fail entire export if PNG fails
-        urls.png_error = "PNG export requires deployment to Vercel. UXML export is available.";
-      }
+        } catch (pngError) {
+          const errorMessage = pngError instanceof Error ? pngError.message : String(pngError);
+          const errorStack = pngError instanceof Error ? pngError.stack : "";
+          console.error("PNG export failed:", errorMessage);
+          console.error("Stack:", errorStack);
+          urls.png_error = errorMessage;
+          // Return error so we can see it
+          return NextResponse.json({
+            success: false,
+            error: "PNG export failed",
+            detail: errorMessage,
+          }, { status: 500 });
+        }
+    }
+
+    if (type === "figma" || type === "all") {
+      // Figma export — placeholder for now, returns empty
+      urls.figma = "";
     }
     // --------------------------------------------------------
     // UXML Export (game category only)
