@@ -1,9 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
+import path from "path";
 
 /**
  * PNG Export — Session 9
- * Generates full screen PNG + individual element PNGs using Puppeteer.
- * No Claude API — pure browser automation.
+ * Generates full screen PNG + individual element PNGs using Playwright + @sparticuz/chromium.
  */
 
 function getAdminClient() {
@@ -26,10 +26,6 @@ export interface PNGGenerationResult {
   pngUrl: string;
 }
 
-/**
- * UI element selectors to capture individually.
- * These are common UI patterns across all categories.
- */
 const ELEMENT_SELECTORS = [
   { selector: "button, .btn, [class*='btn-']", prefix: "button" },
   { selector: "input, textarea, select", prefix: "input" },
@@ -37,17 +33,40 @@ const ELEMENT_SELECTORS = [
   { selector: "nav, .nav, [class*='nav-']", prefix: "nav" },
   { selector: ".card, [class*='card']", prefix: "card" },
   { selector: "img, .icon, [class*='icon']", prefix: "icon" },
-  { selector: ".bg-base, .background, [class*='bg-']", prefix: "background" },
   { selector: ".header, header", prefix: "header" },
   { selector: ".footer, footer", prefix: "footer" },
   { selector: ".menu, [class*='menu-']", prefix: "menu" },
   { selector: ".bar, [class*='-bar']", prefix: "bar" },
 ];
 
-/**
- * Generate full screen + element PNGs for a single screen.
- * Returns paths to all generated PNGs.
- */
+async function launchBrowser() {
+  const chromium = await import("@sparticuz/chromium");
+  const { chromium: playwrightChromium } = await import("playwright-core");
+
+  const executablePath = await chromium.default.executablePath();
+
+  // Set LD_LIBRARY_PATH so Chromium can find shared libraries on Vercel AL2023
+  const execDir = path.dirname(executablePath);
+  process.env.LD_LIBRARY_PATH = execDir;
+
+  console.log(`Launching browser: executablePath=${executablePath}`);
+
+  const browser = await playwrightChromium.launch({
+    args: [
+      ...chromium.default.args,
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+      "--hide-scrollbars",
+    ],
+    executablePath,
+    headless: true,
+  });
+
+  return browser;
+}
+
 export async function generateScreenPNGs(
   screenId: string,
   kitId: string,
@@ -55,29 +74,12 @@ export async function generateScreenPNGs(
   htmlCss: string,
   category: string
 ): Promise<ScreenPNGResult> {
-  const chromium = await import("@sparticuz/chromium-min");
-  const puppeteer = await import("puppeteer-core");
-
   const isMobile = category === "mobile" || category === "game";
   const viewport = isMobile
-    ? { width: 390, height: 844, deviceScaleFactor: 2 }
-    : { width: 1440, height: 900, deviceScaleFactor: 1 };
+    ? { width: 390, height: 844 }
+    : { width: 1440, height: 900 };
 
-  const browser = await puppeteer.default.launch({
-      args: [
-        ...chromium.default.args,
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-      ],
-      defaultViewport: viewport,
-      executablePath: await chromium.default.executablePath(
-        "https://github.com/Sparticuz/chromium/releases/download/v123.0.0/chromium-v123.0.0-pack.tar"
-      ),
-      headless: true,
-    });
-
+  const browser = await launchBrowser();
   const adminSupabase = getAdminClient();
   const sanitizedScreenName = screenName.replace(/[^a-zA-Z0-9]/g, "_");
   const basePath = `kits/${kitId}/screens/${sanitizedScreenName}`;
@@ -86,23 +88,24 @@ export async function generateScreenPNGs(
   let fullScreenUrl = "";
 
   try {
-    const page = await browser.newPage();
-    await page.setViewport(viewport);
-
-    await page.setContent(htmlCss, {
-      waitUntil: "networkidle0",
-      timeout: 30000,
+    const context = await browser.newContext({
+      viewport,
+      deviceScaleFactor: isMobile ? 2 : 1,
     });
+    const page = await context.newPage();
+
+    await page.setContent(htmlCss, { waitUntil: "networkidle" });
 
     // Wait for fonts and animations to settle
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await page.waitForTimeout(1500);
 
     // --------------------------------------------------------
     // 1. Full screen screenshot
     // --------------------------------------------------------
-    const fullScreenBuffer = Buffer.from(
-      await page.screenshot({ type: "png", fullPage: false })
-    );
+    const fullScreenBuffer = await page.screenshot({
+      type: "png",
+      fullPage: false,
+    });
 
     const fullScreenPath = `${basePath}/full_screen.png`;
     await adminSupabase.storage
@@ -118,7 +121,7 @@ export async function generateScreenPNGs(
 
     fullScreenUrl = fullScreenSigned?.signedUrl ?? "";
 
-    // Update screen png_url with full screen screenshot
+    // Update screen png_url
     await adminSupabase
       .from("screens")
       .update({
@@ -137,22 +140,16 @@ export async function generateScreenPNGs(
         const elements = await page.$$(selector);
 
         for (const element of elements.slice(0, 5)) {
-          // Max 5 per type
           try {
             const box = await element.boundingBox();
             if (!box || box.width < 10 || box.height < 10) continue;
-
-            // Skip elements that are off-screen
             if (box.x < 0 || box.y < 0) continue;
             if (
               box.x + box.width > viewport.width * 2 ||
               box.y + box.height > viewport.height * 2
-            )
-              continue;
+            ) continue;
 
-            const elementBuffer = Buffer.from(
-              await element.screenshot({ type: "png" })
-            );
+            const elementBuffer = await element.screenshot({ type: "png" });
 
             elementCounters[prefix] = (elementCounters[prefix] ?? 0) + 1;
             const count = elementCounters[prefix];
@@ -171,10 +168,7 @@ export async function generateScreenPNGs(
               .createSignedUrl(elementPath, 60 * 60 * 24 * 365);
 
             if (elementSigned?.signedUrl) {
-              elementUrls.push({
-                name: elementName,
-                url: elementSigned.signedUrl,
-              });
+              elementUrls.push({ name: elementName, url: elementSigned.signedUrl });
             }
           } catch {
             // Skip elements that can't be captured
@@ -184,22 +178,15 @@ export async function generateScreenPNGs(
         // Skip selectors that don't match
       }
     }
+
+    await context.close();
   } finally {
     await browser.close();
   }
 
-  return {
-    screenId,
-    screenName,
-    fullScreenUrl,
-    elementUrls,
-  };
+  return { screenId, screenName, fullScreenUrl, elementUrls };
 }
 
-/**
- * Generate PNGs for all screens in a kit.
- * Returns results for each screen.
- */
 export async function generateKitPNGs(
   kitId: string,
   category: string,
@@ -238,49 +225,29 @@ export async function generateKitPNGs(
   console.log(`generateKitPNGs complete: ${results.length} screens processed`);
   return results;
 }
-/**
- * Capture SVG elements from an HTML screen as PNG files.
- * Returns array of { className, pngBuffer } for each SVG container found.
- */
+
 export async function captureSVGElements(
   htmlCss: string,
   category: string
 ): Promise<Array<{ className: string; buffer: Buffer }>> {
-  const chromium = await import("@sparticuz/chromium-min");
-  const puppeteer = await import("puppeteer-core");
-
   const isMobile = category === "mobile" || category === "game";
   const viewport = isMobile
-    ? { width: 390, height: 844, deviceScaleFactor: 2 }
-    : { width: 1440, height: 900, deviceScaleFactor: 1 };
+    ? { width: 390, height: 844 }
+    : { width: 1440, height: 900 };
 
-  const browser = await puppeteer.default.launch({
-      args: [
-        ...chromium.default.args,
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-      ],
-      defaultViewport: viewport,
-      executablePath: await chromium.default.executablePath(
-      "https://github.com/Sparticuz/chromium/releases/download/v123.0.0/chromium-v123.0.0-pack.tar"
-      ),
-      headless: true,
-    });
-
+  const browser = await launchBrowser();
   const results: Array<{ className: string; buffer: Buffer }> = [];
 
   try {
-    const page = await browser.newPage();
-    await page.setViewport(viewport);
-    await page.setContent(htmlCss, {
-      waitUntil: "networkidle0",
-      timeout: 30000,
+    const context = await browser.newContext({
+      viewport,
+      deviceScaleFactor: isMobile ? 2 : 1,
     });
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const page = await context.newPage();
 
-    // Find all elements that contain SVG children
+    await page.setContent(htmlCss, { waitUntil: "networkidle" });
+    await page.waitForTimeout(1000);
+
     const svgContainers = await page.evaluate(() => {
       const containers: Array<{ className: string; selector: string }> = [];
       const elements = document.querySelectorAll("*");
@@ -291,16 +258,13 @@ export async function captureSVGElements(
           if (className && typeof className === "string" && className.trim()) {
             const firstClass = className.trim().split(" ")[0];
             if (firstClass && !containers.find((c) => c.className === firstClass)) {
-              containers.push({
-                className: firstClass,
-                selector: `.${firstClass}`,
-              });
+              containers.push({ className: firstClass, selector: `.${firstClass}` });
             }
           }
         }
       });
 
-      return containers.slice(0, 20); // Max 20 SVG containers
+      return containers.slice(0, 20);
     });
 
     for (const container of svgContainers) {
@@ -311,27 +275,21 @@ export async function captureSVGElements(
         const box = await element.boundingBox();
         if (!box || box.width < 5 || box.height < 5) continue;
 
-        const buffer = Buffer.from(
-          await element.screenshot({ type: "png" })
-        );
-
-        results.push({
-          className: container.className,
-          buffer,
-        });
+        const buffer = Buffer.from(await element.screenshot({ type: "png" }));
+        results.push({ className: container.className, buffer });
       } catch {
         // Skip elements that can't be captured
       }
     }
+
+    await context.close();
   } finally {
     await browser.close();
   }
 
   return results;
 }
-/**
- * Legacy single PNG generation — kept for compatibility.
- */
+
 export async function generatePNG(
   screenId: string,
   kitId: string,
@@ -339,12 +297,6 @@ export async function generatePNG(
   htmlCss: string,
   category: string
 ): Promise<string> {
-  const result = await generateScreenPNGs(
-    screenId,
-    kitId,
-    screenName,
-    htmlCss,
-    category
-  );
+  const result = await generateScreenPNGs(screenId, kitId, screenName, htmlCss, category);
   return result.fullScreenUrl;
 }

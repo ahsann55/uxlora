@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: [
-    "puppeteer-core",
-    "@sparticuz/chromium-min",
+    "playwright-core",
+    "@sparticuz/chromium",
     "pdf-parse",
     "mammoth",
   ],
+outputFileTracingIncludes: {
+    "/api/kits/[id]/export": ["node_modules/@sparticuz/chromium/bin/**/*"],
+  },
 
   turbopack: {
     root: __dirname,
