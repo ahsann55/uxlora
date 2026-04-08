@@ -55,7 +55,7 @@ export async function generateScreenPNGs(
   htmlCss: string,
   category: string
 ): Promise<ScreenPNGResult> {
-  const chromium = await import("@sparticuz/chromium");
+  const chromium = await import("@sparticuz/chromium-min");
   const puppeteer = await import("puppeteer-core");
 
   const isMobile = category === "mobile" || category === "game";
@@ -244,7 +244,7 @@ export async function captureSVGElements(
   htmlCss: string,
   category: string
 ): Promise<Array<{ className: string; buffer: Buffer }>> {
-  const chromium = await import("@sparticuz/chromium");
+  const chromium = await import("@sparticuz/chromium-min");
   const puppeteer = await import("puppeteer-core");
 
   const isMobile = category === "mobile" || category === "game";
@@ -261,7 +261,9 @@ export async function captureSVGElements(
         "--disable-gpu",
       ],
       defaultViewport: viewport,
-      executablePath: await chromium.default.executablePath(),
+      executablePath: await chromium.default.executablePath(
+        "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
+      ),
       headless: true,
     });
 
