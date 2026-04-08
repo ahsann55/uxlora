@@ -199,8 +199,15 @@ export async function generateKitPNGs(
 ): Promise<ScreenPNGResult[]> {
   const results: ScreenPNGResult[] = [];
 
+  console.log(`generateKitPNGs called: kitId=${kitId}, category=${category}, screens=${screens.length}`);
+
   for (const screen of screens) {
-    if (!screen.html_css) continue;
+    if (!screen.html_css) {
+      console.log(`Skipping screen ${screen.name} — no html_css`);
+      continue;
+    }
+
+    console.log(`Starting PNG generation for screen: ${screen.name}`);
 
     try {
       const result = await generateScreenPNGs(
@@ -211,14 +218,16 @@ export async function generateKitPNGs(
         category
       );
       results.push(result);
-      console.log(
-        `PNG generated for ${screen.name}: ${result.elementUrls.length + 1} files`
-      );
+      console.log(`PNG generated for ${screen.name}: fullScreenUrl=${result.fullScreenUrl}, elements=${result.elementUrls.length}`);
     } catch (error) {
-      console.error(`PNG generation failed for ${screen.name}:`, error);
+      const msg = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : "";
+      console.error(`PNG generation failed for ${screen.name}: ${msg}`);
+      console.error(`Stack: ${stack}`);
     }
   }
 
+  console.log(`generateKitPNGs complete: ${results.length} screens processed`);
   return results;
 }
 /**
