@@ -41,17 +41,16 @@ const ELEMENT_SELECTORS = [
 
 async function launchBrowser() {
   const chromium = await import("@sparticuz/chromium");
-  const { chromium: playwrightChromium } = await import("playwright-core");
+  const puppeteer = await import("puppeteer-core");
 
   const executablePath = await chromium.default.executablePath();
 
-  // Set LD_LIBRARY_PATH so Chromium can find shared libraries on Vercel AL2023
   const execDir = path.dirname(executablePath);
   process.env.LD_LIBRARY_PATH = execDir;
 
   console.log(`Launching browser: executablePath=${executablePath}`);
 
-  const browser = await playwrightChromium.launch({
+  const browser = await puppeteer.default.launch({
     args: [
       ...chromium.default.args,
       "--no-sandbox",
@@ -60,6 +59,7 @@ async function launchBrowser() {
       "--disable-gpu",
       "--hide-scrollbars",
     ],
+    defaultViewport: null,
     executablePath,
     headless: true,
   });
@@ -88,17 +88,11 @@ export async function generateScreenPNGs(
   let fullScreenUrl = "";
 
   try {
-    const context = await browser.newContext({
-      viewport,
-      deviceScaleFactor: isMobile ? 2 : 1,
-    });
-    const page = await context.newPage();
+    const page = await browser.newPage();
+    await page.setViewport({ ...viewport, deviceScaleFactor: isMobile ? 2 : 1 });
 
-    await page.setContent(htmlCss, { waitUntil: "networkidle" });
-
-    // Wait for fonts and animations to settle
-    await page.waitForTimeout(1500);
-
+    await page.setContent(htmlCss, { waitUntil: "networkidle0", timeout: 30000 });
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     // --------------------------------------------------------
     // 1. Full screen screenshot
     // --------------------------------------------------------
@@ -179,7 +173,7 @@ export async function generateScreenPNGs(
       }
     }
 
-    await context.close();
+    await page.close();
   } finally {
     await browser.close();
   }
@@ -239,14 +233,11 @@ export async function captureSVGElements(
   const results: Array<{ className: string; buffer: Buffer }> = [];
 
   try {
-    const context = await browser.newContext({
-      viewport,
-      deviceScaleFactor: isMobile ? 2 : 1,
-    });
-    const page = await context.newPage();
+    const page = await browser.newPage();
+    await page.setViewport({ ...viewport, deviceScaleFactor: isMobile ? 2 : 1 });
 
-    await page.setContent(htmlCss, { waitUntil: "networkidle" });
-    await page.waitForTimeout(1000);
+    await page.setContent(htmlCss, { waitUntil: "networkidle0", timeout: 30000 });
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const svgContainers = await page.evaluate(() => {
       const containers: Array<{ className: string; selector: string }> = [];
@@ -282,7 +273,7 @@ export async function captureSVGElements(
       }
     }
 
-    await context.close();
+    await page.close();
   } finally {
     await browser.close();
   }

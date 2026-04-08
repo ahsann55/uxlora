@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+  const nextConfig = {
   serverExternalPackages: [
-    "playwright-core",
+    "puppeteer-core",
     "@sparticuz/chromium",
     "pdf-parse",
     "mammoth",
   ],
-outputFileTracingIncludes: {
+  outputFileTracingIncludes: {
     "/api/kits/[id]/export": ["node_modules/@sparticuz/chromium/bin/**/*"],
   },
 
