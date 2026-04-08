@@ -64,11 +64,17 @@ export async function generateScreenPNGs(
     : { width: 1440, height: 900, deviceScaleFactor: 1 };
 
   const browser = await puppeteer.default.launch({
-    args: chromium.default.args,
-    defaultViewport: viewport,
-    executablePath: await chromium.default.executablePath(),
-    headless: true,
-  });
+      args: [
+        ...chromium.default.args,
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
+      defaultViewport: viewport,
+      executablePath: await chromium.default.executablePath(),
+      headless: true,
+    });
 
   const adminSupabase = getAdminClient();
   const sanitizedScreenName = screenName.replace(/[^a-zA-Z0-9]/g, "_");
@@ -247,11 +253,17 @@ export async function captureSVGElements(
     : { width: 1440, height: 900, deviceScaleFactor: 1 };
 
   const browser = await puppeteer.default.launch({
-    args: chromium.default.args,
-    defaultViewport: viewport,
-    executablePath: await chromium.default.executablePath(),
-    headless: true,
-  });
+      args: [
+        ...chromium.default.args,
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
+      defaultViewport: viewport,
+      executablePath: await chromium.default.executablePath(),
+      headless: true,
+    });
 
   const results: Array<{ className: string; buffer: Buffer }> = [];
 
