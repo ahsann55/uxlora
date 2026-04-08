@@ -36,11 +36,11 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com",
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: blob: https://*.supabase.co",
-              "connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.lemonsqueezy.com https://api.resend.com https://*.lemonsqueezy.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.lemonsqueezy.com https://api.resend.com https://cdn.jsdelivr.net",
               "frame-src 'self' https://*.lemonsqueezy.com",
               "object-src 'none'",
               "base-uri 'self'",
