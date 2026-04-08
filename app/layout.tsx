@@ -50,11 +50,6 @@ export const metadata: Metadata = {
       index: true,
       follow: true,
     },
-    icons: {
-      icon: "/favicon.ico",
-      shortcut: "/favicon.ico",
-      apple: "/favicon-512.png",
-    },
   };
 
 export default function RootLayout({
@@ -64,6 +59,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={plusJakartaSans.variable} suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon-512.png" type="image/png" sizes="512x512" />
+        <link rel="apple-touch-icon" href="/favicon-512.png" />
+      </head>
       <body
        className={`${plusJakartaSans.className} bg-surface text-white antialiased min-h-screen`}
        suppressHydrationWarning
