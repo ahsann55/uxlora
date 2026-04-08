@@ -37,7 +37,7 @@ export function ResetPasswordForm() {
       }
 
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard"), 2000);
+      setTimeout(() => router.push("/sign-in"), 2000);
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -55,7 +55,7 @@ export function ResetPasswordForm() {
         </div>
         <h3 className="text-lg font-semibold text-white mb-2">Password updated</h3>
         <p className="text-white/50 text-sm">
-          Your password has been changed. Redirecting to dashboard...
+          Your password has been changed. Redirecting to sign in...
         </p>
       </div>
     );
