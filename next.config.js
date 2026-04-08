@@ -11,7 +11,7 @@ const nextConfig = {
     root: __dirname,
   },
 
-  async headers() {
+async headers() {
     return [
       {
         source: "/(.*)",
@@ -37,14 +37,23 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com",
-              "font-src 'self' https://fonts.gstatic.com data:",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.lemonsqueezy.com https://api.resend.com https://cdn.jsdelivr.net",
-              "frame-src 'self' https://*.lemonsqueezy.com",
+              "frame-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
             ].join("; "),
+          },
+        ],
+      },
+      {
+        source: "/MonsterWar_UI.html",
+        headers: [
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
           },
         ],
       },
