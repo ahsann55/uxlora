@@ -72,7 +72,9 @@ export async function generateScreenPNGs(
         "--disable-gpu",
       ],
       defaultViewport: viewport,
-      executablePath: await chromium.default.executablePath(),
+      executablePath: await chromium.default.executablePath(
+        "https://github.com/Sparticuz/chromium/releases/download/v123.0.0/chromium-v123.0.0-pack.tar"
+      ),
       headless: true,
     });
 
@@ -262,7 +264,7 @@ export async function captureSVGElements(
       ],
       defaultViewport: viewport,
       executablePath: await chromium.default.executablePath(
-        "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar"
+      "https://github.com/Sparticuz/chromium/releases/download/v123.0.0/chromium-v123.0.0-pack.tar"
       ),
       headless: true,
     });
