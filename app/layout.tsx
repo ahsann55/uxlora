@@ -47,10 +47,15 @@ export const metadata: Metadata = {
     creator: "@uxlora",
   },
   robots: {
-    index: true,
-    follow: true,
-  },
-};
+      index: true,
+      follow: true,
+    },
+    icons: {
+      icon: "/favicon.ico",
+      shortcut: "/favicon.ico",
+      apple: "/favicon-512.png",
+    },
+  };
 
 export default function RootLayout({
   children,
