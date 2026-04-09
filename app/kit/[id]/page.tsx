@@ -232,18 +232,8 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
             try {
               const rect = el.getBoundingClientRect();
               if (!rect || rect.width < 20 || rect.height < 20) return null;
-
-              // Add padding around the element for context
-              const padding = 8;
-              const dataUrl = await htmlToImage.toPng(el, {
-                ...captureOpts,
-                backgroundColor: undefined,
-                style: {
-                  margin: `${padding}px`,
-                  padding: `${padding}px`,
-                  overflow: "visible",
-                },
-              });
+              if (rect.left < -width || rect.top < -height) return null;
+              const dataUrl = await htmlToImage.toPng(el, captureOpts);
               if (!dataUrl || dataUrl.length < 2000) return null;
               if (capturedDataUrls.has(dataUrl)) return null;
               capturedDataUrls.add(dataUrl);
@@ -306,51 +296,49 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
             }
           }
 
-// Find the real root element (html or first wrapper div)
           const htmlEl = iframeDoc.documentElement as HTMLElement;
 
-          // 4. BACKGROUND PLAIN — hide everything, show only background
+          // 4. BACKGROUND PLAIN — hide all content, keep only background colors/gradients
           try {
-            const allEls = Array.from(iframeDoc.body.querySelectorAll("*")) as HTMLElement[];
-            const hiddenForPlain: HTMLElement[] = [];
-
-            allEls.forEach(el => {
-              const tag = el.tagName.toLowerCase();
-              const cls = el.className?.toString() ?? "";
-              const style = iframe.contentWindow?.getComputedStyle(el) ?? null;
-              const hasBg = style?.backgroundImage !== "none" || style?.backgroundColor !== "rgba(0, 0, 0, 0)";
-              const isBgLayer = cls.includes("bg") || cls.includes("background") ||
-                cls.includes("gradient") || tag === "canvas";
-
-              // Hide anything that's not a background layer
-              if (!isBgLayer && !hasBg) {
-                el.style.visibility = "hidden";
-                hiddenForPlain.push(el);
-              }
-            });
-
-            // Also hide all text and interactive elements explicitly
-            const textAndButtons = Array.from(iframeDoc.querySelectorAll(
-              "button, h1, h2, h3, h4, h5, p, span, a, input, svg, img, [class*='title'], [class*='text'], [class*='menu'], [class*='control'], [class*='icon']"
+            const hideForPlain = Array.from(iframeDoc.querySelectorAll(
+              "button, .btn, h1, h2, h3, h4, h5, p, span, a, input, svg, img, " +
+              "[class*='title'], [class*='text'], [class*='menu'], [class*='control'], " +
+              "[class*='icon'], [class*='round'], [class*='circle'], [class*='sword'], " +
+              "[class*='castle'], [class*='mountain'], [class*='star'], [class*='moon'], " +
+              "[class*='particle'], [class*='dot'], [class*='corner']"
             )) as HTMLElement[];
-            textAndButtons.forEach(el => {
-              el.style.visibility = "hidden";
-              if (!hiddenForPlain.includes(el)) hiddenForPlain.push(el);
-            });
 
+            hideForPlain.forEach(el => { el.style.visibility = "hidden"; });
             await new Promise(r => setTimeout(r, 200));
-            const plainBgUrl = await htmlToImage.toPng(htmlEl, {
-              ...captureOpts,
-              width,
-              height,
-            });
-            hiddenForPlain.forEach(el => el.style.visibility = "");
+
+            const plainBgUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+            hideForPlain.forEach(el => { el.style.visibility = ""; });
 
             if (plainBgUrl && plainBgUrl.length > 2000) {
               await addToZip(plainBgUrl, "background_plain.png");
             }
           } catch {
-            // Skip if plain bg fails
+            // Skip
+          }
+
+          // 5. BACKGROUND WITH DECORATIVES — hide only buttons and text
+          try {
+            const hideForDecor = Array.from(iframeDoc.querySelectorAll(
+              "button, .btn, [class*='btn-'], h1, h2, h3, h4, h5, p, " +
+              "[class*='title'], [class*='heading']"
+            )) as HTMLElement[];
+
+            hideForDecor.forEach(el => { el.style.visibility = "hidden"; });
+            await new Promise(r => setTimeout(r, 200));
+
+            const decorBgUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+            hideForDecor.forEach(el => { el.style.visibility = ""; });
+
+            if (decorBgUrl && decorBgUrl.length > 2000) {
+              await addToZip(decorBgUrl, "background_with_decoratives.png");
+            }
+          } catch {
+            // Skip
           }
 
           // 5. BACKGROUND WITH DECORATIVES — hide buttons, text, nav only
