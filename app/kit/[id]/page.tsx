@@ -194,8 +194,7 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
         iframe.style.visibility = "hidden";
         document.body.appendChild(iframe);
 
-        try {
-          // Write HTML to iframe
+      try {
           const iframeDoc = iframe.contentDocument ?? iframe.contentWindow?.document;
           if (!iframeDoc) continue;
 
@@ -203,28 +202,78 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
           iframeDoc.write(screen.html_css);
           iframeDoc.close();
 
-          // Wait for content to render
-          await new Promise((resolve) => setTimeout(resolve, 1500));
+          // Wait for fonts and animations to settle
+          await new Promise((resolve) => setTimeout(resolve, 2000));
 
-          // Capture as PNG
           const iframeBody = iframeDoc.body;
           if (!iframeBody) continue;
 
-          const dataUrl = await htmlToImage.toPng(iframeBody, {
+          const captureOptions = {
             width,
             height,
             pixelRatio: isMobile ? 2 : 1,
-          });
+            skipFonts: true,
+          };
 
-          // Convert data URL to blob
-          const response = await fetch(dataUrl);
-          const blob = await response.blob();
-          const arrayBuffer = await blob.arrayBuffer();
+          // 1. Full screen PNG
+          const fullScreenDataUrl = await htmlToImage.toPng(iframeBody, captureOptions);
+          const fullRes = await fetch(fullScreenDataUrl);
+          const fullBlob = await fullRes.blob();
+          zip.file(`${folderName}/full_screen.png`, await fullBlob.arrayBuffer());
 
-          zip.file(`${folderName}/full_screen.png`, arrayBuffer);
+          // 2. Individual element screenshots
+          const ELEMENT_SELECTORS = [
+            { selector: "button, .btn, [class*='btn']", prefix: "button" },
+            { selector: "h1, h2, h3, h4, [class*='title'], [class*='heading']", prefix: "heading" },
+            { selector: "input, textarea, select", prefix: "input" },
+            { selector: "nav, [class*='nav']", prefix: "nav" },
+            { selector: ".card, [class*='card']", prefix: "card" },
+            { selector: "img, svg, [class*='icon']", prefix: "icon" },
+            { selector: "header, [class*='header']", prefix: "header" },
+            { selector: "footer, [class*='footer']", prefix: "footer" },
+            { selector: "[class*='bg'], [class*='background']", prefix: "background" },
+            { selector: "[class*='menu']", prefix: "menu" },
+            { selector: "[class*='bar']", prefix: "bar" },
+            { selector: "p, span, [class*='text'], [class*='label']", prefix: "text" },
+          ];
 
-          // Also add HTML source
-          zip.file(`html/${folderName}.html`, screen.html_css);
+          const elementCounters: Record<string, number> = {};
+
+          for (const { selector, prefix } of ELEMENT_SELECTORS) {
+            try {
+              const elements = iframeDoc.querySelectorAll(selector);
+              const elementsArray = Array.from(elements).slice(0, 5);
+
+              for (const element of elementsArray) {
+                try {
+                  const el = element as HTMLElement;
+                  const rect = el.getBoundingClientRect
+                    ? el.getBoundingClientRect()
+                    : null;
+
+                  // Skip tiny or off-screen elements
+                  if (!rect || rect.width < 10 || rect.height < 10) continue;
+
+                  const dataUrl = await htmlToImage.toPng(el, {
+                    pixelRatio: isMobile ? 2 : 1,
+                    skipFonts: true,
+                  });
+
+                  elementCounters[prefix] = (elementCounters[prefix] ?? 0) + 1;
+                  const count = elementCounters[prefix];
+                  const elementName = `${prefix}_${count}.png`;
+
+                  const res = await fetch(dataUrl);
+                  const blob = await res.blob();
+                  zip.file(`${folderName}/${elementName}`, await blob.arrayBuffer());
+                } catch {
+                  // Skip elements that can't be captured
+                }
+              }
+            } catch {
+              // Skip selectors that don't match
+            }
+          }
 
         } finally {
           document.body.removeChild(iframe);
