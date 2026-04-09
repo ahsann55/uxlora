@@ -220,6 +220,7 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
           const fullRes = await fetch(fullScreenDataUrl);
           const fullBlob = await fullRes.blob();
           zip.file(`${folderName}/full_screen.png`, await fullBlob.arrayBuffer());
+          const capturedDataUrls = new Set<string>();
 
           // 2. Individual element screenshots
           const ELEMENT_SELECTORS = [
@@ -228,13 +229,14 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
             { selector: "input, textarea, select", prefix: "input" },
             { selector: "nav, [class*='nav']", prefix: "nav" },
             { selector: ".card, [class*='card']", prefix: "card" },
-            { selector: "img, svg, [class*='icon']", prefix: "icon" },
+            { selector: "[class*='icon']:not(button):not(nav)", prefix: "icon" },
             { selector: "header, [class*='header']", prefix: "header" },
             { selector: "footer, [class*='footer']", prefix: "footer" },
             { selector: "[class*='bg'], [class*='background']", prefix: "background" },
             { selector: "[class*='menu']", prefix: "menu" },
             { selector: "[class*='bar']", prefix: "bar" },
-            { selector: "p, span, [class*='text'], [class*='label']", prefix: "text" },
+            { selector: "[class*='control'], [class*='ctrl']", prefix: "control" },
+            { selector: "[class*='circle'], [class*='round'], [class*='btn-icon']", prefix: "control" },
           ];
 
           const elementCounters: Record<string, number> = {};
@@ -253,11 +255,19 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
 
                   // Skip tiny or off-screen elements
                   if (!rect || rect.width < 10 || rect.height < 10) continue;
+                  if (rect.left < -width || rect.top < -height) continue;
 
                   const dataUrl = await htmlToImage.toPng(el, {
                     pixelRatio: isMobile ? 2 : 1,
                     skipFonts: true,
                   });
+
+                  // Skip blank/black images (data URL too short means empty)
+                  if (!dataUrl || dataUrl.length < 1000) continue;
+
+                  // Skip duplicates by checking if same dataUrl already added
+                  if (capturedDataUrls.has(dataUrl)) continue;
+                  capturedDataUrls.add(dataUrl);
 
                   elementCounters[prefix] = (elementCounters[prefix] ?? 0) + 1;
                   const count = elementCounters[prefix];
