@@ -221,67 +221,146 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
           const fullBlob = await fullRes.blob();
           zip.file(`${folderName}/full_screen.png`, await fullBlob.arrayBuffer());
           const capturedDataUrls = new Set<string>();
+          const captureOpts = {
+            pixelRatio: isMobile ? 2 : 1,
+            skipFonts: true,
+            backgroundColor: undefined as string | undefined,
+          };
 
-          // 2. Individual element screenshots
-          const ELEMENT_SELECTORS = [
-            { selector: "button, .btn, [class*='btn']", prefix: "button" },
-            { selector: "h1, h2, h3, h4, [class*='title'], [class*='heading']", prefix: "heading" },
-            { selector: "input, textarea, select", prefix: "input" },
-            { selector: "nav, [class*='nav']", prefix: "nav" },
-            { selector: ".card, [class*='card']", prefix: "card" },
-            { selector: "[class*='icon']:not(button):not(nav)", prefix: "icon" },
-            { selector: "header, [class*='header']", prefix: "header" },
-            { selector: "footer, [class*='footer']", prefix: "footer" },
-            { selector: "[class*='bg'], [class*='background']", prefix: "background" },
-            { selector: "[class*='menu']", prefix: "menu" },
-            { selector: "[class*='bar']", prefix: "bar" },
-            { selector: "[class*='control'], [class*='ctrl']", prefix: "control" },
-            { selector: "[class*='circle'], [class*='round'], [class*='btn-icon']", prefix: "control" },
-          ];
-
-          const elementCounters: Record<string, number> = {};
-
-          for (const { selector, prefix } of ELEMENT_SELECTORS) {
+          // Helper to capture an element safely
+          async function captureElement(el: HTMLElement): Promise<string | null> {
             try {
-              const elements = iframeDoc.querySelectorAll(selector);
-              const elementsArray = Array.from(elements).slice(0, 5);
-
-              for (const element of elementsArray) {
-                try {
-                  const el = element as HTMLElement;
-                  const rect = el.getBoundingClientRect
-                    ? el.getBoundingClientRect()
-                    : null;
-
-                  // Skip tiny or off-screen elements
-                  if (!rect || rect.width < 10 || rect.height < 10) continue;
-                  if (rect.left < -width || rect.top < -height) continue;
-
-                  const dataUrl = await htmlToImage.toPng(el, {
-                    pixelRatio: isMobile ? 2 : 1,
-                    skipFonts: true,
-                  });
-
-                  // Skip blank/black images (data URL too short means empty)
-                  if (!dataUrl || dataUrl.length < 1000) continue;
-
-                  // Skip duplicates by checking if same dataUrl already added
-                  if (capturedDataUrls.has(dataUrl)) continue;
-                  capturedDataUrls.add(dataUrl);
-
-                  elementCounters[prefix] = (elementCounters[prefix] ?? 0) + 1;
-                  const count = elementCounters[prefix];
-                  const elementName = `${prefix}_${count}.png`;
-
-                  const res = await fetch(dataUrl);
-                  const blob = await res.blob();
-                  zip.file(`${folderName}/${elementName}`, await blob.arrayBuffer());
-                } catch {
-                  // Skip elements that can't be captured
-                }
-              }
+              const rect = el.getBoundingClientRect();
+              if (!rect || rect.width < 20 || rect.height < 20) return null;
+              if (rect.left < -width || rect.top < -height) return null;
+              const dataUrl = await htmlToImage.toPng(el, captureOpts);
+              if (!dataUrl || dataUrl.length < 2000) return null;
+              if (capturedDataUrls.has(dataUrl)) return null;
+              capturedDataUrls.add(dataUrl);
+              return dataUrl;
             } catch {
-              // Skip selectors that don't match
+              return null;
+            }
+          }
+
+          async function addToZip(dataUrl: string, filename: string) {
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            zip.file(`${folderName}/${filename}`, await blob.arrayBuffer());
+          }
+
+          // 1. FULL BUTTONS — skip anything inside a button
+          const buttons = Array.from(iframeDoc.querySelectorAll(
+            "button, .btn, [class*='btn-'], [class*='-btn'], [class*='button']"
+          )) as HTMLElement[];
+          let btnCount = 0;
+          for (const btn of buttons) {
+            const dataUrl = await captureElement(btn);
+            if (dataUrl) {
+              btnCount++;
+              await addToZip(dataUrl, `button_${btnCount}.png`);
+            }
+          }
+
+          // 2. ROUND/CIRCLE BUTTONS — icon buttons, floating action buttons
+          const roundBtns = Array.from(iframeDoc.querySelectorAll(
+            "[class*='circle'], [class*='round'], [class*='fab'], [class*='icon-btn'], [class*='btn-icon'], [class*='control']"
+          )) as HTMLElement[];
+          let roundCount = 0;
+          for (const btn of roundBtns) {
+            const dataUrl = await captureElement(btn);
+            if (dataUrl) {
+              roundCount++;
+              await addToZip(dataUrl, `round_button_${roundCount}.png`);
+            }
+          }
+
+          // 3. TEXT ELEMENTS — only text NOT inside a button
+          const textSelectors = [
+            "h1", "h2", "h3", "h4", "h5",
+            "[class*='title']", "[class*='heading']",
+            "[class*='subtitle']", "[class*='label']",
+            "p:not(button p)", "[class*='text-']",
+          ];
+          const allTextEls = Array.from(
+            iframeDoc.querySelectorAll(textSelectors.join(", "))
+          ) as HTMLElement[];
+          // Filter out elements inside buttons
+          const textEls = allTextEls.filter(el => !el.closest("button, .btn, [class*='btn-']"));
+          let textCount = 0;
+          for (const el of textEls.slice(0, 10)) {
+            const dataUrl = await captureElement(el);
+            if (dataUrl) {
+              textCount++;
+              await addToZip(dataUrl, `text_${textCount}.png`);
+            }
+          }
+
+          // 4. BACKGROUND PLAIN — find the root background element
+          const bgEl = iframeDoc.body;
+          if (bgEl) {
+            try {
+              // Temporarily hide all children except background-like elements
+              const allChildren = Array.from(bgEl.children) as HTMLElement[];
+              const hiddenElements: HTMLElement[] = [];
+
+              allChildren.forEach(child => {
+                const tag = child.tagName.toLowerCase();
+                const cls = child.className?.toString() ?? "";
+                // Keep only bg/gradient elements, hide interactive content
+                const isBgElement = cls.includes("bg") || cls.includes("background") ||
+                  cls.includes("gradient") || tag === "canvas";
+                if (!isBgElement) {
+                  child.style.visibility = "hidden";
+                  hiddenElements.push(child);
+                }
+              });
+
+              await new Promise(r => setTimeout(r, 100));
+              const plainBgUrl = await htmlToImage.toPng(bgEl, {
+                ...captureOpts,
+                width,
+                height,
+              });
+              if (plainBgUrl && plainBgUrl.length > 2000) {
+                await addToZip(plainBgUrl, "background_plain.png");
+              }
+
+              // Restore visibility
+              hiddenElements.forEach(el => el.style.visibility = "");
+            } catch {
+              // Skip if plain bg fails
+            }
+          }
+
+          // 5. BACKGROUND WITH DECORATIVES — hide only interactive UI (buttons, text, nav)
+          if (bgEl) {
+            try {
+              const interactiveEls = Array.from(
+                iframeDoc.querySelectorAll(
+                  "button, .btn, [class*='btn-'], nav, [class*='nav'], input, select, textarea, h1, h2, h3, h4, [class*='title'], [class*='heading'], p"
+                )
+              ) as HTMLElement[];
+
+              interactiveEls.forEach(el => {
+                el.style.visibility = "hidden";
+              });
+
+              await new Promise(r => setTimeout(r, 100));
+              const decorBgUrl = await htmlToImage.toPng(bgEl, {
+                ...captureOpts,
+                width,
+                height,
+              });
+              if (decorBgUrl && decorBgUrl.length > 2000) {
+                await addToZip(decorBgUrl, "background_with_decoratives.png");
+              }
+
+              interactiveEls.forEach(el => {
+                el.style.visibility = "";
+              });
+            } catch {
+              // Skip if decorative bg fails
             }
           }
 
