@@ -40,10 +40,12 @@ const ELEMENT_SELECTORS = [
 ];
 
 async function launchBrowser() {
-  const chromium = await import("@sparticuz/chromium");
+  const chromium = await import("@sparticuz/chromium-min");
   const puppeteer = await import("puppeteer-core");
 
-  const executablePath = await chromium.default.executablePath();
+  const executablePath = await chromium.default.executablePath(
+    "https://github.com/Sparticuz/chromium/releases/download/v137.0.0/chromium-v137.0.0-pack.x64.tar"
+  );
 
   const execDir = path.dirname(executablePath);
   process.env.LD_LIBRARY_PATH = execDir;

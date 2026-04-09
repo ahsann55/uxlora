@@ -2,13 +2,10 @@
   const nextConfig = {
   serverExternalPackages: [
     "puppeteer-core",
-    "@sparticuz/chromium",
+    "@sparticuz/chromium-min",
     "pdf-parse",
     "mammoth",
   ],
-  outputFileTracingIncludes: {
-    "/api/kits/[id]/export": ["node_modules/@sparticuz/chromium/bin/**/*"],
-  },
 
   turbopack: {
     root: __dirname,
