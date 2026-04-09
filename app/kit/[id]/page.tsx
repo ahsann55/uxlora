@@ -232,8 +232,18 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
             try {
               const rect = el.getBoundingClientRect();
               if (!rect || rect.width < 20 || rect.height < 20) return null;
-              if (rect.left < -width || rect.top < -height) return null;
-              const dataUrl = await htmlToImage.toPng(el, captureOpts);
+
+              // Add padding around the element for context
+              const padding = 8;
+              const dataUrl = await htmlToImage.toPng(el, {
+                ...captureOpts,
+                backgroundColor: undefined,
+                style: {
+                  margin: `${padding}px`,
+                  padding: `${padding}px`,
+                  overflow: "visible",
+                },
+              });
               if (!dataUrl || dataUrl.length < 2000) return null;
               if (capturedDataUrls.has(dataUrl)) return null;
               capturedDataUrls.add(dataUrl);
@@ -264,7 +274,7 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
 
           // 2. ROUND/CIRCLE BUTTONS — icon buttons, floating action buttons
           const roundBtns = Array.from(iframeDoc.querySelectorAll(
-            "[class*='circle'], [class*='round'], [class*='fab'], [class*='icon-btn'], [class*='btn-icon'], [class*='control']"
+            "[class*='circle'], [class*='round'], [class*='fab'], [class*='icon-btn'], [class*='btn-icon'], [class*='control'], [class*='sound'], [class*='volume'], [class*='brightness'], [class*='settings']"
           )) as HTMLElement[];
           let roundCount = 0;
           for (const btn of roundBtns) {
@@ -296,72 +306,76 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
             }
           }
 
-          // 4. BACKGROUND PLAIN — find the root background element
-          const bgEl = iframeDoc.body;
-          if (bgEl) {
-            try {
-              // Temporarily hide all children except background-like elements
-              const allChildren = Array.from(bgEl.children) as HTMLElement[];
-              const hiddenElements: HTMLElement[] = [];
+// Find the real root element (html or first wrapper div)
+          const htmlEl = iframeDoc.documentElement as HTMLElement;
 
-              allChildren.forEach(child => {
-                const tag = child.tagName.toLowerCase();
-                const cls = child.className?.toString() ?? "";
-                // Keep only bg/gradient elements, hide interactive content
-                const isBgElement = cls.includes("bg") || cls.includes("background") ||
-                  cls.includes("gradient") || tag === "canvas";
-                if (!isBgElement) {
-                  child.style.visibility = "hidden";
-                  hiddenElements.push(child);
-                }
-              });
+          // 4. BACKGROUND PLAIN — hide everything, show only background
+          try {
+            const allEls = Array.from(iframeDoc.body.querySelectorAll("*")) as HTMLElement[];
+            const hiddenForPlain: HTMLElement[] = [];
 
-              await new Promise(r => setTimeout(r, 100));
-              const plainBgUrl = await htmlToImage.toPng(bgEl, {
-                ...captureOpts,
-                width,
-                height,
-              });
-              if (plainBgUrl && plainBgUrl.length > 2000) {
-                await addToZip(plainBgUrl, "background_plain.png");
+            allEls.forEach(el => {
+              const tag = el.tagName.toLowerCase();
+              const cls = el.className?.toString() ?? "";
+              const style = iframe.contentWindow?.getComputedStyle(el) ?? null;
+              const hasBg = style?.backgroundImage !== "none" || style?.backgroundColor !== "rgba(0, 0, 0, 0)";
+              const isBgLayer = cls.includes("bg") || cls.includes("background") ||
+                cls.includes("gradient") || tag === "canvas";
+
+              // Hide anything that's not a background layer
+              if (!isBgLayer && !hasBg) {
+                el.style.visibility = "hidden";
+                hiddenForPlain.push(el);
               }
+            });
 
-              // Restore visibility
-              hiddenElements.forEach(el => el.style.visibility = "");
-            } catch {
-              // Skip if plain bg fails
+            // Also hide all text and interactive elements explicitly
+            const textAndButtons = Array.from(iframeDoc.querySelectorAll(
+              "button, h1, h2, h3, h4, h5, p, span, a, input, svg, img, [class*='title'], [class*='text'], [class*='menu'], [class*='control'], [class*='icon']"
+            )) as HTMLElement[];
+            textAndButtons.forEach(el => {
+              el.style.visibility = "hidden";
+              if (!hiddenForPlain.includes(el)) hiddenForPlain.push(el);
+            });
+
+            await new Promise(r => setTimeout(r, 200));
+            const plainBgUrl = await htmlToImage.toPng(htmlEl, {
+              ...captureOpts,
+              width,
+              height,
+            });
+            hiddenForPlain.forEach(el => el.style.visibility = "");
+
+            if (plainBgUrl && plainBgUrl.length > 2000) {
+              await addToZip(plainBgUrl, "background_plain.png");
             }
+          } catch {
+            // Skip if plain bg fails
           }
 
-          // 5. BACKGROUND WITH DECORATIVES — hide only interactive UI (buttons, text, nav)
-          if (bgEl) {
-            try {
-              const interactiveEls = Array.from(
-                iframeDoc.querySelectorAll(
-                  "button, .btn, [class*='btn-'], nav, [class*='nav'], input, select, textarea, h1, h2, h3, h4, [class*='title'], [class*='heading'], p"
-                )
-              ) as HTMLElement[];
+          // 5. BACKGROUND WITH DECORATIVES — hide buttons, text, nav only
+          try {
+            const interactiveEls = Array.from(
+              iframeDoc.querySelectorAll(
+                "button, .btn, [class*='btn-'], [class*='btn '], nav, [class*='nav'], input, select, textarea, h1, h2, h3, h4, h5, [class*='title'], [class*='heading'], [class*='control'], [class*='round']"
+              )
+            ) as HTMLElement[];
 
-              interactiveEls.forEach(el => {
-                el.style.visibility = "hidden";
-              });
+            interactiveEls.forEach(el => { el.style.visibility = "hidden"; });
 
-              await new Promise(r => setTimeout(r, 100));
-              const decorBgUrl = await htmlToImage.toPng(bgEl, {
-                ...captureOpts,
-                width,
-                height,
-              });
-              if (decorBgUrl && decorBgUrl.length > 2000) {
-                await addToZip(decorBgUrl, "background_with_decoratives.png");
-              }
+            await new Promise(r => setTimeout(r, 200));
+            const decorBgUrl = await htmlToImage.toPng(htmlEl, {
+              ...captureOpts,
+              width,
+              height,
+            });
+            interactiveEls.forEach(el => { el.style.visibility = ""; });
 
-              interactiveEls.forEach(el => {
-                el.style.visibility = "";
-              });
-            } catch {
-              // Skip if decorative bg fails
+            if (decorBgUrl && decorBgUrl.length > 2000) {
+              await addToZip(decorBgUrl, "background_with_decoratives.png");
             }
+          } catch {
+            // Skip if decorative bg fails
           }
 
         } finally {
