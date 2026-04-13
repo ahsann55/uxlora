@@ -119,3 +119,74 @@ export function getScreenList(
     "Detail Screen",
   ];
 }
+
+// ============================================================
+// PROMPT TEMPLATE LOADER
+// Fetches active prompt template from DB.
+// Falls back to hardcoded if not found.
+// ============================================================
+
+export interface PromptTemplate {
+  id: string;
+  step: string;
+  category: string;
+  system_prompt: string;
+  user_template: string;
+  model: string;
+  temperature: number;
+  max_tokens: number;
+}
+
+/**
+ * Fetch the active prompt template from the database.
+ * Tries category-specific first, then falls back to universal.
+ * Returns null if neither found.
+ */
+export async function getPromptTemplate(
+  step: string,
+  category: string
+): Promise<PromptTemplate | null> {
+  try {
+    const { createAdminClient } = await import("@/lib/supabase/server");
+    const supabase = await createAdminClient();
+
+    // First try category-specific
+    const { data: specific } = await supabase
+      .from("prompt_templates")
+      .select("*")
+      .eq("step", step)
+      .eq("category", category)
+      .eq("is_active", true)
+      .single();
+
+    if (specific) return specific as PromptTemplate;
+
+    // Fall back to universal
+    const { data: universal } = await supabase
+      .from("prompt_templates")
+      .select("*")
+      .eq("step", step)
+      .eq("category", "universal")
+      .eq("is_active", true)
+      .single();
+
+    if (universal) return universal as PromptTemplate;
+
+    return null;
+  } catch (error) {
+    console.error(`Failed to fetch prompt template: ${step}/${category}`, error);
+    return null;
+  }
+}
+
+/**
+ * Replace {{variable}} placeholders in a template string.
+ */
+export function resolvTemplate(
+  template: string,
+  variables: Record<string, string>
+): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+    return variables[key] ?? `{{${key}}}`;
+  });
+}

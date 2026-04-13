@@ -71,13 +71,25 @@ export async function POST(request: NextRequest) {
       apiKey: process.env.ANTHROPIC_API_KEY!,
     });
 
-    const systemPrompt = `You are an expert at extracting structured information from design documents.
+const { getPromptTemplate, resolvTemplate } = await import("@/lib/anthropic/index");
+    const template = await getPromptTemplate("parser", category);
+
+    const variables = {
+      category,
+      document_text: documentText.slice(0, 8000),
+    };
+
+    const systemPrompt = template
+      ? resolvTemplate(template.system_prompt, variables)
+      : `You are an expert at extracting structured information from design documents.
 Extract UI kit information from the provided document.
 Return ONLY a valid JSON object with no explanation or markdown.
 Only extract information that is explicitly stated in the document.
 Do not invent or assume details not present in the document.`;
 
-    const userPrompt = `Extract UI kit information from this ${category} design document.
+    const userPrompt = template
+      ? resolvTemplate(template.user_template, variables)
+      : `Extract UI kit information from this ${category} design document.
 
 Document content:
 ${documentText.slice(0, 8000)}
@@ -85,7 +97,7 @@ ${documentText.slice(0, 8000)}
 Return a JSON object with these fields (set to null if not found):
 {
   "product_name": "string or null",
-  "product_description": "string or null", 
+  "product_description": "string or null",
   "target_audience": "string or null",
   "visual_style": "string or null",
   "color_preferences": "string or null",
@@ -96,9 +108,12 @@ Return a JSON object with these fields (set to null if not found):
   "genre_or_category": "string or null"
 }`;
 
+    const model = template?.model ?? "claude-sonnet-4-6";
+    const maxTokens = template?.max_tokens ?? 1024;
+
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1024,
+      model,
+      max_tokens: maxTokens,
       messages: [{ role: "user", content: userPrompt }],
       system: systemPrompt,
     });
