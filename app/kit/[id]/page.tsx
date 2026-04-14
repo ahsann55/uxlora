@@ -164,7 +164,7 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
     }
   }
 
-  async function handleClientSidePNGExport() {
+async function handleClientSidePNGExport() {
     if (!kit || sortedScreens.length === 0) return;
     setExporting(true);
     setExportError(null);
@@ -183,7 +183,6 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
         const sanitizedName = screen.name.replace(/[^a-zA-Z0-9]/g, "_");
         const folderName = `${paddedIndex}_${sanitizedName}`;
 
-        // Create a hidden iframe to render the HTML
         const iframe = document.createElement("iframe");
         iframe.style.position = "fixed";
         iframe.style.left = "-9999px";
@@ -194,7 +193,7 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
         iframe.style.visibility = "hidden";
         document.body.appendChild(iframe);
 
-      try {
+        try {
           const iframeDoc = iframe.contentDocument ?? iframe.contentWindow?.document;
           if (!iframeDoc) continue;
 
@@ -202,33 +201,17 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
           iframeDoc.write(screen.html_css);
           iframeDoc.close();
 
-          // Wait for fonts and animations to settle
           await new Promise((resolve) => setTimeout(resolve, 2000));
 
-          const iframeBody = iframeDoc.body;
-          if (!iframeBody) continue;
-
-          const captureOptions = {
-            width,
-            height,
-            pixelRatio: isMobile ? 2 : 1,
-            skipFonts: true,
-          };
-
-          // 1. Full screen PNG
-          const fullScreenDataUrl = await htmlToImage.toPng(iframeBody, captureOptions);
-          const fullRes = await fetch(fullScreenDataUrl);
-          const fullBlob = await fullRes.blob();
-          zip.file(`${folderName}/full_screen.png`, await fullBlob.arrayBuffer());
-          const capturedDataUrls = new Set<string>();
+          const htmlEl = iframeDoc.documentElement as HTMLElement;
           const captureOpts = {
             pixelRatio: isMobile ? 2 : 1,
             skipFonts: true,
-            backgroundColor: undefined as string | undefined,
           };
+          const capturedDataUrls = new Set<string>();
 
-          // Helper to capture an element safely
-          async function captureElement(el: HTMLElement): Promise<string | null> {
+          // Helper — capture element safely, skip duplicates and blanks
+          async function captureEl(el: HTMLElement): Promise<string | null> {
             try {
               const rect = el.getBoundingClientRect();
               if (!rect || rect.width < 20 || rect.height < 20) return null;
@@ -249,122 +232,175 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
             zip.file(`${folderName}/${filename}`, await blob.arrayBuffer());
           }
 
-          // 1. FULL BUTTONS — skip anything inside a button
-          const buttons = Array.from(iframeDoc.querySelectorAll(
-            "button, .btn, [class*='btn-'], [class*='-btn'], [class*='button']"
-          )) as HTMLElement[];
-          let btnCount = 0;
-          for (const btn of buttons) {
-            const dataUrl = await captureElement(btn);
-            if (dataUrl) {
-              btnCount++;
-              await addToZip(dataUrl, `button_${btnCount}.png`);
-            }
+          // ── 1. FULL SCREEN ──────────────────────────────────────────
+          const fullUrl = await htmlToImage.toPng(htmlEl, {
+            ...captureOpts, width, height,
+          });
+          if (fullUrl && fullUrl.length > 2000) {
+            await addToZip(fullUrl, "full_screen.png");
           }
 
-          // 2. ROUND/CIRCLE BUTTONS — icon buttons, floating action buttons
-          const roundBtns = Array.from(iframeDoc.querySelectorAll(
-            "[class*='circle'], [class*='round'], [class*='fab'], [class*='icon-btn'], [class*='btn-icon'], [class*='control'], [class*='sound'], [class*='volume'], [class*='brightness'], [class*='settings']"
-          )) as HTMLElement[];
-          let roundCount = 0;
-          for (const btn of roundBtns) {
-            const dataUrl = await captureElement(btn);
-            if (dataUrl) {
-              roundCount++;
-              await addToZip(dataUrl, `round_button_${roundCount}.png`);
-            }
-          }
-
-          // 3. TEXT ELEMENTS — only text NOT inside a button
-          const textSelectors = [
-            "h1", "h2", "h3", "h4", "h5",
-            "[class*='title']", "[class*='heading']",
-            "[class*='subtitle']", "[class*='label']",
-            "p:not(button p)", "[class*='text-']",
-          ];
-          const allTextEls = Array.from(
-            iframeDoc.querySelectorAll(textSelectors.join(", "))
+          // ── 2. ALL BUTTONS (primary, secondary, ghost, tab, back) ───
+          const buttons = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:button"]:not([data-uxlora="ui:button:icon"])')
           ) as HTMLElement[];
-          // Filter out elements inside buttons
-          const textEls = allTextEls.filter(el => !el.closest("button, .btn, [class*='btn-']"));
+          let btnCount = 0;
+          for (const el of buttons) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { btnCount++; await addToZip(dataUrl, `button_${btnCount}.png`); }
+          }
+
+          // ── 3. ICON/ROUND BUTTONS ───────────────────────────────────
+          const iconBtns = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora="ui:button:icon"]')
+          ) as HTMLElement[];
+          let iconBtnCount = 0;
+          for (const el of iconBtns) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { iconBtnCount++; await addToZip(dataUrl, `icon_button_${iconBtnCount}.png`); }
+          }
+
+          // ── 4. TEXT ELEMENTS ────────────────────────────────────────
+          const textEls = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:text"]')
+          ) as HTMLElement[];
           let textCount = 0;
-          for (const el of textEls.slice(0, 10)) {
-            const dataUrl = await captureElement(el);
-            if (dataUrl) {
-              textCount++;
-              await addToZip(dataUrl, `text_${textCount}.png`);
-            }
+          for (const el of textEls.slice(0, 15)) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { textCount++; await addToZip(dataUrl, `text_${textCount}.png`); }
           }
 
-          const htmlEl = iframeDoc.documentElement as HTMLElement;
-
-          // 4. BACKGROUND PLAIN — hide all content, keep only background colors/gradients
-          try {
-            const hideForPlain = Array.from(iframeDoc.querySelectorAll(
-              "button, .btn, h1, h2, h3, h4, h5, p, span, a, input, svg, img, " +
-              "[class*='title'], [class*='text'], [class*='menu'], [class*='control'], " +
-              "[class*='icon'], [class*='round'], [class*='circle'], [class*='sword'], " +
-              "[class*='castle'], [class*='mountain'], [class*='star'], [class*='moon'], " +
-              "[class*='particle'], [class*='dot'], [class*='corner']"
-            )) as HTMLElement[];
-
-            hideForPlain.forEach(el => { el.style.visibility = "hidden"; });
-            await new Promise(r => setTimeout(r, 200));
-
-            const plainBgUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
-            hideForPlain.forEach(el => { el.style.visibility = ""; });
-
-            if (plainBgUrl && plainBgUrl.length > 2000) {
-              await addToZip(plainBgUrl, "background_plain.png");
-            }
-          } catch {
-            // Skip
+          // ── 5. VECTORS & DECORATIVES ────────────────────────────────
+          const vectors = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="vec"]')
+          ) as HTMLElement[];
+          let vecCount = 0;
+          for (const el of vectors) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { vecCount++; await addToZip(dataUrl, `vector_${vecCount}.png`); }
           }
 
-          // 5. BACKGROUND WITH DECORATIVES — hide only buttons and text
-          try {
-            const hideForDecor = Array.from(iframeDoc.querySelectorAll(
-              "button, .btn, [class*='btn-'], h1, h2, h3, h4, h5, p, " +
-              "[class*='title'], [class*='heading']"
-            )) as HTMLElement[];
-
-            hideForDecor.forEach(el => { el.style.visibility = "hidden"; });
-            await new Promise(r => setTimeout(r, 200));
-
-            const decorBgUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
-            hideForDecor.forEach(el => { el.style.visibility = ""; });
-
-            if (decorBgUrl && decorBgUrl.length > 2000) {
-              await addToZip(decorBgUrl, "background_with_decoratives.png");
-            }
-          } catch {
-            // Skip
+          // ── 6. NAVIGATION ───────────────────────────────────────────
+          const navEls = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:nav"]')
+          ) as HTMLElement[];
+          let navCount = 0;
+          for (const el of navEls) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { navCount++; await addToZip(dataUrl, `nav_${navCount}.png`); }
           }
 
-          // 5. BACKGROUND WITH DECORATIVES — hide buttons, text, nav only
+          // ── 7. LAYOUT COMPONENTS (cards, modals, panels) ────────────
+          const layoutEls = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:layout"]')
+          ) as HTMLElement[];
+          let layoutCount = 0;
+          for (const el of layoutEls.slice(0, 5)) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { layoutCount++; await addToZip(dataUrl, `component_${layoutCount}.png`); }
+          }
+
+          // ── 8. FORM ELEMENTS ────────────────────────────────────────
+          const formEls = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:form"]')
+          ) as HTMLElement[];
+          let formCount = 0;
+          for (const el of formEls) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { formCount++; await addToZip(dataUrl, `form_${formCount}.png`); }
+          }
+
+          // ── 9. STATUS ELEMENTS ──────────────────────────────────────
+          const statusEls = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:status"]')
+          ) as HTMLElement[];
+          let statusCount = 0;
+          for (const el of statusEls) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { statusCount++; await addToZip(dataUrl, `status_${statusCount}.png`); }
+          }
+
+          // ── 10. GAME SPECIFIC ───────────────────────────────────────
+          const gameEls = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:game"]')
+          ) as HTMLElement[];
+          let gameCount = 0;
+          for (const el of gameEls) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { gameCount++; await addToZip(dataUrl, `game_ui_${gameCount}.png`); }
+          }
+
+          // ── 11. MOBILE SPECIFIC ─────────────────────────────────────
+          const mobileEls = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:mobile"]')
+          ) as HTMLElement[];
+          let mobileCount = 0;
+          for (const el of mobileEls) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { mobileCount++; await addToZip(dataUrl, `mobile_ui_${mobileCount}.png`); }
+          }
+
+          // ── 12. WEB SPECIFIC ────────────────────────────────────────
+          const webEls = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:web"]')
+          ) as HTMLElement[];
+          let webCount = 0;
+          for (const el of webEls) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { webCount++; await addToZip(dataUrl, `web_ui_${webCount}.png`); }
+          }
+
+          // ── 13. MEDIA ELEMENTS ──────────────────────────────────────
+          const mediaEls = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="media"]')
+          ) as HTMLElement[];
+          let mediaCount = 0;
+          for (const el of mediaEls) {
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { mediaCount++; await addToZip(dataUrl, `media_${mediaCount}.png`); }
+          }
+
+          // ── 14. BACKGROUND PLAIN ────────────────────────────────────
           try {
-            const interactiveEls = Array.from(
+            // Hide everything except bg elements
+            const hideForPlain = Array.from(
               iframeDoc.querySelectorAll(
-                "button, .btn, [class*='btn-'], [class*='btn '], nav, [class*='nav'], input, select, textarea, h1, h2, h3, h4, h5, [class*='title'], [class*='heading'], [class*='control'], [class*='round']"
+                '[data-uxlora^="ui:"], [data-uxlora^="vec"], [data-uxlora^="media"]'
               )
             ) as HTMLElement[];
+            hideForPlain.forEach(el => { el.style.visibility = "hidden"; });
+            await new Promise(r => setTimeout(r, 150));
 
-            interactiveEls.forEach(el => { el.style.visibility = "hidden"; });
+            const plainUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+            hideForPlain.forEach(el => { el.style.visibility = ""; });
 
-            await new Promise(r => setTimeout(r, 200));
-            const decorBgUrl = await htmlToImage.toPng(htmlEl, {
-              ...captureOpts,
-              width,
-              height,
-            });
-            interactiveEls.forEach(el => { el.style.visibility = ""; });
-
-            if (decorBgUrl && decorBgUrl.length > 2000) {
-              await addToZip(decorBgUrl, "background_with_decoratives.png");
+            if (plainUrl && plainUrl.length > 2000) {
+              await addToZip(plainUrl, "background_plain.png");
             }
-          } catch {
-            // Skip if decorative bg fails
-          }
+          } catch { /* skip */ }
+
+          // ── 15. BACKGROUND WITH DECORATIVES ────────────────────────
+          try {
+            // Hide buttons, text, form, nav, game/mobile/web UI — keep bg + vec
+            const hideForDecor = Array.from(
+              iframeDoc.querySelectorAll(
+                '[data-uxlora^="ui:button"], [data-uxlora^="ui:text"], ' +
+                '[data-uxlora^="ui:form"], [data-uxlora^="ui:nav"], ' +
+                '[data-uxlora^="ui:layout"], [data-uxlora^="ui:status"], ' +
+                '[data-uxlora^="ui:game"], [data-uxlora^="ui:mobile"], ' +
+                '[data-uxlora^="ui:web"], [data-uxlora^="media"]'
+              )
+            ) as HTMLElement[];
+            hideForDecor.forEach(el => { el.style.visibility = "hidden"; });
+            await new Promise(r => setTimeout(r, 150));
+
+            const decorUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+            hideForDecor.forEach(el => { el.style.visibility = ""; });
+
+            if (decorUrl && decorUrl.length > 2000) {
+              await addToZip(decorUrl, "background_with_decoratives.png");
+            }
+          } catch { /* skip */ }
 
         } finally {
           document.body.removeChild(iframe);
@@ -377,9 +413,9 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
       }
 
       // Add README
-      zip.file("README.md", `# ${kit.name} UI Kit\nGenerated by UXLora (uxlora.app)\n\n## Contents\nEach folder contains the full screen PNG and HTML source.\n`);
+      zip.file("README.md", `# ${kit.name} UI Kit\nGenerated by UXLora (uxlora.app)\n\nEach screen folder contains:\n- full_screen.png — complete screen\n- button_*.png — all buttons\n- icon_button_*.png — round/icon buttons\n- text_*.png — text elements\n- vector_*.png — icons and decoratives\n- background_plain.png — clean background\n- background_with_decoratives.png — background with all decorative elements\n- Additional platform-specific elements\n\ndesign_system.json — complete design tokens\n`);
 
-      // Generate and download ZIP
+      // Download ZIP
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement("a");
