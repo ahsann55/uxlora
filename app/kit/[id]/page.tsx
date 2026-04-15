@@ -215,7 +215,7 @@ async function handleClientSidePNGExport() {
 
           const htmlEl = iframeDoc.documentElement as HTMLElement;
           const captureOpts = {
-            pixelRatio: isMobile ? 2 : 1,
+            pixelRatio: isMobile ? 3 : 2,
             skipFonts: true,
           };
           
@@ -235,6 +235,9 @@ async function handleClientSidePNGExport() {
               if (!rect || rect.width < 20 || rect.height < 20) return null;
               if (rect.left < -width || rect.top < -height) return null;
               if (rect.top > height || rect.left > width) return null;
+              // Skip elements that are children of already-captured containers
+              const capturedParent = el.closest('[data-uxlora="ui:nav:bar"], [data-uxlora="media:image:hero"], [data-uxlora="ui:game:hud"]');
+              if (capturedParent && capturedParent !== el) return null;
               const canvas = document.createElement("canvas");
               const scale = captureOpts.pixelRatio ?? 1;
               canvas.width = rect.width * scale;
