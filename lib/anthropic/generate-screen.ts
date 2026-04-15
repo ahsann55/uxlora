@@ -1,5 +1,5 @@
-import { getAnthropicClient, buildScreenSummary, getPromptTemplate, resolvTemplate, stripDesignSystemForScreen } from "./index";import type { DesignSystem, GenerationContext } from "./index";
-
+import { getAnthropicClient, buildScreenSummary, getPromptTemplate, resolvTemplate, stripDesignSystemForScreen } from "./index";
+import type { DesignSystem, GenerationContext } from "./index";
 
 export interface GeneratedScreen {
   htmlCss: string;
@@ -7,6 +7,7 @@ export interface GeneratedScreen {
   userPrompt: string;
   inputTokens: number;
   outputTokens: number;
+  promptTemplateId: string | null;
 }
 
 export async function generateScreen(
@@ -20,9 +21,9 @@ export async function generateScreen(
   const client = getAnthropicClient();
   const summary = buildScreenSummary(context.checklistData, context.category);
   const strippedDesignSystem = stripDesignSystemForScreen(
-  designSystem as unknown as Record<string, unknown>,
-  context.category
-);
+    designSystem as unknown as Record<string, unknown>,
+    context.category
+  );
   const designSystemStr = JSON.stringify(strippedDesignSystem);
 
   const isMobile = context.category === "mobile" ||
@@ -34,7 +35,6 @@ export async function generateScreen(
     ? "390x844px (mobile game)"
     : "1440x900px (desktop web)";
 
-  // Fetch prompt from DB, fall back to hardcoded
   const template = await getPromptTemplate("screen_generator", context.category);
 
   const variables = {
@@ -79,7 +79,6 @@ Requirements:
 
 Return the complete HTML document starting with <!DOCTYPE html>`;
 
-  // Add revision feedback if provided
   if (revisionFeedback) {
     userPrompt += `\n\nREVISION REQUEST — Apply these specific changes to the screen:
 ${revisionFeedback}
@@ -120,5 +119,6 @@ ${responseText}
     userPrompt,
     inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,
+    promptTemplateId: template?.id ?? null,
   };
 }

@@ -2,6 +2,7 @@ import { generateDesignSystem } from "./generate-design-system";
 import { generateScreen } from "./generate-screen";
 import { getScreenList } from "./index";
 import type { GenerationContext } from "./index";
+import type { GeneratedScreen } from "./generate-screen";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminClient() {
