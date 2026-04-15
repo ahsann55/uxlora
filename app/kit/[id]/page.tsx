@@ -297,25 +297,31 @@ async function handleClientSidePNGExport() {
           const navEls = Array.from(
             iframeDoc.querySelectorAll('[data-uxlora^="ui:nav"]')
           ) as HTMLElement[];
-          console.log("Nav elements found:", navEls.length);
           let navCount = 0;
           for (const el of navEls) {
             try {
               const rect = el.getBoundingClientRect();
-              console.log("Nav rect:", rect.top, rect.left, rect.width, rect.height);
               if (!rect || rect.width < 20 || rect.height < 20) continue;
-              if (rect.top > height || rect.left > width) continue;
-              const computedBg = iframeDoc.defaultView?.getComputedStyle(el).backgroundColor;
-              const originalBg = el.style.backgroundColor;
-              if (!computedBg || computedBg === "rgba(0, 0, 0, 0)" || computedBg === "transparent") {
-                el.style.backgroundColor = "#ffffff";
-              }
-              const dataUrl = await htmlToImage.toPng(el, captureOpts);
-              el.style.backgroundColor = originalBg;
-              if (dataUrl && dataUrl.length > 2000 && !capturedDataUrls.has(dataUrl)) {
-                capturedDataUrls.add(dataUrl);
+              // Capture full screen then crop to nav area using canvas
+              const fullDataUrl = await htmlToImage.toPng(htmlEl, {
+                ...captureOpts,
+                width,
+                height,
+              });
+              if (!fullDataUrl) continue;
+              const img = new Image();
+              await new Promise<void>((res) => { img.onload = () => res(); img.src = fullDataUrl; });
+              const canvas = document.createElement("canvas");
+              const scale = captureOpts.pixelRatio ?? 1;
+              canvas.width = rect.width * scale;
+              canvas.height = rect.height * scale;
+              const ctx = canvas.getContext("2d");
+              if (!ctx) continue;
+              ctx.drawImage(img, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
+              const croppedUrl = canvas.toDataURL("image/png");
+              if (croppedUrl && croppedUrl.length > 2000) {
                 navCount++;
-                await addToZip(dataUrl, `nav_${navCount}.png`);
+                await addToZip(croppedUrl, `nav_${navCount}.png`);
               }
             } catch { /* skip */ }
           }
