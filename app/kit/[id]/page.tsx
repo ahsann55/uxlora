@@ -236,8 +236,10 @@ async function handleClientSidePNGExport() {
               if (rect.left < -width || rect.top < -height) return null;
               if (rect.top > height || rect.left > width) return null;
               // Skip elements that are children of already-captured containers
-              const capturedParent = el.closest('[data-uxlora="ui:nav:bar"], [data-uxlora="media:image:hero"], [data-uxlora="ui:game:hud"]');
-              if (capturedParent && capturedParent !== el) return null;
+              const navParent = el.closest('[data-uxlora="ui:nav:bar"]');
+              if (navParent && navParent !== el) return null;
+              const heroParent = el.closest('[data-uxlora="media:image:hero"]');
+              if (heroParent && heroParent !== el) return null;
               const canvas = document.createElement("canvas");
               const scale = captureOpts.pixelRatio ?? 1;
               canvas.width = rect.width * scale;
@@ -246,7 +248,7 @@ async function handleClientSidePNGExport() {
               if (!ctx) return null;
               ctx.drawImage(fullScreenImg, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
               const croppedUrl = canvas.toDataURL("image/png");
-              if (!croppedUrl || croppedUrl.length < 2000) return null;
+              if (!croppedUrl || croppedUrl.length < 3000) return null;
               if (capturedDataUrls.has(croppedUrl)) return null;
               capturedDataUrls.add(croppedUrl);
               return croppedUrl;
