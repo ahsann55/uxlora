@@ -216,6 +216,10 @@ async function handleClientSidePNGExport() {
             pixelRatio: isMobile ? 2 : 1,
             skipFonts: true,
           };
+          const elementCaptureOpts = {
+            pixelRatio: isMobile ? 3 : 2,
+            skipFonts: true,
+          };
           const capturedDataUrls = new Set<string>();
 
           // Helper — capture element safely, skip duplicates and blanks
@@ -293,10 +297,12 @@ async function handleClientSidePNGExport() {
           const navEls = Array.from(
             iframeDoc.querySelectorAll('[data-uxlora^="ui:nav"]')
           ) as HTMLElement[];
+          console.log("Nav elements found:", navEls.length);
           let navCount = 0;
           for (const el of navEls) {
             try {
               const rect = el.getBoundingClientRect();
+              console.log("Nav rect:", rect.top, rect.left, rect.width, rect.height);
               if (!rect || rect.width < 20 || rect.height < 20) continue;
               if (rect.top > height || rect.left > width) continue;
               const computedBg = iframeDoc.defaultView?.getComputedStyle(el).backgroundColor;
