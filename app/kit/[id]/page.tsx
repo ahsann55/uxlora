@@ -201,7 +201,7 @@ async function handleClientSidePNGExport() {
           iframeDoc.write(screen.html_css);
           iframeDoc.close();
 
-          await new Promise((resolve) => setTimeout(resolve, 3000));
+          await new Promise((resolve) => setTimeout(resolve, 2000));
 
           const htmlEl = iframeDoc.documentElement as HTMLElement;
           const captureOpts = {
