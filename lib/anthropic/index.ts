@@ -306,6 +306,8 @@ export async function generateSuggestions(
   const maxTokens = template?.max_tokens ?? 500;
   const temperature = template?.temperature ?? 0.9;
 
+console.log("SUGGESTION userPrompt:", userPrompt);
+
   const message = await client.messages.create({
     model,
     max_tokens: maxTokens,
@@ -315,6 +317,8 @@ export async function generateSuggestions(
   });
 
   const text = message.content[0].type === "text" ? message.content[0].text : "[]";
+  
+  console.log("SUGGESTION response:", text);
 
   try {
     const parsed = extractJSON(text);
