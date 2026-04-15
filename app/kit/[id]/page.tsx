@@ -295,8 +295,23 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           let navCount = 0;
           for (const el of navEls) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { navCount++; await addToZip(dataUrl, `nav_${navCount}.png`); }
+            try {
+              const rect = el.getBoundingClientRect();
+              if (!rect || rect.width < 20 || rect.height < 20) continue;
+              if (rect.top > height || rect.left > width) continue;
+              const computedBg = iframeDoc.defaultView?.getComputedStyle(el).backgroundColor;
+              const originalBg = el.style.backgroundColor;
+              if (!computedBg || computedBg === "rgba(0, 0, 0, 0)" || computedBg === "transparent") {
+                el.style.backgroundColor = "#ffffff";
+              }
+              const dataUrl = await htmlToImage.toPng(el, captureOpts);
+              el.style.backgroundColor = originalBg;
+              if (dataUrl && dataUrl.length > 2000 && !capturedDataUrls.has(dataUrl)) {
+                capturedDataUrls.add(dataUrl);
+                navCount++;
+                await addToZip(dataUrl, `nav_${navCount}.png`);
+              }
+            } catch { /* skip */ }
           }
 
           // ── 7. LAYOUT COMPONENTS (cards, modals, panels) ────────────
