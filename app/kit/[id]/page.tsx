@@ -186,11 +186,12 @@ async function handleClientSidePNGExport() {
         const iframe = document.createElement("iframe");
         iframe.style.position = "fixed";
         iframe.style.left = "-9999px";
-        iframe.style.top = "-9999px";
+        iframe.style.top = "0px";
         iframe.style.width = `${width}px`;
         iframe.style.height = `${height}px`;
         iframe.style.border = "none";
-        iframe.style.visibility = "hidden";
+        iframe.style.opacity = "0";
+        iframe.style.pointerEvents = "none";
         document.body.appendChild(iframe);
 
         try {
@@ -389,7 +390,8 @@ async function handleClientSidePNGExport() {
                 '[data-uxlora^="ui:form"], [data-uxlora^="ui:nav"], ' +
                 '[data-uxlora^="ui:layout"], [data-uxlora^="ui:status"], ' +
                 '[data-uxlora^="ui:game"], [data-uxlora^="ui:mobile"], ' +
-                '[data-uxlora^="ui:web"], [data-uxlora^="media"]'
+                '[data-uxlora^="ui:web"], [data-uxlora^="media:image:thumbnail"], ' +
+                '[data-uxlora^="media:image:item"], [data-uxlora^="media:image:avatar"]'
               )
             ) as HTMLElement[];
             hideForDecor.forEach(el => { el.style.visibility = "hidden"; });
