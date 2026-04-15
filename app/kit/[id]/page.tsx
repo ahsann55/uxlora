@@ -216,6 +216,7 @@ async function handleClientSidePNGExport() {
               const rect = el.getBoundingClientRect();
               if (!rect || rect.width < 20 || rect.height < 20) return null;
               if (rect.left < -width || rect.top < -height) return null;
+              if (rect.top > height || rect.left > width) return null;
               const dataUrl = await htmlToImage.toPng(el, captureOpts);
               if (!dataUrl || dataUrl.length < 2000) return null;
               if (capturedDataUrls.has(dataUrl)) return null;
