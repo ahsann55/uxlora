@@ -191,8 +191,12 @@ export async function getPromptTemplate(
   category: string
 ): Promise<PromptTemplate | null> {
   try {
-    const { createAdminClient } = await import("@/lib/supabase/server");
-    const supabase = await createAdminClient();
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
 
     // First try category-specific
     const { data: specific } = await supabase

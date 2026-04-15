@@ -580,12 +580,20 @@ async function handleClientSidePNGExport() {
               </div>
             )}
             <p className="text-white/30 text-xs mt-6">Updates every 3 seconds</p>
-            <button
-              onClick={handleCancel}
-              className="btn-danger mt-4 px-6 py-2 text-sm"
-            >
-              Cancel generation
-            </button>
+            <div className="flex items-center justify-center gap-3 mt-4">
+              <button
+                onClick={() => router.push(`/dashboard/new/${kit.category}/guided?kitId=${kit.id}&regenerate=true`)}
+                className="btn-secondary px-6 py-2 text-sm"
+              >
+                ✏️ Edit & Restart
+              </button>
+              <button
+                onClick={handleCancel}
+                className="btn-danger px-6 py-2 text-sm"
+              >
+                Cancel generation
+              </button>
+            </div>
           </div>
         )}
 
@@ -601,16 +609,52 @@ async function handleClientSidePNGExport() {
             <p className="text-white/50 text-sm mb-6">
               {kit.error_message ?? "An unexpected error occurred."}
             </p>
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="btn-primary px-8"
-            >
-              {generating ? "Starting..." : "Try again"}
-            </button>
+          <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => router.push(`/dashboard/new/${kit.category}/guided?kitId=${kit.id}&regenerate=true`)}
+                className="btn-secondary px-8 py-3"
+              >
+                ✏️ Edit & Regenerate
+              </button>
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="btn-primary px-8 py-3"
+              >
+                {generating ? "Starting..." : "Try again"}
+              </button>
+            </div>
           </div>
         )}
-
+        {/* Cancelled state */}
+        {kit.status === "cancelled" && (
+          <div className="card text-center py-12">
+            <div className="w-16 h-16 bg-error/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-semibold text-white mb-2">Generation cancelled</h2>
+            <p className="text-white/50 text-sm mb-6">
+              Your kit was cancelled. Regenerate with your previous inputs or edit them first.
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => router.push(`/dashboard/new/${kit.category}/guided?kitId=${kit.id}&regenerate=true`)}
+                className="btn-secondary px-8 py-3"
+              >
+                ✏️ Edit & Regenerate
+              </button>
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="btn-primary px-8 py-3"
+              >
+                {generating ? "Starting..." : "Regenerate →"}
+              </button>
+            </div>
+          </div>
+        )}
         {/* Complete state */}
         {isComplete && (
           <div>
