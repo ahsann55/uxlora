@@ -139,11 +139,12 @@ export function extractJSON(text: string): unknown {
 export function getScreenList(
   data: Record<string, unknown>
 ): string[] {
-  const screens = data.key_screens;
-  if (Array.isArray(screens) && screens.length > 0) {
-    return screens as string[];
-  }
-  // Default screens if none specified
+  const screens = Array.isArray(data.key_screens) ? (data.key_screens as string[]) : [];
+  const custom = Array.isArray(data.custom_screens) ? (data.custom_screens as string[]) : [];
+  const merged = [...new Set([...screens, ...custom])];
+
+  if (merged.length > 0) return merged;
+
   return [
     "Main Screen",
     "Secondary Screen",
@@ -306,8 +307,6 @@ export async function generateSuggestions(
   const maxTokens = template?.max_tokens ?? 500;
   const temperature = template?.temperature ?? 0.9;
 
-console.log("SUGGESTION userPrompt:", userPrompt);
-
   const message = await client.messages.create({
     model,
     max_tokens: maxTokens,
@@ -318,8 +317,6 @@ console.log("SUGGESTION userPrompt:", userPrompt);
 
   const text = message.content[0].type === "text" ? message.content[0].text : "[]";
   
-  console.log("SUGGESTION response:", text);
-
   try {
     const parsed = extractJSON(text);
     if (!Array.isArray(parsed)) return [];

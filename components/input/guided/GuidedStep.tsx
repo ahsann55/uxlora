@@ -23,10 +23,26 @@ export function GuidedStep({
   addScreensMode = false,
 }: GuidedStepProps) {
   const [screenLimitWarningShown, setScreenLimitWarningShown] = useState(false);
+  const [customScreenInput, setCustomScreenInput] = useState("");
+
+  function addCustomScreen() {
+    const name = customScreenInput.trim();
+    if (!name) return;
+    const current = Array.isArray(data.custom_screens) ? (data.custom_screens as string[]) : [];
+    if (current.includes(name)) return;
+    onUpdate("custom_screens", [...current, name]);
+    setCustomScreenInput("");
+  }
+
+  function removeCustomScreen(name: string) {
+    const current = Array.isArray(data.custom_screens) ? (data.custom_screens as string[]) : [];
+    onUpdate("custom_screens", current.filter((s) => s !== name));
+  }
 
   function renderField(field: ChecklistField) {
     const value = data[field.id];
     const isScreenField = field.id === "key_screens";
+    const customScreens = Array.isArray(data.custom_screens) ? (data.custom_screens as string[]) : [];
 
     return (
       <div key={field.id} className="space-y-2">
@@ -145,13 +161,47 @@ export function GuidedStep({
                   </button>
                 );
               })}
+
+              {/* Custom screens as selected chips */}
+              {isScreenField && customScreens.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => removeCustomScreen(name)}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-brand-500/30 text-brand-300 border border-brand-500/50"
+                >
+                  ✓ {name} ×
+                </button>
+              ))}
             </div>
 
-            {Array.isArray(value) && value.length > 0 && (
+            {/* Custom screen input — only for paid, non-demo */}
+            {isScreenField && !isDemo && (
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  value={customScreenInput}
+                  onChange={(e) => setCustomScreenInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustomScreen(); } }}
+                  placeholder="Add custom screen name..."
+                  className="input flex-1 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomScreen}
+                  disabled={!customScreenInput.trim()}
+                  className="btn-secondary text-sm px-4 py-2"
+                >
+                  + Add
+                </button>
+              </div>
+            )}
+
+            {Array.isArray(value) && (value.length > 0 || customScreens.length > 0) && (
               <p className="text-white/40 text-xs">
-                {value.length} total ({existingScreens.length} existing
-                {value.length - existingScreens.length > 0
-                  ? `, ${value.length - existingScreens.length} new`
+                {(Array.isArray(value) ? value.length : 0) + customScreens.length} total ({existingScreens.length} existing
+                {((Array.isArray(value) ? value.length : 0) + customScreens.length) - existingScreens.length > 0
+                  ? `, ${((Array.isArray(value) ? value.length : 0) + customScreens.length) - existingScreens.length} new`
                   : ""})
                 {isScreenField && isDemo && !addScreensMode && (
                   <span className="text-yellow-400/70 ml-1">
