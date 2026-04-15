@@ -7,8 +7,10 @@ import { getChecklist } from "@/lib/checklist";
 import { generateKitName } from "@/lib/utils";
 import { GuidedStep } from "@/components/input/guided/GuidedStep";
 import { GuidedReview } from "@/components/input/guided/GuidedReview";
+import { SuggestionStep } from "@/components/input/SuggestionStep";
+import type { SuggestionQuestion } from "@/lib/anthropic/index";
 
-type Step = "questions" | "review";
+type Step = "questions" | "suggestions" | "review";
 
 export default function GuidedPage() {
   const params = useParams();
@@ -31,6 +33,11 @@ export default function GuidedPage() {
   const [initialLoading, setInitialLoading] = useState(addScreensMode || regenerateMode);
   const [error, setError] = useState<string | null>(null);
 
+  // Suggestion state
+  const [suggestionQuestions, setSuggestionQuestions] = useState<SuggestionQuestion[]>([]);
+  const [suggestionAnswers, setSuggestionAnswers] = useState<Record<string, unknown>>({});
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+
   // If adding screens to existing kit, fetch existing kit data
   useEffect(() => {
     if ((!addScreensMode && !regenerateMode) || !kitId) return;
@@ -41,21 +48,17 @@ export default function GuidedPage() {
         if (!response.ok) return;
         const kit = await response.json();
 
-        // Pre-populate form data from existing kit
         setFormData(kit.checklist_data ?? {});
         setKitName(kit.name ?? "");
-        // Block demo kits from adding screens or regenerating
         if (kit.is_demo && !regenerateMode) {
           router.push(`/kit/${kitId}`);
           return;
         }
-        // Get existing screen names
         const screenNames = (kit.screens ?? []).map(
           (s: { name: string }) => s.name
         );
         setExistingScreens(screenNames);
 
-        // Pre-select existing screens in key_screens
         if (kit.checklist_data?.key_screens) {
           setFormData((prev) => ({
             ...prev,
@@ -72,8 +75,6 @@ export default function GuidedPage() {
     fetchKit();
   }, [addScreensMode, kitId]);
 
-  // Jump directly to screens section if adding screens
-  // For regenerate mode — start from beginning with pre-filled data
   useEffect(() => {
     if (initialLoading) return;
     if (addScreensMode) {
@@ -84,7 +85,7 @@ export default function GuidedPage() {
         setCurrentSectionIndex(screensIndex);
       }
     } else if (regenerateMode) {
-      setCurrentSectionIndex(0); // Start from beginning
+      setCurrentSectionIndex(0);
     }
   }, [addScreensMode, regenerateMode, initialLoading, sections]);
 
@@ -103,17 +104,66 @@ export default function GuidedPage() {
     });
   }
 
-  function handleNext() {
+  function handleBack() {
+    if (isFirstSection) return;
+    setCurrentSectionIndex((i) => i - 1);
+  }
+
+  async function handleNext() {
     if (isLastSection) {
-      setStep("review");
+      // Skip suggestions for addScreens/regenerate modes
+      if (addScreensMode || regenerateMode) {
+        setStep("review");
+        return;
+      }
+      // Fetch suggestions
+      setLoadingSuggestions(true);
+      try {
+        const response = await fetch("/api/kits/suggest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category,
+            checklist_data: formData,
+          }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const questions: SuggestionQuestion[] = data.questions ?? [];
+          if (questions.length > 0) {
+            setSuggestionQuestions(questions);
+            setStep("suggestions");
+          } else {
+            // No gaps found — go straight to review
+            setStep("review");
+          }
+        } else {
+          // API failed — skip suggestions silently
+          setStep("review");
+        }
+      } catch {
+        // Network error — skip suggestions silently
+        setStep("review");
+      } finally {
+        setLoadingSuggestions(false);
+      }
     } else {
       setCurrentSectionIndex((i) => i + 1);
     }
   }
 
-  function handleBack() {
-    if (isFirstSection) return;
-    setCurrentSectionIndex((i) => i - 1);
+  function handleSuggestionAnswer(id: string, value: unknown) {
+    setSuggestionAnswers((prev) => ({ ...prev, [id]: value }));
+  }
+
+  function handleSuggestionContinue() {
+    // Merge suggestion answers into formData
+    setFormData((prev) => ({ ...prev, ...suggestionAnswers }));
+    setStep("review");
+  }
+
+  function handleSuggestionSkip() {
+    setStep("review");
   }
 
   async function handleSubmit(finalData: Record<string, unknown>) {
@@ -122,7 +172,6 @@ export default function GuidedPage() {
 
     try {
       if ((addScreensMode || regenerateMode) && kitId) {
-        // Update existing kit checklist data and trigger generation
         const updateResponse = await fetch(`/api/kits/${kitId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -138,7 +187,6 @@ export default function GuidedPage() {
           return;
         }
 
-        // Trigger generation
         const genResponse = await fetch(`/api/kits/${kitId}/generate`, {
           method: "POST",
         });
@@ -151,7 +199,6 @@ export default function GuidedPage() {
 
         router.push(`/kit/${kitId}`);
       } else {
-        // Create new kit
         const response = await fetch("/api/kits", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -192,10 +239,10 @@ export default function GuidedPage() {
       <div className="min-h-screen bg-surface p-6">
         <div className="max-w-2xl mx-auto">
           <button
-            onClick={() => setStep("questions")}
+            onClick={() => setStep(suggestionQuestions.length > 0 ? "suggestions" : "questions")}
             className="inline-flex items-center gap-2 text-white/50 hover:text-white text-sm mb-8 transition-colors"
           >
-            ← Back to questions
+            ← Back
           </button>
 
           <div className="mb-8">
@@ -238,11 +285,42 @@ export default function GuidedPage() {
     );
   }
 
+  if (step === "suggestions") {
+    return (
+      <div className="min-h-screen bg-surface p-6">
+        <div className="max-w-2xl mx-auto">
+          <button
+            onClick={() => setStep("questions")}
+            className="inline-flex items-center gap-2 text-white/50 hover:text-white text-sm mb-8 transition-colors"
+          >
+            ← Back to questions
+          </button>
+
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-white mb-1">
+              Tell us more
+            </h1>
+            <p className="text-white/40 text-sm">
+              These answers help generate a more accurate UI kit.
+            </p>
+          </div>
+
+          <SuggestionStep
+            questions={suggestionQuestions}
+            answers={suggestionAnswers}
+            onAnswer={handleSuggestionAnswer}
+            onContinue={handleSuggestionContinue}
+            onSkip={handleSuggestionSkip}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface p-6">
       <div className="max-w-2xl mx-auto">
 
-        {/* Back */}
         <Link
           href={addScreensMode && kitId ? `/kit/${kitId}` : `/dashboard/new/${category}`}
           className="inline-flex items-center gap-2 text-white/50 hover:text-white text-sm mb-8 transition-colors"
@@ -250,7 +328,6 @@ export default function GuidedPage() {
           ← Back
         </Link>
 
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white mb-1">
             {addScreensMode ? "Add more screens" : regenerateMode ? "Regenerate UI Kit" : currentSection.label}
@@ -264,7 +341,6 @@ export default function GuidedPage() {
           </p>
         </div>
 
-        {/* Progress — only show for new kit flow */}
         {!addScreensMode && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
@@ -284,7 +360,6 @@ export default function GuidedPage() {
           </div>
         )}
 
-        {/* Fields */}
         <GuidedStep
           section={currentSection}
           data={formData}
@@ -294,15 +369,26 @@ export default function GuidedPage() {
           addScreensMode={addScreensMode}
         />
 
-        {/* Navigation */}
+        {loadingSuggestions && (
+          <div className="mt-4 text-center text-white/40 text-sm">
+            Analyzing your answers...
+          </div>
+        )}
+
         <div className="flex gap-3 mt-8">
           {!isFirstSection && !addScreensMode && (
             <button onClick={handleBack} className="btn-secondary flex-1">
               ← Back
             </button>
           )}
-          <button onClick={handleNext} className="btn-primary flex-1">
-            {isLastSection || addScreensMode
+          <button
+            onClick={handleNext}
+            disabled={loadingSuggestions}
+            className="btn-primary flex-1"
+          >
+            {loadingSuggestions
+              ? "Analyzing..."
+              : isLastSection || addScreensMode
               ? "Review & Generate →"
               : "Next →"}
           </button>

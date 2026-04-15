@@ -1,5 +1,5 @@
-import { getAnthropicClient, buildChecklistSummary, getPromptTemplate, resolvTemplate } from "./index";
-import type { DesignSystem, GenerationContext } from "./index";
+import { getAnthropicClient, buildScreenSummary, getPromptTemplate, resolvTemplate, stripDesignSystemForScreen } from "./index";import type { DesignSystem, GenerationContext } from "./index";
+
 
 export interface GeneratedScreen {
   htmlCss: string;
@@ -18,8 +18,12 @@ export async function generateScreen(
   revisionFeedback?: string
 ): Promise<GeneratedScreen> {
   const client = getAnthropicClient();
-  const summary = buildChecklistSummary(context.checklistData);
-  const designSystemStr = JSON.stringify(designSystem, null, 2);
+  const summary = buildScreenSummary(context.checklistData, context.category);
+  const strippedDesignSystem = stripDesignSystemForScreen(
+  designSystem as unknown as Record<string, unknown>,
+  context.category
+);
+  const designSystemStr = JSON.stringify(strippedDesignSystem);
 
   const isMobile = context.category === "mobile" ||
     (context.checklistData.platform as string[] | undefined)?.includes("Mobile (iOS/Android)");

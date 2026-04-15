@@ -89,6 +89,39 @@ export function buildChecklistSummary(
 }
 
 /**
+ * Build a minimal one-line summary for screen generator calls.
+ * Full summary is only needed for design system generation.
+ * Saves 500-1000 input tokens per screen call.
+ */
+export function buildScreenSummary(
+  data: Record<string, unknown>,
+  category: string
+): string {
+  const name =
+    (data.game_name as string) ||
+    (data.app_name as string) ||
+    (data.gameName as string) ||
+    (data.appName as string) ||
+    "Untitled";
+
+  const genre =
+    (data.genre as string) ||
+    (data.app_type as string) ||
+    (data.appType as string) ||
+    (data.saas_type as string) ||
+    (data.saasType as string) ||
+    "";
+
+  const style =
+    (data.visual_style as string) ||
+    (data.visualStyle as string) ||
+    "";
+
+  const parts = [name, genre, style].filter(Boolean);
+  return `${category} UI kit — ${parts.join(", ")}`;
+}
+
+/**
  * Extract JSON from a Claude response that may contain markdown.
  */
 export function extractJSON(text: string): unknown {
@@ -189,4 +222,105 @@ export function resolvTemplate(
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
     return variables[key] ?? `{{${key}}}`;
   });
+}
+
+/**
+ * Strip platform-specific keys from design system before injecting
+ * into screen generator context. Reduces input tokens per screen call.
+ */
+export function stripDesignSystemForScreen(
+  designSystem: Record<string, unknown>,
+  category: string
+): Record<string, unknown> {
+  const stripped = { ...designSystem };
+  const colors = stripped.c ? { ...(stripped.c as Record<string, unknown>) } : null;
+
+  if (category === "game") {
+    // Game doesn't need sidebar, table, or tab bar configs
+    delete stripped.side;
+    delete stripped.tbl;
+    delete stripped.tab;
+  } else if (category === "mobile") {
+    // Mobile doesn't need sidebar, table, or rarity colors
+    delete stripped.side;
+    delete stripped.tbl;
+    if (colors) {
+      delete colors.rC;
+      delete colors.rU;
+      delete colors.rR;
+      delete colors.rE;
+      delete colors.rL;
+      stripped.c = colors;
+    }
+  } else if (category === "web") {
+    // Web doesn't need tab bar or rarity colors
+    delete stripped.tab;
+    if (colors) {
+      delete colors.rC;
+      delete colors.rU;
+      delete colors.rR;
+      delete colors.rE;
+      delete colors.rL;
+      stripped.c = colors;
+    }
+  }
+
+  return stripped;
+}
+
+// ============================================================
+// SUGGESTION GENERATOR
+// ============================================================
+
+export interface SuggestionQuestion {
+  id: string;
+  question: string;
+  type: "select" | "multiselect" | "text" | "color";
+  options?: string[];
+  default?: string;
+}
+
+/**
+ * Generate dynamic follow-up questions based on current checklist data.
+ * Returns 0-8 questions depending on how much info is already provided.
+ */
+export async function generateSuggestions(
+  category: string,
+  checklistData: Record<string, unknown>
+): Promise<SuggestionQuestion[]> {
+  const client = getAnthropicClient();
+  const summary = buildChecklistSummary(checklistData);
+  const template = await getPromptTemplate("suggestion", category);
+
+  const variables = { category, summary };
+
+  const systemPrompt = template
+    ? resolvTemplate(template.system_prompt, variables)
+    : "You are a UI/UX product consultant. Return ONLY valid JSON array. No markdown, no code fences.";
+
+  const userPrompt = template
+    ? resolvTemplate(template.user_template, variables)
+    : `User is building a ${category} UI kit. Provided: ${summary}\nReturn up to 8 questions as JSON array or [] if nothing critical is missing.`;
+
+  const model = template?.model ?? "claude-sonnet-4-6";
+  const maxTokens = template?.max_tokens ?? 500;
+  const temperature = template?.temperature ?? 0.9;
+
+  const message = await client.messages.create({
+    model,
+    max_tokens: maxTokens,
+    temperature,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+
+  const text = message.content[0].type === "text" ? message.content[0].text : "[]";
+
+  try {
+    const parsed = extractJSON(text);
+    if (!Array.isArray(parsed)) return [];
+    return parsed as SuggestionQuestion[];
+  } catch {
+    return [];
+  }
 }
