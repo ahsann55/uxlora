@@ -52,9 +52,17 @@ export function ScreenCard({
 
   function handleViewScreen() {
     if (!currentScreen.html_css) return;
-    const blob = new Blob([currentScreen.html_css], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.open();
+    win.document.write(currentScreen.html_css);
+    win.document.close();
+    win.document.documentElement.style.width = "390px";
+    win.document.documentElement.style.height = "844px";
+    win.document.documentElement.style.overflow = "hidden";
+    win.document.body.style.width = "390px";
+    win.document.body.style.height = "844px";
+    win.document.body.style.overflow = "hidden";
   }
 
   function handleDownload(url: string, filename: string) {

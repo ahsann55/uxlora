@@ -203,6 +203,13 @@ async function handleClientSidePNGExport() {
           iframeDoc.close();
 
           await new Promise((resolve) => setTimeout(resolve, 2000));
+          if (iframe.contentWindow) {
+            iframe.contentWindow.scrollTo(0, 0);
+            // Force iframe to correct dimensions for absolute positioned elements
+            iframe.contentDocument!.documentElement.style.width = `${width}px`;
+            iframe.contentDocument!.documentElement.style.height = `${height}px`;
+            iframe.contentDocument!.documentElement.style.overflow = "hidden";
+          }
 
           const htmlEl = iframeDoc.documentElement as HTMLElement;
           const captureOpts = {
