@@ -125,6 +125,7 @@ export default function GuidedPage() {
           body: JSON.stringify({
             category,
             checklist_data: formData,
+            kit_id: kitId ?? undefined,
           }),
         });
         if (response.ok) {

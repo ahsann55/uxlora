@@ -201,7 +201,7 @@ async function handleClientSidePNGExport() {
           iframeDoc.write(screen.html_css);
           iframeDoc.close();
 
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 3000));
 
           const htmlEl = iframeDoc.documentElement as HTMLElement;
           const captureOpts = {
@@ -555,12 +555,10 @@ async function handleClientSidePNGExport() {
         {/* Generating state */}
         {isGenerating && (
           <div className="card text-center py-12">
-            <div className="w-16 h-16 bg-brand-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-8 h-8 text-brand-400 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-              </svg>
-            </div>
+            <svg className="w-12 h-12 text-brand-400 animate-spin mx-auto mb-6" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+            </svg>
             <h2 className="text-xl font-semibold text-white mb-2">Generating your UI kit</h2>
             <p className="text-white/50 text-sm mb-4">
               {kit.current_step ?? "Starting generation..."}
