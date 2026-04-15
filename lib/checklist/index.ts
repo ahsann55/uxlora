@@ -121,7 +121,7 @@ export const gameChecklist: ChecklistDefinition = {
           required: false,
           placeholder: "e.g. Dark blues and purples with gold accents",
         },
-        {
+    {
           id: "typography_preferences",
           label: "Typography Style",
           type: "select",
@@ -134,6 +134,15 @@ export const gameChecklist: ChecklistDefinition = {
             "Futuristic",
             "No preference",
           ],
+        },
+        {
+          id: "orientation",
+          label: "Screen Orientation",
+          type: "select",
+          required: true,
+          options: ["Portrait", "Landscape"],
+          default: "Portrait",
+          hint: "Portrait for mobile games, Landscape for tablet/PC games",
         },
       ],
     },

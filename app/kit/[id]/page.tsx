@@ -534,13 +534,21 @@ async function handleClientSidePNGExport() {
                 </span>
               )}
             </p>
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="btn-primary px-8 py-3"
-            >
-              {generating ? "Starting..." : "Generate UI Kit →"}
-            </button>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => router.push(`/dashboard/new/${kit.category}/guided?kitId=${kit.id}&regenerate=true`)}
+                className="btn-secondary px-8 py-3"
+              >
+                ✏️ Edit answers
+              </button>
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="btn-primary px-8 py-3"
+              >
+                {generating ? "Starting..." : "Generate UI Kit →"}
+              </button>
+            </div>
           </div>
         )}
 
