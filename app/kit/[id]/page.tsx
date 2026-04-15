@@ -203,6 +203,8 @@ async function handleClientSidePNGExport() {
           iframeDoc.close();
 
           await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Capture full screen once — reused for all element crops
+        
           if (iframe.contentWindow) {
             iframe.contentWindow.scrollTo(0, 0);
             // Force iframe to correct dimensions for absolute positioned elements
@@ -216,12 +218,16 @@ async function handleClientSidePNGExport() {
             pixelRatio: isMobile ? 2 : 1,
             skipFonts: true,
           };
-          const elementCaptureOpts = {
-            pixelRatio: isMobile ? 3 : 2,
-            skipFonts: true,
-          };
+          
           const capturedDataUrls = new Set<string>();
-
+          // Capture full screen once — reused for all element crops
+          const fullScreenDataUrl = await htmlToImage.toPng(htmlEl, {
+            ...captureOpts,
+            width,
+            height,
+          });
+          const fullScreenImg = new Image();
+          await new Promise<void>((res) => { fullScreenImg.onload = () => res(); fullScreenImg.src = fullScreenDataUrl; });
           // Helper — capture element safely, skip duplicates and blanks
           async function captureEl(el: HTMLElement): Promise<string | null> {
             try {
@@ -229,11 +235,18 @@ async function handleClientSidePNGExport() {
               if (!rect || rect.width < 20 || rect.height < 20) return null;
               if (rect.left < -width || rect.top < -height) return null;
               if (rect.top > height || rect.left > width) return null;
-              const dataUrl = await htmlToImage.toPng(el, captureOpts);
-              if (!dataUrl || dataUrl.length < 2000) return null;
-              if (capturedDataUrls.has(dataUrl)) return null;
-              capturedDataUrls.add(dataUrl);
-              return dataUrl;
+              const canvas = document.createElement("canvas");
+              const scale = captureOpts.pixelRatio ?? 1;
+              canvas.width = rect.width * scale;
+              canvas.height = rect.height * scale;
+              const ctx = canvas.getContext("2d");
+              if (!ctx) return null;
+              ctx.drawImage(fullScreenImg, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
+              const croppedUrl = canvas.toDataURL("image/png");
+              if (!croppedUrl || croppedUrl.length < 2000) return null;
+              if (capturedDataUrls.has(croppedUrl)) return null;
+              capturedDataUrls.add(croppedUrl);
+              return croppedUrl;
             } catch {
               return null;
             }
@@ -299,31 +312,8 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           let navCount = 0;
           for (const el of navEls) {
-            try {
-              const rect = el.getBoundingClientRect();
-              if (!rect || rect.width < 20 || rect.height < 20) continue;
-              // Capture full screen then crop to nav area using canvas
-              const fullDataUrl = await htmlToImage.toPng(htmlEl, {
-                ...captureOpts,
-                width,
-                height,
-              });
-              if (!fullDataUrl) continue;
-              const img = new Image();
-              await new Promise<void>((res) => { img.onload = () => res(); img.src = fullDataUrl; });
-              const canvas = document.createElement("canvas");
-              const scale = captureOpts.pixelRatio ?? 1;
-              canvas.width = rect.width * scale;
-              canvas.height = rect.height * scale;
-              const ctx = canvas.getContext("2d");
-              if (!ctx) continue;
-              ctx.drawImage(img, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
-              const croppedUrl = canvas.toDataURL("image/png");
-              if (croppedUrl && croppedUrl.length > 2000) {
-                navCount++;
-                await addToZip(croppedUrl, `nav_${navCount}.png`);
-              }
-            } catch { /* skip */ }
+            const dataUrl = await captureEl(el);
+            if (dataUrl) { navCount++; await addToZip(dataUrl, `nav_${navCount}.png`); }
           }
 
           // ── 7. LAYOUT COMPONENTS (cards, modals, panels) ────────────
@@ -356,6 +346,7 @@ async function handleClientSidePNGExport() {
             if (dataUrl) { statusCount++; await addToZip(dataUrl, `status_${statusCount}.png`); }
           }
 
+          // ── 10. GAME SPECIFIC ───────────────────────────────────────
           // ── 10. GAME SPECIFIC ───────────────────────────────────────
           const gameEls = Array.from(
             iframeDoc.querySelectorAll('[data-uxlora^="ui:game"]')
