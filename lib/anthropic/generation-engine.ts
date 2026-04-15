@@ -43,7 +43,8 @@ export async function runGenerationEngine(
     outputTokens: number,
     durationMs: number,
     status: "success" | "failed",
-    errorMessage?: string
+    errorMessage?: string,
+    promptTemplateId?: string
   ) {
     await adminSupabase.from("generation_logs").insert({
       kit_id: context.kitId,
@@ -54,6 +55,7 @@ export async function runGenerationEngine(
       duration_ms: durationMs,
       status,
       error_message: errorMessage ?? null,
+      prompt_template_id: promptTemplateId ?? null,
     });
   }
 
@@ -71,7 +73,7 @@ export async function runGenerationEngine(
     let designSystemPrompt = "";
 
     try {
-     const dsResult = await generateDesignSystem(context);
+      const dsResult = await generateDesignSystem(context);
       designSystem = dsResult.designSystem;
       designSystemPrompt = dsResult.userPrompt;
 
@@ -90,7 +92,9 @@ export async function runGenerationEngine(
         dsResult.inputTokens,
         dsResult.outputTokens,
         Date.now() - step2Start,
-        "success"
+        "success",
+        undefined,
+        dsResult.promptTemplateId ?? undefined
       );
     } catch (error) {
       await logGeneration(
@@ -110,7 +114,6 @@ export async function runGenerationEngine(
     // --------------------------------------------------------
     const allScreens = getScreenList(context.checklistData);
 
-    // Get already generated screen names to avoid duplicates
     const { data: existingScreensData } = await adminSupabase
       .from("screens")
       .select("name")
@@ -131,7 +134,6 @@ export async function runGenerationEngine(
     const finalTotalScreens = allScreensToGenerate.length;
     const alreadyGeneratedCount = existingNames.size;
 
-    // If all screens already exist, mark complete immediately
     if (screens.length === 0) {
       await updateKitStatus("complete", {
         current_step: "Complete",
@@ -188,7 +190,9 @@ export async function runGenerationEngine(
           result.inputTokens,
           result.outputTokens,
           Date.now() - screenStart,
-          "success"
+          "success",
+          undefined,
+          result.promptTemplateId ?? undefined
         );
       } catch (error) {
         await logGeneration(
@@ -204,7 +208,7 @@ export async function runGenerationEngine(
       }
     }
 
-   // --------------------------------------------------------
+    // --------------------------------------------------------
     // STEP 5: Export pipeline (paid kits only)
     // --------------------------------------------------------
     if (!context.isDemo) {
@@ -214,7 +218,6 @@ export async function runGenerationEngine(
       });
 
       try {
-        // Fetch all screens for export
         const { data: screensForExport } = await adminSupabase
           .from("screens")
           .select("id, name, html_css, order_index")
@@ -231,11 +234,10 @@ export async function runGenerationEngine(
         }
       } catch (error) {
         console.error("Export pipeline error:", error);
-        // Don't fail the kit if export fails — mark complete anyway
       }
     }
 
-// --------------------------------------------------------
+    // --------------------------------------------------------
     // COMPLETE
     // --------------------------------------------------------
     await updateKitStatus("complete", {
@@ -244,7 +246,6 @@ export async function runGenerationEngine(
       total_screens: finalTotalScreens,
     });
 
-    // Send kit ready email (UX-10)
     try {
       await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/kits/${context.kitId}/notify`, {
         method: "POST",

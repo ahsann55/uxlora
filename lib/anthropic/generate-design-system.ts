@@ -6,6 +6,7 @@ export interface DesignSystemResult {
   userPrompt: string;
   inputTokens: number;
   outputTokens: number;
+  promptTemplateId: string | null;
 }
 
 export async function generateDesignSystem(
@@ -14,7 +15,6 @@ export async function generateDesignSystem(
   const client = getAnthropicClient();
   const summary = buildChecklistSummary(context.checklistData);
 
-  // Fetch prompt from DB, fall back to hardcoded
   const template = await getPromptTemplate("design_system", context.category);
 
   const variables = {
@@ -85,6 +85,7 @@ Customise the values for this specific product. Keep all string values short. Re
     userPrompt,
     inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,
+    promptTemplateId: template?.id ?? null,
   };
 }
 
