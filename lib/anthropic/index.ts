@@ -98,6 +98,7 @@ export function buildScreenSummary(
   category: string
 ): string {
   const name =
+    (data.product_name as string) ||
     (data.game_name as string) ||
     (data.app_name as string) ||
     (data.gameName as string) ||
@@ -117,7 +118,16 @@ export function buildScreenSummary(
     (data.visualStyle as string) ||
     "";
 
-  const parts = [name, genre, style].filter(Boolean);
+  const colors =
+    (data.color_preferences as string) ||
+    (data.colorPreferences as string) ||
+    "";
+
+  const orientation =
+    (data.orientation as string) ||
+    "";
+
+  const parts = [name, genre, style, colors, orientation].filter(Boolean);
   return `${category} UI kit — ${parts.join(", ")}`;
 }
 

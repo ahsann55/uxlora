@@ -1,3 +1,4 @@
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -16,5 +17,5 @@ export default async function KitLayout({
     redirect("/sign-in");
   }
 
-  return <>{children}</>;
+  return <ErrorBoundary>{children}</ErrorBoundary>;
 }
