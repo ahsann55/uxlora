@@ -24,6 +24,7 @@ const stepLabels: Record<string, string> = {
   screen_generator: "Screen Generator",
   state_generator: "State Generator",
   suggestion: "AI Suggestions",
+  icon_selection: "Icon Selection",
 };
 
 const categoryLabels: Record<string, string> = {

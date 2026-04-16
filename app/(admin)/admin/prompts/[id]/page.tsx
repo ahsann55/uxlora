@@ -167,6 +167,7 @@ export default function EditPromptPage({
                   <option value="screen_generator">Screen Generator</option>
                   <option value="state_generator">State Generator</option>
                   <option value="suggestion">AI Suggestions</option>
+                  <option value="icon_selection">Icon Selection</option>
                 </select>
               </div>
               <div>
