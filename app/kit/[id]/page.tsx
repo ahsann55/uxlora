@@ -337,6 +337,7 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           let vecCount = 0;
           for (const el of vectors) {
+            if (!el.querySelector('svg') && el.tagName !== 'svg') continue;
             const dataUrl = await captureEl(el);
             if (dataUrl) { vecCount++; await addToZip(dataUrl, `vector_${vecCount}.png`); }
           }
