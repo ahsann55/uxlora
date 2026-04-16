@@ -304,7 +304,10 @@ export async function generateSuggestions(
   checklistData: Record<string, unknown>
 ): Promise<SuggestionQuestion[]> {
   const client = getAnthropicClient();
-  const summary = buildChecklistSummary(checklistData);
+  const filteredData = Object.fromEntries(
+    Object.entries(checklistData).filter(([key]) => !key.match(/^q\d+$/))
+    );
+const summary = buildChecklistSummary(filteredData);
   const template = await getPromptTemplate("suggestion", category);
 
   const variables = { category, summary };
