@@ -76,15 +76,17 @@ function LogRow({ log }: { log: EnrichedLog }) {
       )}
 
       <div className="pl-5">
-  {log.systemPrompt ? (
-    <PromptBlock label="System Prompt" content={log.systemPrompt} />
-  ) : (
-    <p className="mt-1 text-xs text-white/20 italic">No system prompt saved — regenerate this kit to capture prompts</p>
-  )}
-  {log.userPrompt && (
-    <PromptBlock label="User Prompt" content={log.userPrompt} />
-  )}
-</div>
+        {log.systemPrompt ? (
+          <PromptBlock label="System Prompt" content={log.systemPrompt} />
+        ) : (
+          !["icon_selection", "suggestion", "design_system"].includes(log.step) && (
+            <p className="mt-1 text-xs text-white/20 italic">No system prompt saved — regenerate this kit to capture prompts</p>
+          )
+        )}
+        {log.userPrompt && (
+          <PromptBlock label="User Prompt" content={log.userPrompt} />
+        )}
+      </div>
     </div>
   );
 }
