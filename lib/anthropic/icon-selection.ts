@@ -14,6 +14,8 @@ export interface IconSelectionResult {
   authorMap: Record<string, string>;
   inputTokens: number;
   outputTokens: number;
+  systemPrompt: string;
+  userPrompt: string;
 }
 
 export interface IconLibraryEntry {
@@ -62,7 +64,7 @@ export async function selectIcons(
   const icons = await fetchIconLibrary("game");
 
   if (!icons.length) {
-    return { selectedIcons: FALLBACK_ICONS, authorMap: {}, inputTokens: 0, outputTokens: 0 };
+    return { selectedIcons: FALLBACK_ICONS, authorMap: {}, inputTokens: 0, outputTokens: 0, systemPrompt: "", userPrompt: "" };
   }
 
   const iconList = icons.map(i => i.name).join(", ");
@@ -133,6 +135,8 @@ Rules: Use ONLY names from ICONS list. Match game genre. Return JSON only.`;
     authorMap,
     inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,
+    systemPrompt,
+    userPrompt,
   };
 }
 

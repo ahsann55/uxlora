@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
 
     const adminSupabase = await createAdminClient();
 
-    // Fetch all kits that have generation logs
     const { data: kitsData } = await adminSupabase
       .from("kits")
       .select("id, name, category, created_at")
@@ -40,7 +39,6 @@ export async function GET(request: NextRequest) {
       created_at: string;
     }>;
 
-    // Fetch all logs
     const { data: logsData } = await adminSupabase
       .from("generation_logs")
       .select("*")
@@ -59,40 +57,41 @@ export async function GET(request: NextRequest) {
       created_at: string;
     }>;
 
-    // Fetch screens for prompt data
     const { data: screensData } = await adminSupabase
-  .from("screens")
-  .select("id, kit_id, name, system_prompt, user_prompt, order_index");
+      .from("screens")
+      .select("id, kit_id, name, system_prompt, user_prompt, order_index");
 
-const screens = (screensData ?? []) as Array<{
-  id: string;
-  kit_id: string;
-  name: string;
-  system_prompt: string | null;
-  user_prompt: string | null;
-  order_index: number;
-}>;
+    const screens = (screensData ?? []) as Array<{
+      id: string;
+      kit_id: string;
+      name: string;
+      system_prompt: string | null;
+      user_prompt: string | null;
+      order_index: number;
+    }>;
 
-const { data: kitsPromptData } = await adminSupabase
-  .from("kits")
-  .select("id, design_system_prompt");
+    const { data: kitsPromptData } = await adminSupabase
+      .from("kits")
+      .select("id, design_system_prompt, icon_selection_prompt");
 
-const kitsPromptMap = ((kitsPromptData ?? []) as Array<{
-  id: string;
-  design_system_prompt: string | null;
-}>).reduce((acc, k) => {
-  acc[k.id] = k.design_system_prompt;
-  return acc;
-}, {} as Record<string, string | null>);
+    const kitsPromptMap = ((kitsPromptData ?? []) as Array<{
+      id: string;
+      design_system_prompt: string | null;
+      icon_selection_prompt: string | null;
+    }>).reduce((acc, k) => {
+      acc[k.id] = {
+        design: k.design_system_prompt,
+        icons: k.icon_selection_prompt,
+      };
+      return acc;
+    }, {} as Record<string, { design: string | null; icons: string | null }>);
 
-    // Group logs by kit_id
     const logsByKit = logs.reduce((acc, log) => {
       if (!acc[log.kit_id]) acc[log.kit_id] = [];
       acc[log.kit_id].push(log);
       return acc;
     }, {} as Record<string, typeof logs>);
 
-    // Build grouped response
     const grouped = kits
       .filter((kit) => logsByKit[kit.id])
       .map((kit) => {
@@ -100,16 +99,16 @@ const kitsPromptMap = ((kitsPromptData ?? []) as Array<{
         const kitScreens = screens.filter((s) => s.kit_id === kit.id);
 
         const enrichedLogs = kitLogs.map((log) => {
-          // Match log step to screen prompt
           let systemPrompt: string | null = null;
           let userPrompt: string | null = null;
 
           if (log.step === "design_system") {
-            // design_system prompt stored on first screen or kit
-              systemPrompt = kitsPromptMap[kit.id] ?? null;
-  userPrompt = null;
+            systemPrompt = kitsPromptMap[kit.id]?.design ?? null;
+            userPrompt = null;
+          } else if (log.step === "icon_selection") {
+            systemPrompt = kitsPromptMap[kit.id]?.icons ?? null;
+            userPrompt = null;
           } else {
-            // Match screen by order — step name like "screen_0_Main Menu"
             const match = log.step.match(/^screen_(\d+)_/);
             if (match) {
               const idx = parseInt(match[1]);

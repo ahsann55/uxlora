@@ -132,6 +132,7 @@ export async function runGenerationEngine(
           .from("kits")
           .update({
             selected_icons: selectedIcons as unknown as Record<string, unknown>,
+            icon_selection_prompt: iconResult.userPrompt,
             updated_at: new Date().toISOString(),
           })
           .eq("id", context.kitId);
