@@ -85,12 +85,11 @@ Return the complete HTML document starting with <!DOCTYPE html>`;
   if (context.category === "game" && selectedIcons && iconAuthorMap) {
     const primaryColor = (designSystem as unknown as { colors?: { primary?: string } })?.colors?.primary ?? "ffffff";
     const fg = primaryColor.replace("#", "");
-    const baseUrl = `https://game-icons.net/icons/${fg}/transparent/1x1`;
-
     const buildIconLine = (name: string) => {
       const author = iconAuthorMap[name];
       if (!author) return null;
-      return `${name}: ${baseUrl}/${author}/${name}.svg`;
+      const proxyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/icons?author=${author}&name=${name}&color=${fg}`;
+      return `${name}: ${proxyUrl}`;
     };
 
     const navLines = selectedIcons.nav.map(buildIconLine).filter(Boolean).join("\n");
