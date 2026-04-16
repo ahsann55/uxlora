@@ -28,7 +28,6 @@ export default async function IconLibraryPage() {
     .select("*")
     .order("category", { ascending: true })
     .order("name", { ascending: true });
-    console.log("Icons fetched:", icons?.length, icons?.[0]);
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-8">
