@@ -89,12 +89,15 @@ Return the complete HTML document starting with <!DOCTYPE html>`;
       const author = iconAuthorMap[name];
       if (!author) return null;
       try {
-        const url = `https://game-icons.net/icons/${fg}/transparent/1x1/${author}/${name}.svg`;
+        // Fetch white version — Claude will color it appropriately
+        const url = `https://game-icons.net/icons/ffffff/transparent/1x1/${author}/${name}.svg`;
         const res = await fetch(url);
         if (!res.ok) return null;
         const svg = await res.text();
-        // Add data-uxlora and dimensions to the SVG
-        return svg.replace('<svg ', `<svg width="24" height="24" data-uxlora="vec:icon:game" `);
+        const pathMatch = svg.match(/<path[^>]*\/?>/g);
+        if (!pathMatch) return null;
+        const paths = pathMatch.join("");
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24" data-uxlora="vec:icon:game">${paths}</svg>`;
       } catch {
         return null;
       }
@@ -127,7 +130,7 @@ ${btnLines}
 Decoratives:
 ${decLines}
 
-Icon usage: copy the SVG element exactly as provided, resize by changing width/height attributes. Do NOT use <img> tags. Do NOT draw your own SVG icons when a provided icon fits.`;
+Icon usage: copy the SVG element exactly as provided, resize by changing width/height attributes. Change the fill color on each path to match the icon's meaning — coins=gold, gems=purple/blue, health=red, magic=cyan/purple, navigation=primary color. Do NOT use <img> tags. Do NOT draw your own SVG icons when a provided icon fits.`;
   }
 
   if (revisionFeedback) {
