@@ -34,10 +34,11 @@ export async function POST(request: NextRequest) {
     }
 
     const start = Date.now();
-    const questions = await generateSuggestions(
+    const result = await generateSuggestions(
       category,
       checklist_data ?? {}
     );
+    const { questions, inputTokens, outputTokens, promptTemplateId } = result;
     const duration = Date.now() - start;
 
     // Log suggestion call if kit_id provided
@@ -48,11 +49,12 @@ export async function POST(request: NextRequest) {
           kit_id,
           step: "suggestion",
           model_used: "claude-sonnet-4-6",
-          input_tokens: 0,
-          output_tokens: 0,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
           duration_ms: duration,
           status: "success",
           error_message: null,
+          prompt_template_id: promptTemplateId ?? null,
         });
       } catch {
         // ignore logging errors

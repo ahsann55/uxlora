@@ -302,7 +302,7 @@ export interface SuggestionQuestion {
 export async function generateSuggestions(
   category: string,
   checklistData: Record<string, unknown>
-): Promise<SuggestionQuestion[]> {
+): Promise<{ questions: SuggestionQuestion[]; inputTokens: number; outputTokens: number; promptTemplateId: string | null }> {
   const client = getAnthropicClient();
   const filteredData = Object.fromEntries(
     Object.entries(checklistData).filter(([key]) => !key.match(/^q\d+$/))
@@ -336,9 +336,14 @@ const summary = buildChecklistSummary(filteredData);
   
   try {
     const parsed = extractJSON(text);
-    if (!Array.isArray(parsed)) return [];
-    return parsed as SuggestionQuestion[];
+    const questions = Array.isArray(parsed) ? parsed as SuggestionQuestion[] : [];
+    return {
+      questions,
+      inputTokens: message.usage.input_tokens,
+      outputTokens: message.usage.output_tokens,
+      promptTemplateId: template?.id ?? null,
+    };
   } catch {
-    return [];
+    return { questions: [], inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens, promptTemplateId: null };
   }
 }
