@@ -111,6 +111,54 @@ export async function runGenerationEngine(
     }
 
     // --------------------------------------------------------
+    // STEP 2.5: Select icons (game category only)
+    // --------------------------------------------------------
+    let selectedIcons = null;
+    let iconAuthorMap: Record<string, string> = {};
+
+    if (context.category === "game") {
+      await updateKitStatus("generating", {
+        current_step: "Crafting your game's visual style",
+      });
+
+      const iconStart = Date.now();
+      try {
+        const { selectIcons } = await import("./icon-selection");
+        const iconResult = await selectIcons(context, designSystem as unknown as Record<string, unknown>);
+        selectedIcons = iconResult.selectedIcons;
+        iconAuthorMap = iconResult.authorMap;
+
+        await adminSupabase
+          .from("kits")
+          .update({
+            selected_icons: selectedIcons as unknown as Record<string, unknown>,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", context.kitId);
+
+        await logGeneration(
+          "icon_selection",
+          "claude-haiku-4-5-20251001",
+          iconResult.inputTokens,
+          iconResult.outputTokens,
+          Date.now() - iconStart,
+          "success"
+        );
+      } catch (error) {
+        console.error("Icon selection failed, continuing without icons:", error);
+        await logGeneration(
+          "icon_selection",
+          "claude-haiku-4-5-20251001",
+          0,
+          0,
+          Date.now() - iconStart,
+          "failed",
+          String(error)
+        );
+      }
+    }
+
+    // --------------------------------------------------------
     // STEP 3: Generate each screen
     // --------------------------------------------------------
     const allScreens = getScreenList(context.checklistData);
@@ -167,7 +215,9 @@ export async function runGenerationEngine(
           designSystem,
           screenName,
           globalIndex,
-          finalTotalScreens
+          finalTotalScreens,
+          selectedIcons,
+          iconAuthorMap
         );
 
         const { error: insertError } = await adminSupabase

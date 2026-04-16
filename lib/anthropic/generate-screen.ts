@@ -16,6 +16,8 @@ export async function generateScreen(
   screenName: string,
   screenIndex: number,
   totalScreens: number,
+  selectedIcons?: { nav: string[]; hud: string[]; buttons: string[]; decoratives: string[] } | null,
+  iconAuthorMap?: Record<string, string>,
   revisionFeedback?: string
 ): Promise<GeneratedScreen> {
   const client = getAnthropicClient();
@@ -78,6 +80,38 @@ Requirements:
 - CRITICAL: The response must include both the complete CSS in <head> AND the complete HTML body with all UI elements rendered.
 
 Return the complete HTML document starting with <!DOCTYPE html>`;
+
+  // Inject selected icons into prompt for game category
+  if (context.category === "game" && selectedIcons && iconAuthorMap) {
+    const primaryColor = (designSystem as unknown as { colors?: { primary?: string } })?.colors?.primary ?? "ffffff";
+    const fg = primaryColor.replace("#", "");
+    const baseUrl = `https://game-icons.net/icons/${fg}/transparent/1x1`;
+
+    const buildIconLine = (name: string) => {
+      const author = iconAuthorMap[name];
+      if (!author) return null;
+      return `${name}: ${baseUrl}/${author}/${name}.svg`;
+    };
+
+    const navLines = selectedIcons.nav.map(buildIconLine).filter(Boolean).join("\n");
+    const hudLines = selectedIcons.hud.map(buildIconLine).filter(Boolean).join("\n");
+    const btnLines = selectedIcons.buttons.map(buildIconLine).filter(Boolean).join("\n");
+    const decLines = selectedIcons.decoratives.map(buildIconLine).filter(Boolean).join("\n");
+
+    userPrompt += `
+
+ICONS — use these exact URLs as <img> tags instead of drawing SVG icons:
+Nav tabs:
+${navLines}
+HUD elements:
+${hudLines}
+Buttons:
+${btnLines}
+Decoratives:
+${decLines}
+
+Icon usage: <img src="[url]" width="24" height="24" alt="[name]"> — size as needed. Apply CSS color tinting via: filter: brightness(0) saturate(100%) invert(1) — only if you need to recolor. These icons already use the primary color as foreground on transparent background.`;
+  }
 
   if (revisionFeedback) {
     userPrompt += `\n\nREVISION REQUEST — Apply these specific changes to the screen:
