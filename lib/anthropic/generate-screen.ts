@@ -76,61 +76,29 @@ Requirements:
 - Every interactive element (buttons, inputs, nav items) must be fully styled
 - The design must look production-ready, not like a wireframe
 - No JavaScript required — pure HTML/CSS only
-- CRITICAL: Keep the <style> block concise — maximum 150 lines of CSS. Use inline styles for unique elements.
+- CRITICAL: Keep the <style> block concise — maximum 150 lines of CSS.
 - CRITICAL: The response must include both the complete CSS in <head> AND the complete HTML body with all UI elements rendered.
 
 Return the complete HTML document starting with <!DOCTYPE html>`;
 
-  // Inject selected icons into prompt for game category
+  // Inject icon names only — SVGs injected post-generation
   if (context.category === "game" && selectedIcons && iconAuthorMap) {
-    const primaryColor = (designSystem as unknown as { colors?: { primary?: string } })?.colors?.primary ?? "ffffff";
-    const fg = primaryColor.replace("#", "");
-    const fetchIconSvg = async (name: string): Promise<string | null> => {
-      const author = iconAuthorMap[name];
-      if (!author) return null;
-      try {
-        // Fetch white version — Claude will color it appropriately
-        const url = `https://game-icons.net/icons/ffffff/transparent/1x1/${author}/${name}.svg`;
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const svg = await res.text();
-        const pathMatch = svg.match(/<path[^>]*\/?>/g);
-        if (!pathMatch) return null;
-        const paths = pathMatch.join("");
-        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="24" height="24" data-uxlora="vec:icon:game">${paths}</svg>`;
-      } catch {
-        return null;
-      }
-    };
-
-    const navSvgs = await Promise.all(selectedIcons.nav.map(fetchIconSvg));
-    const hudSvgs = await Promise.all(selectedIcons.hud.map(fetchIconSvg));
-    const btnSvgs = await Promise.all(selectedIcons.buttons.map(fetchIconSvg));
-    const decSvgs = await Promise.all(selectedIcons.decoratives.map(fetchIconSvg));
-
-    const buildIconLine = (name: string, svg: string | null) => {
-      if (!svg) return null;
-      return `${name}: ${svg}`;
-    };
-
-    const navLines = selectedIcons.nav.map((n, i) => buildIconLine(n, navSvgs[i])).filter(Boolean).join("\n");
-    const hudLines = selectedIcons.hud.map((n, i) => buildIconLine(n, hudSvgs[i])).filter(Boolean).join("\n");
-    const btnLines = selectedIcons.buttons.map((n, i) => buildIconLine(n, btnSvgs[i])).filter(Boolean).join("\n");
-    const decLines = selectedIcons.decoratives.map((n, i) => buildIconLine(n, decSvgs[i])).filter(Boolean).join("\n");
+    const allIcons = [
+      ...selectedIcons.nav,
+      ...selectedIcons.hud,
+      ...selectedIcons.buttons,
+      ...selectedIcons.decoratives,
+    ].filter((v, i, a) => a.indexOf(v) === i);
 
     userPrompt += `
 
-ICONS — use these exact inline SVG elements instead of drawing your own icons:
-Nav tabs:
-${navLines}
-HUD elements:
-${hudLines}
-Buttons:
-${btnLines}
-Decoratives:
-${decLines}
+ICONS — use placeholder spans for icons. Do NOT draw SVG icons yourself:
+Available: ${allIcons.join(", ")}
 
-Icon usage: copy the SVG element exactly as provided, resize by changing width/height attributes. Change the fill color on each path to match the icon's meaning — coins=gold, gems=purple/blue, health=red, magic=cyan/purple, navigation=primary color. Do NOT use <img> tags. Do NOT draw your own SVG icons when a provided icon fits.`;
+Usage: <span data-icon="[name]" data-icon-color="[hex]" style="display:inline-flex;width:24px;height:24px;"></span>
+- Resize by changing width/height in style
+- Set data-icon-color to match meaning: coins=#FFD700, gems=#9B59B6, health=#E74C3C, magic=#00BCD4, navigation=primary color
+- Use for nav tab icons, HUD chip icons, button icons`;
   }
 
   if (revisionFeedback) {
@@ -154,7 +122,7 @@ Keep everything else the same. Only change what is explicitly requested above.`;
     message.content[0].type === "text" ? message.content[0].text : "";
 
   const htmlMatch = responseText.match(/<!DOCTYPE html>[\s\S]*/i);
-  const htmlCss = htmlMatch
+  let htmlCss = htmlMatch
     ? htmlMatch[0]
     : `<!DOCTYPE html>
 <html>
@@ -166,6 +134,12 @@ Keep everything else the same. Only change what is explicitly requested above.`;
 ${responseText}
 </body>
 </html>`;
+
+  // Post-process: replace icon placeholders with inline SVGs
+  if (selectedIcons && iconAuthorMap && Object.keys(iconAuthorMap).length > 0) {
+    const { postProcessIcons } = await import("./post-process-icons");
+    htmlCss = await postProcessIcons(htmlCss, iconAuthorMap);
+  }
 
   return {
     htmlCss,
