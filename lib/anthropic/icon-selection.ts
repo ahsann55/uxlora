@@ -1,4 +1,4 @@
-import { getAnthropicClient, getPromptTemplate, buildChecklistSummary } from "./index";
+import { getAnthropicClient, getPromptTemplate, buildChecklistSummary, resolvTemplate } from "./index";
 import type { GenerationContext } from "./index";
 import { createClient } from "@supabase/supabase-js";
 
@@ -69,32 +69,37 @@ export async function selectIcons(
   const summary = buildChecklistSummary(context.checklistData);
   const template = await getPromptTemplate("icon_selection", context.category);
 
-  const systemPrompt = template?.system_prompt ??
-    `You are a game UI designer selecting icons for a game UI kit. Return ONLY valid JSON, no markdown, no explanation.`;
+  const variables = {
+    category: context.category,
+    summary,
+    icon_list: iconList,
+  };
 
-  const userPrompt = template?.user_template ??
-    `Select icons from this list for a ${context.category} UI kit.
+  const systemPrompt = template
+    ? resolvTemplate(template.system_prompt, variables)
+    : `You are a game UI designer selecting icons for a game UI kit. Return ONLY valid JSON, no markdown, no explanation.`;
+
+  const userPrompt = template
+    ? resolvTemplate(template.user_template, variables)
+    : `Select icons for a ${context.category} UI kit.
 
 GAME: ${summary}
 
-AVAILABLE ICONS: ${iconList}
+ICONS: ${iconList}
 
-Return JSON with exactly these keys. Pick the most thematic icons for this specific game:
+Return ONLY this JSON:
 {
-  "nav": ["4-5 icon names for bottom nav tabs — game screens like home, inventory, quests, map, character"],
-  "hud": ["2-3 icon names for HUD elements — currency and level/xp indicators"],
-  "buttons": ["2-3 icon names for primary action buttons"],
-  "decoratives": ["2-3 icon names for decorative background elements"]
+  "nav": ["4-5 icon names for bottom nav tabs"],
+  "hud": ["2-3 icon names for currency and level indicators"],
+  "buttons": ["2-3 icon names for action buttons"],
+  "decoratives": ["2-3 icon names for decorative elements"]
 }
 
-Rules:
-- Only use icon names exactly as they appear in AVAILABLE ICONS
-- Match icons to the game genre and visual style
-- Return only the JSON object`;
+Rules: Use ONLY names from ICONS list. Match game genre. Return JSON only.`;
 
   const message = await client.messages.create({
     model: template?.model ?? "claude-haiku-4-5-20251001",
-    max_tokens: 512,
+    max_tokens: template?.max_tokens ?? 512,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
   });
@@ -115,7 +120,6 @@ Rules:
       buttons: (parsed.buttons ?? []).filter(validIcon).slice(0, 3),
       decoratives: (parsed.decoratives ?? []).filter(validIcon).slice(0, 3),
     };
-    // Fallback if any category is empty
     if (!selectedIcons.nav.length) selectedIcons.nav = FALLBACK_ICONS.nav.filter(validIcon);
     if (!selectedIcons.hud.length) selectedIcons.hud = FALLBACK_ICONS.hud.filter(validIcon);
     if (!selectedIcons.buttons.length) selectedIcons.buttons = FALLBACK_ICONS.buttons.filter(validIcon);
@@ -123,7 +127,7 @@ Rules:
   } catch {
     selectedIcons = FALLBACK_ICONS;
   }
-  
+
   return {
     selectedIcons,
     authorMap,
