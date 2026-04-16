@@ -258,6 +258,35 @@ async function handleClientSidePNGExport() {
             }
           }
 
+          async function canvasCrop(el: HTMLElement): Promise<string | null> {
+            try {
+              const rect = el.getBoundingClientRect();
+              if (!rect || rect.width < 20 || rect.height < 20) return null;
+              if (rect.top > height || rect.left > width) return null;
+              const canvas = document.createElement("canvas");
+              const scale = captureOpts.pixelRatio ?? 1;
+              canvas.width = rect.width * scale;
+              canvas.height = rect.height * scale;
+              const ctx = canvas.getContext("2d");
+              if (!ctx) return null;
+              const computedStyle = iframeDoc?.defaultView?.getComputedStyle(el);
+              const borderRadius = computedStyle ? parseFloat(computedStyle.borderRadius) * scale : 0;
+              if (borderRadius > 0) {
+                ctx.beginPath();
+                ctx.roundRect(0, 0, canvas.width, canvas.height, borderRadius);
+                ctx.clip();
+              }
+              ctx.drawImage(fullScreenImg, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
+              const croppedUrl = canvas.toDataURL("image/png");
+              if (!croppedUrl || croppedUrl.length < 3000) return null;
+              if (capturedDataUrls.has(croppedUrl)) return null;
+              capturedDataUrls.add(croppedUrl);
+              return croppedUrl;
+            } catch {
+              return null;
+            }
+          }
+
           async function addToZip(dataUrl: string, filename: string) {
             const res = await fetch(dataUrl);
             const blob = await res.blob();
@@ -318,23 +347,8 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           let navCount = 0;
           for (const el of navEls) {
-            try {
-              const rect = el.getBoundingClientRect();
-              if (!rect || rect.width < 20 || rect.height < 20) continue;
-              if (rect.top > height || rect.left > width) continue;
-              const canvas = document.createElement("canvas");
-              const scale = captureOpts.pixelRatio ?? 1;
-              canvas.width = rect.width * scale;
-              canvas.height = rect.height * scale;
-              const ctx = canvas.getContext("2d");
-              if (!ctx) continue;
-              ctx.drawImage(fullScreenImg, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
-              const croppedUrl = canvas.toDataURL("image/png");
-              if (croppedUrl && croppedUrl.length > 3000) {
-                navCount++;
-                await addToZip(croppedUrl, `nav_${navCount}.png`);
-              }
-            } catch { /* skip */ }
+            const dataUrl = await canvasCrop(el);
+            if (dataUrl) { navCount++; await addToZip(dataUrl, `nav_${navCount}.png`); }
           }
 
           // ── 7. LAYOUT COMPONENTS (cards, modals, panels) ────────────
@@ -389,19 +403,8 @@ async function handleClientSidePNGExport() {
                   await addToZip(dataUrl, `game_ui_${gameCount}.png`);
                 }
               } else {
-                const canvas = document.createElement("canvas");
-                const scale = captureOpts.pixelRatio ?? 1;
-                canvas.width = rect.width * scale;
-                canvas.height = rect.height * scale;
-                const ctx = canvas.getContext("2d");
-                if (!ctx) continue;
-                ctx.drawImage(fullScreenImg, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
-                const croppedUrl = canvas.toDataURL("image/png");
-                if (croppedUrl && croppedUrl.length > 3000 && !capturedDataUrls.has(croppedUrl)) {
-                  capturedDataUrls.add(croppedUrl);
-                  gameCount++;
-                  await addToZip(croppedUrl, `game_ui_${gameCount}.png`);
-                }
+                const dataUrl = await canvasCrop(el);
+                if (dataUrl) { gameCount++; await addToZip(dataUrl, `game_ui_${gameCount}.png`); }
               }
             } catch { /* skip */ }
           }
