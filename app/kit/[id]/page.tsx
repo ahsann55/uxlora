@@ -235,7 +235,7 @@ async function handleClientSidePNGExport() {
               if (!rect || rect.width < 20 || rect.height < 20) return null;
               if (rect.left < -width || rect.top < -height) return null;
               if (rect.top > height || rect.left > width) return null;
-              // Skip elements that are children of already-captured containers
+              // Skip elements inside already-captured containers
               const skipIfInsideAny = [
                 '[data-uxlora="ui:nav:bar"]',
                 '[data-uxlora="media:image:hero"]',
@@ -244,18 +244,15 @@ async function handleClientSidePNGExport() {
               ].join(', ');
               const capturedParent = el.closest(skipIfInsideAny);
               if (capturedParent && capturedParent !== el) return null;
-              const canvas = document.createElement("canvas");
-              const scale = captureOpts.pixelRatio ?? 1;
-              canvas.width = rect.width * scale;
-              canvas.height = rect.height * scale;
-              const ctx = canvas.getContext("2d");
-              if (!ctx) return null;
-              ctx.drawImage(fullScreenImg, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
-              const croppedUrl = canvas.toDataURL("image/png");
-              if (!croppedUrl || croppedUrl.length < 3000) return null;
-              if (capturedDataUrls.has(croppedUrl)) return null;
-              capturedDataUrls.add(croppedUrl);
-              return croppedUrl;
+              // Direct element capture for transparent background
+              const dataUrl = await htmlToImage.toPng(el, {
+                ...captureOpts,
+                backgroundColor: undefined,
+              });
+              if (!dataUrl || dataUrl.length < 3000) return null;
+              if (capturedDataUrls.has(dataUrl)) return null;
+              capturedDataUrls.add(dataUrl);
+              return dataUrl;
             } catch {
               return null;
             }
@@ -277,7 +274,7 @@ async function handleClientSidePNGExport() {
 
           // ── 2. ALL BUTTONS (primary, secondary, ghost, tab, back) ───
           const buttons = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="ui:button"]:not([data-uxlora="ui:button:icon"])')
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:button"]:not([data-uxlora="ui:button:icon"]):not([data-uxlora="ui:button:tab"])')
           ) as HTMLElement[];
           let btnCount = 0;
           for (const el of buttons) {
@@ -321,8 +318,23 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           let navCount = 0;
           for (const el of navEls) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { navCount++; await addToZip(dataUrl, `nav_${navCount}.png`); }
+            try {
+              const rect = el.getBoundingClientRect();
+              if (!rect || rect.width < 20 || rect.height < 20) continue;
+              if (rect.top > height || rect.left > width) continue;
+              const canvas = document.createElement("canvas");
+              const scale = captureOpts.pixelRatio ?? 1;
+              canvas.width = rect.width * scale;
+              canvas.height = rect.height * scale;
+              const ctx = canvas.getContext("2d");
+              if (!ctx) continue;
+              ctx.drawImage(fullScreenImg, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
+              const croppedUrl = canvas.toDataURL("image/png");
+              if (croppedUrl && croppedUrl.length > 3000) {
+                navCount++;
+                await addToZip(croppedUrl, `nav_${navCount}.png`);
+              }
+            } catch { /* skip */ }
           }
 
           // ── 7. LAYOUT COMPONENTS (cards, modals, panels) ────────────
@@ -356,14 +368,42 @@ async function handleClientSidePNGExport() {
           }
 
           // ── 10. GAME SPECIFIC ───────────────────────────────────────
-          // ── 10. GAME SPECIFIC ───────────────────────────────────────
           const gameEls = Array.from(
             iframeDoc.querySelectorAll('[data-uxlora^="ui:game"]')
           ) as HTMLElement[];
           let gameCount = 0;
           for (const el of gameEls) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { gameCount++; await addToZip(dataUrl, `game_ui_${gameCount}.png`); }
+            try {
+              const rect = el.getBoundingClientRect();
+              if (!rect || rect.width < 20 || rect.height < 20) continue;
+              if (rect.top > height || rect.left > width) continue;
+              const parent = el.closest('[data-uxlora="ui:game:hud"]');
+              if (parent && parent !== el) {
+                const dataUrl = await htmlToImage.toPng(el, {
+                  ...captureOpts,
+                  backgroundColor: undefined,
+                });
+                if (dataUrl && dataUrl.length > 3000 && !capturedDataUrls.has(dataUrl)) {
+                  capturedDataUrls.add(dataUrl);
+                  gameCount++;
+                  await addToZip(dataUrl, `game_ui_${gameCount}.png`);
+                }
+              } else {
+                const canvas = document.createElement("canvas");
+                const scale = captureOpts.pixelRatio ?? 1;
+                canvas.width = rect.width * scale;
+                canvas.height = rect.height * scale;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) continue;
+                ctx.drawImage(fullScreenImg, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
+                const croppedUrl = canvas.toDataURL("image/png");
+                if (croppedUrl && croppedUrl.length > 3000 && !capturedDataUrls.has(croppedUrl)) {
+                  capturedDataUrls.add(croppedUrl);
+                  gameCount++;
+                  await addToZip(croppedUrl, `game_ui_${gameCount}.png`);
+                }
+              }
+            } catch { /* skip */ }
           }
 
           // ── 11. MOBILE SPECIFIC ─────────────────────────────────────
