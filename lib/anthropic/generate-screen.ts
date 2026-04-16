@@ -85,21 +85,39 @@ Return the complete HTML document starting with <!DOCTYPE html>`;
   if (context.category === "game" && selectedIcons && iconAuthorMap) {
     const primaryColor = (designSystem as unknown as { colors?: { primary?: string } })?.colors?.primary ?? "ffffff";
     const fg = primaryColor.replace("#", "");
-    const buildIconLine = (name: string) => {
+    const fetchIconSvg = async (name: string): Promise<string | null> => {
       const author = iconAuthorMap[name];
       if (!author) return null;
-      const proxyUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/icons?author=${author}&name=${name}&color=${fg}`;
-      return `${name}: ${proxyUrl}`;
+      try {
+        const url = `https://game-icons.net/icons/${fg}/transparent/1x1/${author}/${name}.svg`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const svg = await res.text();
+        // Add data-uxlora and dimensions to the SVG
+        return svg.replace('<svg ', `<svg width="24" height="24" data-uxlora="vec:icon:game" `);
+      } catch {
+        return null;
+      }
     };
 
-    const navLines = selectedIcons.nav.map(buildIconLine).filter(Boolean).join("\n");
-    const hudLines = selectedIcons.hud.map(buildIconLine).filter(Boolean).join("\n");
-    const btnLines = selectedIcons.buttons.map(buildIconLine).filter(Boolean).join("\n");
-    const decLines = selectedIcons.decoratives.map(buildIconLine).filter(Boolean).join("\n");
+    const navSvgs = await Promise.all(selectedIcons.nav.map(fetchIconSvg));
+    const hudSvgs = await Promise.all(selectedIcons.hud.map(fetchIconSvg));
+    const btnSvgs = await Promise.all(selectedIcons.buttons.map(fetchIconSvg));
+    const decSvgs = await Promise.all(selectedIcons.decoratives.map(fetchIconSvg));
+
+    const buildIconLine = (name: string, svg: string | null) => {
+      if (!svg) return null;
+      return `${name}: ${svg}`;
+    };
+
+    const navLines = selectedIcons.nav.map((n, i) => buildIconLine(n, navSvgs[i])).filter(Boolean).join("\n");
+    const hudLines = selectedIcons.hud.map((n, i) => buildIconLine(n, hudSvgs[i])).filter(Boolean).join("\n");
+    const btnLines = selectedIcons.buttons.map((n, i) => buildIconLine(n, btnSvgs[i])).filter(Boolean).join("\n");
+    const decLines = selectedIcons.decoratives.map((n, i) => buildIconLine(n, decSvgs[i])).filter(Boolean).join("\n");
 
     userPrompt += `
 
-ICONS — use these exact URLs as <img> tags instead of drawing SVG icons:
+ICONS — use these exact inline SVG elements instead of drawing your own icons:
 Nav tabs:
 ${navLines}
 HUD elements:
@@ -109,7 +127,7 @@ ${btnLines}
 Decoratives:
 ${decLines}
 
-Icon usage: <img src="[url]" width="24" height="24" alt="[name]"> — size as needed. Apply CSS color tinting via: filter: brightness(0) saturate(100%) invert(1) — only if you need to recolor. These icons already use the primary color as foreground on transparent background.`;
+Icon usage: copy the SVG element exactly as provided, resize by changing width/height attributes. Do NOT use <img> tags. Do NOT draw your own SVG icons when a provided icon fits.`;
   }
 
   if (revisionFeedback) {
