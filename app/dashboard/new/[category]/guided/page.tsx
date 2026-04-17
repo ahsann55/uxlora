@@ -37,6 +37,7 @@ export default function GuidedPage() {
   const [suggestionQuestions, setSuggestionQuestions] = useState<SuggestionQuestion[]>([]);
   const [suggestionAnswers, setSuggestionAnswers] = useState<Record<string, unknown>>({});
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [suggestionTokens, setSuggestionTokens] = useState<{ input: number; output: number } | null>(null);
 
   // If adding screens to existing kit, fetch existing kit data
   useEffect(() => {
@@ -131,6 +132,7 @@ export default function GuidedPage() {
         if (response.ok) {
           const data = await response.json();
           const questions: SuggestionQuestion[] = data.questions ?? [];
+          setSuggestionTokens({ input: data.inputTokens ?? 0, output: data.outputTokens ?? 0 });
           if (questions.length > 0) {
             setSuggestionQuestions(questions);
             setStep("suggestions");
@@ -208,6 +210,7 @@ export default function GuidedPage() {
             category,
             input_method: "guided",
             checklist_data: finalData,
+            suggestion_tokens: suggestionTokens ?? undefined,
           }),
         });
 

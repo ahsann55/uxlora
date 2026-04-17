@@ -79,6 +79,7 @@ export interface Database {
           notification_sent: boolean;
           created_at: string;
           updated_at: string;
+          suggestion_tokens: Json | null;
         };
         Insert: {
           id?: string;
@@ -94,6 +95,7 @@ export interface Database {
           total_screens?: number;
           error_message?: string | null;
           is_demo?: boolean;
+          suggestion_tokens?: Json | null;
           notification_sent?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -112,6 +114,7 @@ export interface Database {
           total_screens?: number;
           error_message?: string | null;
           is_demo?: boolean;
+          suggestion_tokens?: Json | null;
           notification_sent?: boolean;
           created_at?: string;
           updated_at?: string;

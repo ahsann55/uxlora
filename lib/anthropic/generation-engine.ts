@@ -286,17 +286,20 @@ export async function runGenerationEngine(
         }
       } catch (error) {
         console.error("Export pipeline error:", error);
+      } finally {
+        await updateKitStatus("complete", {
+          current_step: "Complete",
+          current_screen_index: finalTotalScreens,
+          total_screens: finalTotalScreens,
+        });
       }
+    } else {
+      await updateKitStatus("complete", {
+        current_step: "Complete",
+        current_screen_index: finalTotalScreens,
+        total_screens: finalTotalScreens,
+      });
     }
-
-    // --------------------------------------------------------
-    // COMPLETE
-    // --------------------------------------------------------
-    await updateKitStatus("complete", {
-      current_step: "Complete",
-      current_screen_index: finalTotalScreens,
-      total_screens: finalTotalScreens,
-    });
 
     try {
       await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/kits/${context.kitId}/notify`, {

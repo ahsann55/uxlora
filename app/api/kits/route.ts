@@ -30,9 +30,10 @@ export async function POST(request: NextRequest) {
       category?: string;
       input_method?: string;
       checklist_data?: Record<string, unknown>;
+      suggestion_tokens?: { input: number; output: number };
     };
 
-    const { name, category, input_method, checklist_data } = body;
+    const { name, category, input_method, checklist_data, suggestion_tokens } = body;
 
     // Validate
     if (!category || !["game", "mobile", "web"].includes(category)) {
@@ -79,6 +80,7 @@ export async function POST(request: NextRequest) {
       checklist_data: (checklist_data ?? {}) as import("@/lib/supabase/types").Json,
       status: "collecting_input",
       is_demo,
+      suggestion_tokens: (suggestion_tokens ?? null) as import("@/lib/supabase/types").Json,
     };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
