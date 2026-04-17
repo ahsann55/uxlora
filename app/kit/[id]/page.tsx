@@ -32,6 +32,7 @@ export default function KitPage({
   const [exporting, setExporting] = useState(false);
   const [exportUrls, setExportUrls] = useState<Record<string, string>>({});
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportProgress, setExportProgress] = useState<string>("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeModalTrigger, setUpgradeModalTrigger] = useState<"download" | "generate" | "export" | "revision">("download");
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>("inactive");
@@ -180,6 +181,7 @@ async function handleClientSidePNGExport() {
     for (let i = 0; i < sortedScreens.length; i++) {
       const screen = sortedScreens[i];
       if (!screen.html_css) continue;
+      setExportProgress(`Processing screen ${i + 1} of ${sortedScreens.length}: ${screen.name}`);
 
       const paddedIndex = String(i + 1).padStart(2, "0");
       const sanitizedName = screen.name.replace(/[^a-zA-Z0-9]/g, "_");
@@ -577,6 +579,7 @@ async function handleClientSidePNGExport() {
     setExportError(`PNG export failed: ${msg}`);
   } finally {
     setExporting(false);
+    setExportProgress("");
   }
 }
   function handleScreenUpdated(updatedScreen: Screen) {
@@ -931,6 +934,22 @@ async function handleClientSidePNGExport() {
           onClose={() => setShowUpgradeModal(false)}
           trigger={upgradeModalTrigger}
         />
+      )}
+
+      {exporting && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="card max-w-sm w-full mx-4 text-center py-8 px-6">
+            <svg className="w-10 h-10 text-brand-400 animate-spin mx-auto mb-4" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+            </svg>
+            <h3 className="text-white font-semibold text-lg mb-2">Preparing your export</h3>
+            <p className="text-white/50 text-sm mb-4">
+              {exportProgress || "Initializing..."}
+            </p>
+            <p className="text-white/30 text-xs">This may take a while for large kits. Please don't close this tab.</p>
+          </div>
+        </div>
       )}
     </div>
   );

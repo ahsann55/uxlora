@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ questions });
+    return NextResponse.json({ questions, inputTokens, outputTokens });
 
   } catch (error) {
     console.error("POST /api/kits/suggest error:", error);
