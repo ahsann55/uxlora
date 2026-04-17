@@ -189,8 +189,8 @@ async function handleClientSidePNGExport() {
 
       const iframe = document.createElement("iframe");
       iframe.style.position = "fixed";
-      iframe.style.left = "-9999px";
-      iframe.style.top = "0px";
+      iframe.style.left = "0px";
+      iframe.style.top = `-${height + 100}px`;
       iframe.style.width = `${width}px`;
       iframe.style.height = `${height}px`;
       iframe.style.border = "none";
