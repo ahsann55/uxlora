@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       checklist_data ?? {}
     );
     const { questions, inputTokens, outputTokens, promptTemplateId } = result;
+    console.log("Suggestion result:", { inputTokens, outputTokens, questionsCount: questions.length });
     const duration = Date.now() - start;
 
     // Log suggestion call if kit_id provided

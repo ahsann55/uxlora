@@ -13,6 +13,7 @@ interface ScreenCardProps {
   kitId: string;
   onScreenUpdated: (screen: Screen) => void;
   isSubscriptionActive: boolean;
+  isLandscape?: boolean;
 }
 
 const categoryColors: Record<string, string> = {
@@ -39,7 +40,8 @@ export function ScreenCard({
   isDemo, 
   kitId, 
   onScreenUpdated, 
-  isSubscriptionActive }: ScreenCardProps) {
+  isSubscriptionActive,
+  isLandscape = false }: ScreenCardProps) {
   const [showReviseModal, setShowReviseModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<Screen>(screen);
@@ -54,14 +56,16 @@ export function ScreenCard({
     if (!currentScreen.html_css) return;
     const win = window.open("", "_blank");
     if (!win) return;
+    const w = isLandscape ? "844px" : "390px";
+    const h = isLandscape ? "390px" : "844px";
     win.document.open();
     win.document.write(currentScreen.html_css);
     win.document.close();
-    win.document.documentElement.style.width = "390px";
-    win.document.documentElement.style.height = "844px";
+    win.document.documentElement.style.width = w;
+    win.document.documentElement.style.height = h;
     win.document.documentElement.style.overflow = "hidden";
-    win.document.body.style.width = "390px";
-    win.document.body.style.height = "844px";
+    win.document.body.style.width = w;
+    win.document.body.style.height = h;
     win.document.body.style.overflow = "hidden";
   }
 

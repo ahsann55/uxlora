@@ -31,11 +31,14 @@ export async function generateScreen(
   const isMobile = context.category === "mobile" ||
     (context.checklistData.platform as string[] | undefined)?.includes("Mobile (iOS/Android)");
 
-  const dimensions = isMobile
-    ? "390x844px (mobile)"
-    : context.category === "game"
-    ? "390x844px (mobile game)"
-    : "1440x900px (desktop web)";
+  const orientation = (context.checklistData?.orientation as string) ?? "Portrait";
+  const isLandscape = orientation === "Landscape";
+
+  const dimensions = context.category === "game"
+      ? isLandscape ? "844x390px (mobile game landscape)" : "390x844px (mobile game portrait)"
+      : isMobile
+      ? isLandscape ? "844x390px (mobile landscape)" : "390x844px (mobile portrait)"
+      : "1440x900px (desktop web)";
 
   const template = await getPromptTemplate("screen_generator", context.category);
 

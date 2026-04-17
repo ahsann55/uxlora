@@ -172,8 +172,10 @@ async function handleClientSidePNGExport() {
     try {
       const zip = new JSZip();
       const isMobile = kit.category === "mobile" || kit.category === "game";
-      const width = isMobile ? 390 : 1440;
-      const height = isMobile ? 844 : 900;
+      const kitChecklistData = kit.checklist_data as Record<string, unknown>;
+      const isLandscape = (kitChecklistData?.orientation as string) === "Landscape";
+      const width = isMobile ? (isLandscape ? 844 : 390) : 1440;
+      const height = isMobile ? (isLandscape ? 390 : 844) : 900;
 
       for (let i = 0; i < sortedScreens.length; i++) {
         const screen = sortedScreens[i];
@@ -852,6 +854,7 @@ async function handleClientSidePNGExport() {
                   kitId={id}
                   onScreenUpdated={handleScreenUpdated}
                   isSubscriptionActive={isSubscriptionActive()}
+                  isLandscape={(kit.checklist_data as Record<string, unknown>)?.orientation === "Landscape"}
                 />
               ))}
               </div>
