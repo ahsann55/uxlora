@@ -230,12 +230,13 @@ async function handleClientSidePNGExport() {
           zip.file(`${folderName}/${filename}`, await blob.arrayBuffer());
         }
 
-        // Universal element size — uses offsetWidth/offsetHeight which includes borders
+        // Universal element size — uses the larger of getBoundingClientRect and offsetWidth/offsetHeight
+        // getBoundingClientRect gives the full visual size, offsetWidth/offsetHeight works for off-screen elements
         function elSize(el: HTMLElement) {
-          return {
-            w: el.offsetWidth + 4,
-            h: el.offsetHeight + 4,
-          };
+          const rect = el.getBoundingClientRect();
+          const w = Math.max(rect.width || 0, el.offsetWidth) + 4;
+          const h = Math.max(rect.height || 0, el.offsetHeight) + 4;
+          return { w: Math.ceil(w), h: Math.ceil(h) };
         }
 
         // Universal direct capture — transparent bg, uses offsetWidth/offsetHeight + buffer
@@ -243,12 +244,16 @@ async function handleClientSidePNGExport() {
           try {
             const { w, h } = elSize(el);
             if (w < 20 || h < 20) return null;
+            const computedRadius = iframeDoc?.defaultView?.getComputedStyle(el)?.borderRadius ?? '';
+            const savedRadius = el.style.borderRadius;
+            if (computedRadius) el.style.borderRadius = computedRadius;
             const dataUrl = await htmlToImage.toPng(el, {
               ...captureOpts,
               backgroundColor: undefined,
               width: w,
               height: h,
             });
+            el.style.borderRadius = savedRadius;
             if (!dataUrl || dataUrl.length < 1000 || capturedDataUrls.has(dataUrl)) return null;
             capturedDataUrls.add(dataUrl);
             return dataUrl;
@@ -457,16 +462,38 @@ async function handleClientSidePNGExport() {
           activeTabDecorations.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 100));
           try {
-            const navUrl = await captureEl(nav);
-            if (navUrl) await addToZip(navUrl, "nav_complete.png");
+            const { w, h } = elSize(nav);
+            if (w > 20 && h > 20) {
+              const navUrl = await htmlToImage.toPng(nav, {
+                ...captureOpts,
+                backgroundColor: undefined,
+                width: w,
+                height: h,
+              });
+              if (navUrl && navUrl.length > 1000) await addToZip(navUrl, "nav_complete.png");
+            }
           } catch { /* skip */ }
           activeTabDecorations.forEach(el => { el.style.visibility = ""; });
 
-          // Export active tab decoration separately
+          // Export active tab decoration separately — add top buffer for absolute positioned elements
           let decorCount = 0;
           for (const decor of activeTabDecorations) {
-            const decorUrl = await captureSvg(decor);
-            if (decorUrl) { decorCount++; await addToZip(decorUrl, `nav_active_decoration_${decorCount}.png`); }
+            try {
+              const w = decor.offsetWidth + 4;
+              const h = decor.offsetHeight + 20; // extra top buffer for negative positioning
+              if (w < 5 || h < 5) continue;
+              const wrapper = iframeDoc!.createElement('div');
+              wrapper.style.cssText = `position:fixed;left:0;top:20px;width:${w}px;height:${h}px;overflow:visible;background:transparent;padding-top:20px;box-sizing:border-box`;
+              wrapper.appendChild(decor.cloneNode(true) as HTMLElement);
+              iframeDoc!.body.appendChild(wrapper);
+              await new Promise(r => setTimeout(r, 50));
+              const dataUrl = await htmlToImage.toPng(wrapper, { ...captureOpts, backgroundColor: undefined });
+              iframeDoc!.body.removeChild(wrapper);
+              if (dataUrl && dataUrl.length > 500) {
+                decorCount++;
+                await addToZip(dataUrl, `nav_active_decoration_${decorCount}.png`);
+              }
+            } catch { /* skip */ }
           }
 
           // Each tab icon separately
