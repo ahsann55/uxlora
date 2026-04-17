@@ -231,12 +231,30 @@ async function handleClientSidePNGExport() {
         }
 
         // Universal element size — uses the larger of getBoundingClientRect and offsetWidth/offsetHeight
-        // getBoundingClientRect gives the full visual size, offsetWidth/offsetHeight works for off-screen elements
         function elSize(el: HTMLElement) {
           const rect = el.getBoundingClientRect();
           const w = Math.max(rect.width || 0, el.offsetWidth) + 4;
           const h = Math.max(rect.height || 0, el.offsetHeight) + 4;
           return { w: Math.ceil(w), h: Math.ceil(h) };
+        }
+
+        // Temporarily remove overflow:hidden from ancestors to prevent clipping
+        function unlockOverflow(el: HTMLElement): Array<{el: HTMLElement, overflow: string}> {
+          const saved: Array<{el: HTMLElement, overflow: string}> = [];
+          let parent = el.parentElement;
+          while (parent && parent !== iframeDoc!.body) {
+            const style = iframeDoc!.defaultView?.getComputedStyle(parent);
+            if (style?.overflow === 'hidden' || style?.overflowY === 'hidden' || style?.overflowX === 'hidden') {
+              saved.push({ el: parent, overflow: parent.style.overflow });
+              parent.style.overflow = 'visible';
+            }
+            parent = parent.parentElement;
+          }
+          return saved;
+        }
+
+        function restoreOverflow(saved: Array<{el: HTMLElement, overflow: string}>) {
+          saved.forEach(({ el, overflow }) => { el.style.overflow = overflow; });
         }
 
         // Universal direct capture — transparent bg, uses offsetWidth/offsetHeight + buffer
@@ -247,12 +265,14 @@ async function handleClientSidePNGExport() {
             const computedRadius = iframeDoc?.defaultView?.getComputedStyle(el)?.borderRadius ?? '';
             const savedRadius = el.style.borderRadius;
             if (computedRadius) el.style.borderRadius = computedRadius;
+            const overflowSaved = unlockOverflow(el);
             const dataUrl = await htmlToImage.toPng(el, {
               ...captureOpts,
               backgroundColor: undefined,
               width: w,
               height: h,
             });
+            restoreOverflow(overflowSaved);
             el.style.borderRadius = savedRadius;
             if (!dataUrl || dataUrl.length < 1000 || capturedDataUrls.has(dataUrl)) return null;
             capturedDataUrls.add(dataUrl);
@@ -289,12 +309,18 @@ async function handleClientSidePNGExport() {
             const savedElColor = el.style.color;
             el.style.color = "transparent";
             await new Promise(r => setTimeout(r, 80));
+            const computedRadius = iframeDoc?.defaultView?.getComputedStyle(el)?.borderRadius ?? '';
+            const savedRadius = el.style.borderRadius;
+            if (computedRadius) el.style.borderRadius = computedRadius;
+            const overflowSaved = unlockOverflow(el);
             const dataUrl = await htmlToImage.toPng(el, {
               ...captureOpts,
               backgroundColor: undefined,
               width: w,
               height: h,
             });
+            restoreOverflow(overflowSaved);
+            el.style.borderRadius = savedRadius;
             descendants.forEach((c, i) => { c.style.color = saved[i].color; c.style.visibility = saved[i].visibility; });
             el.style.color = savedElColor;
             if (!dataUrl || dataUrl.length < 500) return null;
