@@ -312,8 +312,14 @@ export async function runGenerationEngine(
 
   } catch (error) {
     console.error("Generation engine error:", error);
+    const errorStr = String(error);
+    const userMessage = errorStr.includes("timeout") || errorStr.includes("Timeout")
+      ? "Generation took too long. Please try again."
+      : errorStr.includes("Design system generation failed")
+      ? "Failed to generate design system. Please try again."
+      : "Something went wrong. Please try again.";
     await updateKitStatus("failed", {
-      error_message: String(error),
+      error_message: userMessage,
       current_step: "Failed",
     });
     throw error;
