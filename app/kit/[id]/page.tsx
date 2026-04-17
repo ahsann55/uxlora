@@ -165,357 +165,356 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
   }
 
 async function handleClientSidePNGExport() {
-    if (!kit || sortedScreens.length === 0) return;
-    setExporting(true);
-    setExportError(null);
+  if (!kit || sortedScreens.length === 0) return;
+  setExporting(true);
+  setExportError(null);
 
-    try {
-      const zip = new JSZip();
-      const isMobile = kit.category === "mobile" || kit.category === "game";
-      const kitChecklistData = kit.checklist_data as Record<string, unknown>;
-      const isLandscape = (kitChecklistData?.orientation as string) === "Landscape";
-      const width = isMobile ? (isLandscape ? 844 : 390) : 1440;
-      const height = isMobile ? (isLandscape ? 390 : 844) : 900;
+  try {
+    const zip = new JSZip();
+    const isMobile = kit.category === "mobile" || kit.category === "game";
+    const kitChecklistData = kit.checklist_data as Record<string, unknown>;
+    const isLandscape = (kitChecklistData?.orientation as string) === "Landscape";
+    const width = isMobile ? (isLandscape ? 844 : 390) : 1440;
+    const height = isMobile ? (isLandscape ? 390 : 844) : 900;
 
-      for (let i = 0; i < sortedScreens.length; i++) {
-        const screen = sortedScreens[i];
-        if (!screen.html_css) continue;
+    for (let i = 0; i < sortedScreens.length; i++) {
+      const screen = sortedScreens[i];
+      if (!screen.html_css) continue;
 
-        const paddedIndex = String(i + 1).padStart(2, "0");
-        const sanitizedName = screen.name.replace(/[^a-zA-Z0-9]/g, "_");
-        const folderName = `${paddedIndex}_${sanitizedName}`;
+      const paddedIndex = String(i + 1).padStart(2, "0");
+      const sanitizedName = screen.name.replace(/[^a-zA-Z0-9]/g, "_");
+      const folderName = `${paddedIndex}_${sanitizedName}`;
 
-        const iframe = document.createElement("iframe");
-        iframe.style.position = "fixed";
-        iframe.style.left = "-9999px";
-        iframe.style.top = "0px";
-        iframe.style.width = `${width}px`;
-        iframe.style.height = `${height}px`;
-        iframe.style.border = "none";
-        iframe.style.opacity = "0";
-        iframe.style.pointerEvents = "none";
-        document.body.appendChild(iframe);
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.left = "-9999px";
+      iframe.style.top = "0px";
+      iframe.style.width = `${width}px`;
+      iframe.style.height = `${height}px`;
+      iframe.style.border = "none";
+      iframe.style.opacity = "0";
+      iframe.style.pointerEvents = "none";
+      document.body.appendChild(iframe);
 
-        try {
-          const iframeDoc = iframe.contentDocument ?? iframe.contentWindow?.document;
-          if (!iframeDoc) continue;
+      try {
+        const iframeDoc = iframe.contentDocument ?? iframe.contentWindow?.document;
+        if (!iframeDoc) continue;
 
-          iframeDoc.open();
-          iframeDoc.write(screen.html_css);
-          iframeDoc.close();
+        iframeDoc.open();
+        iframeDoc.write(screen.html_css);
+        iframeDoc.close();
 
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          // Capture full screen once — reused for all element crops
-        
-          if (iframe.contentWindow) {
-            iframe.contentWindow.scrollTo(0, 0);
-            // Force iframe to correct dimensions for absolute positioned elements
-            iframe.contentDocument!.documentElement.style.width = `${width}px`;
-            iframe.contentDocument!.documentElement.style.height = `${height}px`;
-            iframe.contentDocument!.documentElement.style.overflow = "hidden";
-          }
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
-          const htmlEl = iframeDoc.documentElement as HTMLElement;
-          const captureOpts = {
-            pixelRatio: isMobile ? 3 : 2,
-            skipFonts: true,
-          };
-          
-          const capturedDataUrls = new Set<string>();
-          // Capture full screen once — reused for all element crops
-          const fullScreenDataUrl = await htmlToImage.toPng(htmlEl, {
-            ...captureOpts,
-            width,
-            height,
-          });
-          const fullScreenImg = new Image();
-          await new Promise<void>((res) => { fullScreenImg.onload = () => res(); fullScreenImg.src = fullScreenDataUrl; });
-          // Helper — capture element safely, skip duplicates and blanks
-          async function captureEl(el: HTMLElement): Promise<string | null> {
-            try {
-              const rect = el.getBoundingClientRect();
-              if (!rect || rect.width < 20 || rect.height < 20) return null;
-              if (rect.left < -width || rect.top < -height) return null;
-              if (rect.top > height || rect.left > width) return null;
-              // Skip elements inside already-captured containers
-              const skipIfInsideAny = [
-                '[data-uxlora="ui:nav:bar"]',
-                '[data-uxlora="media:image:hero"]',
-                '[data-uxlora^="ui:button"]',
-                '[data-uxlora^="ui:game:hud"]',
-              ].join(', ');
-              const capturedParent = el.closest(skipIfInsideAny);
-              if (capturedParent && capturedParent !== el) return null;
-              // Direct element capture for transparent background
-              const dataUrl = await htmlToImage.toPng(el, {
-                ...captureOpts,
-                backgroundColor: undefined,
-              });
-              if (!dataUrl || dataUrl.length < 3000) return null;
-              if (capturedDataUrls.has(dataUrl)) return null;
-              capturedDataUrls.add(dataUrl);
-              return dataUrl;
-            } catch {
-              return null;
-            }
-          }
-
-          async function canvasCrop(el: HTMLElement): Promise<string | null> {
-            try {
-              const rect = el.getBoundingClientRect();
-              if (!rect || rect.width < 20 || rect.height < 20) return null;
-              if (rect.top > height || rect.left > width) return null;
-              const canvas = document.createElement("canvas");
-              const scale = captureOpts.pixelRatio ?? 1;
-              canvas.width = rect.width * scale;
-              canvas.height = rect.height * scale;
-              const ctx = canvas.getContext("2d");
-              if (!ctx) return null;
-              const computedStyle = iframeDoc?.defaultView?.getComputedStyle(el);
-              const borderRadius = computedStyle ? parseFloat(computedStyle.borderRadius) * scale : 0;
-              if (borderRadius > 0) {
-                ctx.beginPath();
-                ctx.roundRect(0, 0, canvas.width, canvas.height, borderRadius);
-                ctx.clip();
-              }
-              ctx.drawImage(fullScreenImg, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
-              const croppedUrl = canvas.toDataURL("image/png");
-              if (!croppedUrl || croppedUrl.length < 3000) return null;
-              if (capturedDataUrls.has(croppedUrl)) return null;
-              capturedDataUrls.add(croppedUrl);
-              return croppedUrl;
-            } catch {
-              return null;
-            }
-          }
-
-          async function addToZip(dataUrl: string, filename: string) {
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
-            zip.file(`${folderName}/${filename}`, await blob.arrayBuffer());
-          }
-
-          // ── 1. FULL SCREEN ──────────────────────────────────────────
-          const fullUrl = await htmlToImage.toPng(htmlEl, {
-            ...captureOpts, width, height,
-          });
-          if (fullUrl && fullUrl.length > 2000) {
-            await addToZip(fullUrl, "full_screen.png");
-          }
-
-          // ── 2. ALL BUTTONS (primary, secondary, ghost, tab, back) ───
-          const buttons = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="ui:button"]:not([data-uxlora="ui:button:icon"]):not([data-uxlora="ui:button:tab"])')
-          ) as HTMLElement[];
-          let btnCount = 0;
-          for (const el of buttons) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { btnCount++; await addToZip(dataUrl, `button_${btnCount}.png`); }
-          }
-
-          // ── 3. ICON/ROUND BUTTONS ───────────────────────────────────
-          const iconBtns = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora="ui:button:icon"]')
-          ) as HTMLElement[];
-          let iconBtnCount = 0;
-          for (const el of iconBtns) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { iconBtnCount++; await addToZip(dataUrl, `icon_button_${iconBtnCount}.png`); }
-          }
-
-          // ── 4. TEXT ELEMENTS ────────────────────────────────────────
-          const textEls = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="ui:text"]')
-          ) as HTMLElement[];
-          let textCount = 0;
-          for (const el of textEls.slice(0, 15)) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { textCount++; await addToZip(dataUrl, `text_${textCount}.png`); }
-          }
-
-          // ── 5. VECTORS & DECORATIVES ────────────────────────────────
-          const vectors = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="vec"]')
-          ) as HTMLElement[];
-          let vecCount = 0;
-          for (const el of vectors) {
-            if (!el.querySelector('svg') && el.tagName !== 'svg') continue;
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { vecCount++; await addToZip(dataUrl, `vector_${vecCount}.png`); }
-          }
-
-          // ── 6. NAVIGATION ───────────────────────────────────────────
-          const navEls = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="ui:nav"]')
-          ) as HTMLElement[];
-          let navCount = 0;
-          for (const el of navEls) {
-            const dataUrl = await canvasCrop(el);
-            if (dataUrl) { navCount++; await addToZip(dataUrl, `nav_${navCount}.png`); }
-          }
-
-          // ── 7. LAYOUT COMPONENTS (cards, modals, panels) ────────────
-          const layoutEls = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="ui:layout"]')
-          ) as HTMLElement[];
-          let layoutCount = 0;
-          for (const el of layoutEls.slice(0, 5)) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { layoutCount++; await addToZip(dataUrl, `component_${layoutCount}.png`); }
-          }
-
-          // ── 8. FORM ELEMENTS ────────────────────────────────────────
-          const formEls = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="ui:form"]')
-          ) as HTMLElement[];
-          let formCount = 0;
-          for (const el of formEls) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { formCount++; await addToZip(dataUrl, `form_${formCount}.png`); }
-          }
-
-          // ── 9. STATUS ELEMENTS ──────────────────────────────────────
-          const statusEls = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="ui:status"]')
-          ) as HTMLElement[];
-          let statusCount = 0;
-          for (const el of statusEls) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { statusCount++; await addToZip(dataUrl, `status_${statusCount}.png`); }
-          }
-
-          // ── 10. GAME SPECIFIC ───────────────────────────────────────
-          const gameEls = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="ui:game"]')
-          ) as HTMLElement[];
-          let gameCount = 0;
-          for (const el of gameEls) {
-            try {
-              const rect = el.getBoundingClientRect();
-              if (!rect || rect.width < 20 || rect.height < 20) continue;
-              if (rect.top > height || rect.left > width) continue;
-              const parent = el.closest('[data-uxlora="ui:game:hud"]');
-              if (parent && parent !== el) {
-                const dataUrl = await htmlToImage.toPng(el, {
-                  ...captureOpts,
-                  backgroundColor: undefined,
-                });
-                if (dataUrl && dataUrl.length > 3000 && !capturedDataUrls.has(dataUrl)) {
-                  capturedDataUrls.add(dataUrl);
-                  gameCount++;
-                  await addToZip(dataUrl, `game_ui_${gameCount}.png`);
-                }
-              } else {
-                const dataUrl = await canvasCrop(el);
-                if (dataUrl) { gameCount++; await addToZip(dataUrl, `game_ui_${gameCount}.png`); }
-              }
-            } catch { /* skip */ }
-          }
-
-          // ── 11. MOBILE SPECIFIC ─────────────────────────────────────
-          const mobileEls = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="ui:mobile"]')
-          ) as HTMLElement[];
-          let mobileCount = 0;
-          for (const el of mobileEls) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { mobileCount++; await addToZip(dataUrl, `mobile_ui_${mobileCount}.png`); }
-          }
-
-          // ── 12. WEB SPECIFIC ────────────────────────────────────────
-          const webEls = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="ui:web"]')
-          ) as HTMLElement[];
-          let webCount = 0;
-          for (const el of webEls) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { webCount++; await addToZip(dataUrl, `web_ui_${webCount}.png`); }
-          }
-
-          // ── 13. MEDIA ELEMENTS ──────────────────────────────────────
-          const mediaEls = Array.from(
-            iframeDoc.querySelectorAll('[data-uxlora^="media"]')
-          ) as HTMLElement[];
-          let mediaCount = 0;
-          for (const el of mediaEls) {
-            const dataUrl = await captureEl(el);
-            if (dataUrl) { mediaCount++; await addToZip(dataUrl, `media_${mediaCount}.png`); }
-          }
-
-          // ── 14. BACKGROUND PLAIN ────────────────────────────────────
-          try {
-            // Hide everything except bg elements
-            const hideForPlain = Array.from(
-              iframeDoc.querySelectorAll(
-                '[data-uxlora^="ui:"], [data-uxlora^="vec"], [data-uxlora^="media"]'
-              )
-            ) as HTMLElement[];
-            hideForPlain.forEach(el => { el.style.visibility = "hidden"; });
-            await new Promise(r => setTimeout(r, 150));
-
-            const plainUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
-            hideForPlain.forEach(el => { el.style.visibility = ""; });
-
-            if (plainUrl && plainUrl.length > 2000) {
-              await addToZip(plainUrl, "background_plain.png");
-            }
-          } catch { /* skip */ }
-
-          // ── 15. BACKGROUND WITH DECORATIVES ────────────────────────
-          try {
-            // Hide buttons, text, form, nav, game/mobile/web UI — keep bg + vec
-            const hideForDecor = Array.from(
-              iframeDoc.querySelectorAll(
-                '[data-uxlora^="ui:button"], [data-uxlora^="ui:text"], ' +
-                '[data-uxlora^="ui:form"], [data-uxlora^="ui:nav"], ' +
-                '[data-uxlora^="ui:layout"], [data-uxlora^="ui:status"], ' +
-                '[data-uxlora^="ui:game"], [data-uxlora^="ui:mobile"], ' +
-                '[data-uxlora^="ui:web"], [data-uxlora^="media:image:thumbnail"], ' +
-                '[data-uxlora^="media:image:item"], [data-uxlora^="media:image:avatar"]'
-              )
-            ) as HTMLElement[];
-            hideForDecor.forEach(el => { el.style.visibility = "hidden"; });
-            await new Promise(r => setTimeout(r, 150));
-
-            const decorUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
-            hideForDecor.forEach(el => { el.style.visibility = ""; });
-
-            if (decorUrl && decorUrl.length > 2000) {
-              await addToZip(decorUrl, "background_with_decoratives.png");
-            }
-          } catch { /* skip */ }
-
-        } finally {
-          document.body.removeChild(iframe);
+        if (iframe.contentWindow) {
+          iframe.contentWindow.scrollTo(0, 0);
+          iframeDoc.documentElement.style.width = `${width}px`;
+          iframeDoc.documentElement.style.height = `${height}px`;
+          iframeDoc.documentElement.style.overflow = "hidden";
         }
+
+        const htmlEl = iframeDoc.documentElement as HTMLElement;
+        const captureOpts = { pixelRatio: isMobile ? 3 : 2, skipFonts: true };
+        const capturedDataUrls = new Set<string>();
+
+        // Capture full screen once — reused for canvas crops
+        const fullScreenDataUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+        const fullScreenImg = new Image();
+        await new Promise<void>((res) => { fullScreenImg.onload = () => res(); fullScreenImg.src = fullScreenDataUrl; });
+
+        async function addToZip(dataUrl: string, filename: string) {
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          zip.file(`${folderName}/${filename}`, await blob.arrayBuffer());
+        }
+
+        // Direct capture — transparent bg
+        async function captureEl(el: HTMLElement): Promise<string | null> {
+          try {
+            const rect = el.getBoundingClientRect();
+            if (!rect || rect.width < 20 || rect.height < 20) return null;
+            if (rect.left < -width || rect.top < -height || rect.top > height || rect.left > width) return null;
+            const dataUrl = await htmlToImage.toPng(el, { ...captureOpts, backgroundColor: undefined });
+            if (!dataUrl || dataUrl.length < 3000 || capturedDataUrls.has(dataUrl)) return null;
+            capturedDataUrls.add(dataUrl);
+            return dataUrl;
+          } catch { return null; }
+        }
+
+        // Canvas crop from full screen image
+        async function canvasCrop(el: HTMLElement): Promise<string | null> {
+          try {
+            const rect = el.getBoundingClientRect();
+            if (!rect || rect.width < 20 || rect.height < 20) return null;
+            if (rect.top > height || rect.left > width) return null;
+            const canvas = document.createElement("canvas");
+            const scale = captureOpts.pixelRatio ?? 1;
+            canvas.width = rect.width * scale;
+            canvas.height = rect.height * scale;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return null;
+            const borderRadius = parseFloat(iframeDoc?.defaultView?.getComputedStyle(el)?.borderRadius ?? "0") * scale;
+            if (borderRadius > 0) {
+              ctx.beginPath();
+              ctx.roundRect(0, 0, canvas.width, canvas.height, borderRadius);
+              ctx.clip();
+            }
+            ctx.drawImage(fullScreenImg, rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale, 0, 0, canvas.width, canvas.height);
+            const croppedUrl = canvas.toDataURL("image/png");
+            if (!croppedUrl || croppedUrl.length < 3000 || capturedDataUrls.has(croppedUrl)) return null;
+            capturedDataUrls.add(croppedUrl);
+            return croppedUrl;
+          } catch { return null; }
+        }
+
+        // Capture plain container — hide all children, capture shell, restore
+        async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
+          try {
+            const children = Array.from(el.children) as HTMLElement[];
+            children.forEach(c => { c.style.visibility = "hidden"; });
+            await new Promise(r => setTimeout(r, 50));
+            const dataUrl = await captureEl(el);
+            children.forEach(c => { c.style.visibility = ""; });
+            return dataUrl;
+          } catch { return null; }
+        }
+
+        // Extract first SVG/icon child from element
+        async function captureIconOnly(el: HTMLElement): Promise<string | null> {
+          try {
+            const icon = el.querySelector('[data-uxlora^="vec:icon"], svg') as HTMLElement | null;
+            if (!icon) return null;
+            return await captureEl(icon);
+          } catch { return null; }
+        }
+
+        // ── 1. FULL SCREEN ──────────────────────────────────────────
+        await addToZip(fullScreenDataUrl, "full_screen.png");
+
+        // ── 2. BUTTONS (primary, secondary, ghost, back, danger) ────
+        // Rule 3: plain container + complete button + icon
+        const buttons = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora^="ui:button"]:not([data-uxlora="ui:button:icon"]):not([data-uxlora="ui:button:tab"])')
+        ) as HTMLElement[];
+
+        // Deduplicate by height — keep one per unique height
+        const seenBtnHeights = new Set<number>();
+        let btnCount = 0;
+        for (const el of buttons) {
+          const h = Math.round(el.getBoundingClientRect().height);
+          if (seenBtnHeights.has(h)) continue;
+          seenBtnHeights.add(h);
+          btnCount++;
+          const plainUrl = await capturePlainContainer(el);
+          if (plainUrl) await addToZip(plainUrl, `button_${btnCount}_plain.png`);
+          const completeUrl = await captureEl(el);
+          if (completeUrl) await addToZip(completeUrl, `button_${btnCount}_complete.png`);
+          const iconUrl = await captureIconOnly(el);
+          if (iconUrl) await addToZip(iconUrl, `button_${btnCount}_icon.png`);
+        }
+
+        // ── 3. ICON BUTTONS ─────────────────────────────────────────
+        // Rule: plain container + complete button
+        const iconBtns = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora="ui:button:icon"]')
+        ) as HTMLElement[];
+        const seenIconBtnHeights = new Set<number>();
+        let iconBtnCount = 0;
+        for (const el of iconBtns) {
+          const h = Math.round(el.getBoundingClientRect().height);
+          if (seenIconBtnHeights.has(h)) continue;
+          seenIconBtnHeights.add(h);
+          iconBtnCount++;
+          const plainUrl = await capturePlainContainer(el);
+          if (plainUrl) await addToZip(plainUrl, `icon_button_${iconBtnCount}_plain.png`);
+          const completeUrl = await captureEl(el);
+          if (completeUrl) await addToZip(completeUrl, `icon_button_${iconBtnCount}_complete.png`);
+        }
+
+        // ── 4. CURRENCY & SCORE (game) ──────────────────────────────
+        // Rule 4: plain container + icon only
+        const gameChipEls = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora="ui:game:currency"], [data-uxlora="ui:game:score"]')
+        ) as HTMLElement[];
+        const seenChipHeights = new Set<number>();
+        let chipCount = 0;
+        for (const el of gameChipEls) {
+          const h = Math.round(el.getBoundingClientRect().height);
+          if (seenChipHeights.has(h)) continue;
+          seenChipHeights.add(h);
+          chipCount++;
+          const plainUrl = await capturePlainContainer(el);
+          if (plainUrl) await addToZip(plainUrl, `chip_${chipCount}_plain.png`);
+          const iconUrl = await captureIconOnly(el);
+          if (iconUrl) await addToZip(iconUrl, `chip_${chipCount}_icon.png`);
+        }
+
+        // ── 5. LAYOUT — DYNAMIC (card:dynamic, panel:dynamic) ───────
+        // Rule 1: plain container only
+        const dynamicLayouts = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora="ui:layout:card:dynamic"], [data-uxlora="ui:layout:panel:dynamic"]')
+        ) as HTMLElement[];
+        let dynCount = 0;
+        for (const el of dynamicLayouts.slice(0, 8)) {
+          const plainUrl = await capturePlainContainer(el);
+          if (plainUrl) { dynCount++; await addToZip(plainUrl, `container_dynamic_${dynCount}.png`); }
+        }
+
+        // ── 6. LAYOUT — STATIC (card:static, panel:static) ──────────
+        // Rule 2: plain container + complete with text
+        const staticLayouts = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora="ui:layout:card:static"], [data-uxlora="ui:layout:panel:static"]')
+        ) as HTMLElement[];
+        let statCount = 0;
+        for (const el of staticLayouts.slice(0, 8)) {
+          statCount++;
+          const plainUrl = await capturePlainContainer(el);
+          if (plainUrl) await addToZip(plainUrl, `container_static_${statCount}_plain.png`);
+          const completeUrl = await captureEl(el);
+          if (completeUrl) await addToZip(completeUrl, `container_static_${statCount}_complete.png`);
+        }
+
+        // ── 7. PLAIN TEXT (not in containers) ───────────────────────
+        // Rule 6: text as-is
+        const textEls = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora^="ui:text"]')
+        ) as HTMLElement[];
+        let textCount = 0;
+        for (const el of textEls.slice(0, 10)) {
+          // Skip if inside a layout container
+          const insideLayout = el.closest('[data-uxlora^="ui:layout"], [data-uxlora^="ui:game"], [data-uxlora^="ui:button"]');
+          if (insideLayout) continue;
+          const dataUrl = await captureEl(el);
+          if (dataUrl) { textCount++; await addToZip(dataUrl, `text_${textCount}.png`); }
+        }
+
+        // ── 8. NAVIGATION ───────────────────────────────────────────
+        // Complete nav bar + each tab icon separately
+        const navEls = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora="ui:nav:bar"]')
+        ) as HTMLElement[];
+        for (const nav of navEls) {
+          const navUrl = await canvasCrop(nav);
+          if (navUrl) await addToZip(navUrl, "nav_complete.png");
+
+          // Each tab icon separately
+          const tabs = Array.from(
+            nav.querySelectorAll('[data-uxlora="ui:button:tab"]')
+          ) as HTMLElement[];
+          let tabCount = 0;
+          for (const tab of tabs) {
+            const icon = tab.querySelector('[data-uxlora^="vec:icon"], svg') as HTMLElement | null;
+            if (!icon) continue;
+            const iconUrl = await captureEl(icon);
+            if (iconUrl) { tabCount++; await addToZip(iconUrl, `nav_icon_${tabCount}.png`); }
+          }
+        }
+
+        // ── 9. VECTORS & DECORATIVES ────────────────────────────────
+        const vectors = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora^="vec"]:not([data-uxlora="vec:decoration"])')
+        ) as HTMLElement[];
+        let vecCount = 0;
+        for (const el of vectors) {
+          if (!el.querySelector('svg') && el.tagName !== 'SVG') continue;
+          // Skip if inside button, nav, game chip — already exported
+          const insideExported = el.closest('[data-uxlora^="ui:button"], [data-uxlora="ui:nav:bar"], [data-uxlora="ui:game:currency"], [data-uxlora="ui:game:score"]');
+          if (insideExported) continue;
+          const dataUrl = await captureEl(el);
+          if (dataUrl) { vecCount++; await addToZip(dataUrl, `vector_${vecCount}.png`); }
+        }
+
+        // ── 10. MEDIA (hero, avatar) ─────────────────────────────────
+        const mediaEls = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora^="media"]')
+        ) as HTMLElement[];
+        let mediaCount = 0;
+        for (const el of mediaEls) {
+          const dataUrl = await captureEl(el);
+          if (dataUrl) { mediaCount++; await addToZip(dataUrl, `media_${mediaCount}.png`); }
+        }
+
+        // ── 11. FORM ELEMENTS ────────────────────────────────────────
+        const formEls = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora^="ui:form"]')
+        ) as HTMLElement[];
+        let formCount = 0;
+        for (const el of formEls) {
+          const dataUrl = await captureEl(el);
+          if (dataUrl) { formCount++; await addToZip(dataUrl, `form_${formCount}.png`); }
+        }
+
+        // ── 12. STATUS ELEMENTS ──────────────────────────────────────
+        const statusEls = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora^="ui:status"]')
+        ) as HTMLElement[];
+        let statusCount = 0;
+        for (const el of statusEls) {
+          const dataUrl = await captureEl(el);
+          if (dataUrl) { statusCount++; await addToZip(dataUrl, `status_${statusCount}.png`); }
+        }
+
+        // ── 13. BACKGROUND PLAIN ────────────────────────────────────
+        try {
+          const hideForPlain = Array.from(
+            iframeDoc.querySelectorAll('[data-uxlora^="ui:"], [data-uxlora^="vec"], [data-uxlora^="media"]')
+          ) as HTMLElement[];
+          hideForPlain.forEach(el => { el.style.visibility = "hidden"; });
+          await new Promise(r => setTimeout(r, 150));
+          const plainUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+          hideForPlain.forEach(el => { el.style.visibility = ""; });
+          if (plainUrl && plainUrl.length > 2000) await addToZip(plainUrl, "background_plain.png");
+        } catch { /* skip */ }
+
+        // ── 14. BACKGROUND WITH DECORATIVES ─────────────────────────
+        try {
+          const hideForDecor = Array.from(
+            iframeDoc.querySelectorAll(
+              '[data-uxlora^="ui:button"], [data-uxlora^="ui:text"], ' +
+              '[data-uxlora^="ui:form"], [data-uxlora^="ui:nav"], ' +
+              '[data-uxlora^="ui:layout"], [data-uxlora^="ui:status"], ' +
+              '[data-uxlora^="ui:game"], [data-uxlora^="ui:mobile"], ' +
+              '[data-uxlora^="ui:web"], [data-uxlora^="media:image:thumbnail"], ' +
+              '[data-uxlora^="media:image:item"], [data-uxlora^="media:image:avatar"]'
+            )
+          ) as HTMLElement[];
+          hideForDecor.forEach(el => { el.style.visibility = "hidden"; });
+          await new Promise(r => setTimeout(r, 150));
+          const decorUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+          hideForDecor.forEach(el => { el.style.visibility = ""; });
+          if (decorUrl && decorUrl.length > 2000) await addToZip(decorUrl, "background_with_decoratives.png");
+        } catch { /* skip */ }
+
+      } finally {
+        document.body.removeChild(iframe);
       }
-
-      // Add design system JSON
-      if (kit.design_system) {
-        zip.file("design_system.json", JSON.stringify(kit.design_system, null, 2));
-      }
-
-      // Add README
-      zip.file("README.md", `# ${kit.name} UI Kit\nGenerated by UXLora (uxlora.app)\n\nEach screen folder contains:\n- full_screen.png — complete screen\n- button_*.png — all buttons\n- icon_button_*.png — round/icon buttons\n- text_*.png — text elements\n- vector_*.png — icons and decoratives\n- background_plain.png — clean background\n- background_with_decoratives.png — background with all decorative elements\n- Additional platform-specific elements\n\ndesign_system.json — complete design tokens\n`);
-
-      // Download ZIP
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      const url = URL.createObjectURL(zipBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${kit.name.replace(/[^a-zA-Z0-9]/g, "_")}_UI_Kit.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Export failed.";
-      setExportError(`PNG export failed: ${msg}`);
-    } finally {
-      setExporting(false);
     }
+
+    // Design system JSON
+    if (kit.design_system) {
+      zip.file("design_system.json", JSON.stringify(kit.design_system, null, 2));
+    }
+
+    // README
+    zip.file("README.md", `# ${kit.name} UI Kit\nGenerated by UXLora (uxlora.app)\n\nEach screen folder contains:\n- full_screen.png — complete screen\n- button_N_plain.png / button_N_complete.png / button_N_icon.png — buttons\n- icon_button_N_plain.png / icon_button_N_complete.png — icon buttons\n- chip_N_plain.png / chip_N_icon.png — currency/score chips\n- container_dynamic_N.png — dynamic content containers (plain only)\n- container_static_N_plain.png / container_static_N_complete.png — static containers\n- nav_complete.png / nav_icon_N.png — navigation\n- text_N.png — standalone text elements\n- vector_N.png — icons and illustrations\n- media_N.png — character/hero elements\n- background_plain.png / background_with_decoratives.png — backgrounds\n\ndesign_system.json — complete design tokens\n`);
+
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${kit.name.replace(/[^a-zA-Z0-9]/g, "_")}_UI_Kit.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Export failed.";
+    setExportError(`PNG export failed: ${msg}`);
+  } finally {
+    setExporting(false);
   }
+}
   function handleScreenUpdated(updatedScreen: Screen) {
     setKit((prev) => {
       if (!prev) return prev;
