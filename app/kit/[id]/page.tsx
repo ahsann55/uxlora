@@ -534,32 +534,15 @@ async function handleClientSidePNGExport() {
           activeTabDecorations.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 100));
           try {
-            const buf = 3;
-            const navCs = iframeDoc!.defaultView!.getComputedStyle(nav);
-            const navSaved = {
-              paddingTop: nav.style.paddingTop, paddingRight: nav.style.paddingRight,
-              paddingBottom: nav.style.paddingBottom, paddingLeft: nav.style.paddingLeft,
-              marginTop: nav.style.marginTop, marginBottom: nav.style.marginBottom,
-            };
-            const pn = (v: string) => parseFloat(v) || 0;
-            nav.style.paddingTop = `${pn(navCs.paddingTop) + buf}px`;
-            nav.style.paddingRight = `${pn(navCs.paddingRight) + buf}px`;
-            nav.style.paddingBottom = `${pn(navCs.paddingBottom) + buf}px`;
-            nav.style.paddingLeft = `${pn(navCs.paddingLeft) + buf}px`;
-            nav.style.marginTop = `${Math.max(0, pn(navCs.marginTop) - buf)}px`;
-            nav.style.marginBottom = `${Math.max(0, pn(navCs.marginBottom) - buf)}px`;
-            await new Promise(r => setTimeout(r, 30));
             const { w, h } = elSize(nav);
             if (w > 20 && h > 20) {
               const navUrl = await htmlToImage.toPng(nav, {
                 ...captureOpts,
-                backgroundColor: undefined,
                 width: w,
                 height: h,
               });
               if (navUrl && navUrl.length > 1000) await addToZip(navUrl, "nav_complete.png");
             }
-            Object.assign(nav.style, navSaved);
           } catch { /* skip */ }
           activeTabDecorations.forEach(el => { el.style.visibility = ""; });
 
