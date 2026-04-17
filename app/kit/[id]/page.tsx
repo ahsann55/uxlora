@@ -257,23 +257,53 @@ async function handleClientSidePNGExport() {
           saved.forEach(({ el, overflow }) => { el.style.overflow = overflow; });
         }
 
-        // Universal direct capture — transparent bg, uses offsetWidth/offsetHeight + buffer
+        // Universal direct capture — adds temporary padding to expand layout box for full border capture
         async function captureEl(el: HTMLElement): Promise<string | null> {
           try {
+            const buf = 3;
+            const cs = iframeDoc!.defaultView!.getComputedStyle(el);
+            const savedStyle = {
+              padding: el.style.padding,
+              margin: el.style.margin,
+              paddingTop: el.style.paddingTop,
+              paddingRight: el.style.paddingRight,
+              paddingBottom: el.style.paddingBottom,
+              paddingLeft: el.style.paddingLeft,
+              marginTop: el.style.marginTop,
+              marginRight: el.style.marginRight,
+              marginBottom: el.style.marginBottom,
+              marginLeft: el.style.marginLeft,
+            };
+            // Expand padding, shrink margin to keep position
+            const pt = parseFloat(cs.paddingTop) + buf;
+            const pr = parseFloat(cs.paddingRight) + buf;
+            const pb = parseFloat(cs.paddingBottom) + buf;
+            const pl = parseFloat(cs.paddingLeft) + buf;
+            const mt = Math.max(0, parseFloat(cs.marginTop) - buf);
+            const mr = Math.max(0, parseFloat(cs.marginRight) - buf);
+            const mb = Math.max(0, parseFloat(cs.marginBottom) - buf);
+            const ml = Math.max(0, parseFloat(cs.marginLeft) - buf);
+            el.style.paddingTop = `${pt}px`;
+            el.style.paddingRight = `${pr}px`;
+            el.style.paddingBottom = `${pb}px`;
+            el.style.paddingLeft = `${pl}px`;
+            el.style.marginTop = `${mt}px`;
+            el.style.marginRight = `${mr}px`;
+            el.style.marginBottom = `${mb}px`;
+            el.style.marginLeft = `${ml}px`;
+            await new Promise(r => setTimeout(r, 30));
             const { w, h } = elSize(el);
-            if (w < 20 || h < 20) return null;
-            const computedRadius = iframeDoc?.defaultView?.getComputedStyle(el)?.borderRadius ?? '';
-            const savedRadius = el.style.borderRadius;
-            if (computedRadius) el.style.borderRadius = computedRadius;
-            const overflowSaved = unlockOverflow(el);
+            if (w < 20 || h < 20) {
+              Object.assign(el.style, savedStyle);
+              return null;
+            }
             const dataUrl = await htmlToImage.toPng(el, {
               ...captureOpts,
               backgroundColor: undefined,
               width: w,
               height: h,
             });
-            restoreOverflow(overflowSaved);
-            el.style.borderRadius = savedRadius;
+            Object.assign(el.style, savedStyle);
             if (!dataUrl || dataUrl.length < 1000 || capturedDataUrls.has(dataUrl)) return null;
             capturedDataUrls.add(dataUrl);
             return dataUrl;
@@ -298,31 +328,47 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Universal plain container — hides all content, captures shell only
+        // Universal plain container — expands padding for full border capture, hides content
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
-            const { w, h } = elSize(el);
-            if (w < 20 || h < 20) return null;
+            const buf = 3;
+            const cs = iframeDoc!.defaultView!.getComputedStyle(el);
+            const savedStyle = {
+              paddingTop: el.style.paddingTop, paddingRight: el.style.paddingRight,
+              paddingBottom: el.style.paddingBottom, paddingLeft: el.style.paddingLeft,
+              marginTop: el.style.marginTop, marginRight: el.style.marginRight,
+              marginBottom: el.style.marginBottom, marginLeft: el.style.marginLeft,
+              color: el.style.color, borderRadius: el.style.borderRadius,
+            };
+            const p = (v: string) => parseFloat(v) || 0;
+            el.style.paddingTop = `${p(cs.paddingTop) + buf}px`;
+            el.style.paddingRight = `${p(cs.paddingRight) + buf}px`;
+            el.style.paddingBottom = `${p(cs.paddingBottom) + buf}px`;
+            el.style.paddingLeft = `${p(cs.paddingLeft) + buf}px`;
+            el.style.marginTop = `${Math.max(0, p(cs.marginTop) - buf)}px`;
+            el.style.marginRight = `${Math.max(0, p(cs.marginRight) - buf)}px`;
+            el.style.marginBottom = `${Math.max(0, p(cs.marginBottom) - buf)}px`;
+            el.style.marginLeft = `${Math.max(0, p(cs.marginLeft) - buf)}px`;
+            if (cs.borderRadius) el.style.borderRadius = cs.borderRadius;
             const descendants = Array.from(el.querySelectorAll("*")) as HTMLElement[];
-            const saved = descendants.map(c => ({ color: c.style.color, visibility: c.style.visibility }));
+            const savedDesc = descendants.map(c => ({ color: c.style.color, visibility: c.style.visibility }));
             descendants.forEach(c => { c.style.color = "transparent"; c.style.visibility = "hidden"; });
-            const savedElColor = el.style.color;
             el.style.color = "transparent";
             await new Promise(r => setTimeout(r, 80));
-            const computedRadius = iframeDoc?.defaultView?.getComputedStyle(el)?.borderRadius ?? '';
-            const savedRadius = el.style.borderRadius;
-            if (computedRadius) el.style.borderRadius = computedRadius;
-            const overflowSaved = unlockOverflow(el);
+            const { w, h } = elSize(el);
+            if (w < 20 || h < 20) {
+              Object.assign(el.style, savedStyle);
+              descendants.forEach((c, i) => { c.style.color = savedDesc[i].color; c.style.visibility = savedDesc[i].visibility; });
+              return null;
+            }
             const dataUrl = await htmlToImage.toPng(el, {
               ...captureOpts,
               backgroundColor: undefined,
               width: w,
               height: h,
             });
-            restoreOverflow(overflowSaved);
-            el.style.borderRadius = savedRadius;
-            descendants.forEach((c, i) => { c.style.color = saved[i].color; c.style.visibility = saved[i].visibility; });
-            el.style.color = savedElColor;
+            Object.assign(el.style, savedStyle);
+            descendants.forEach((c, i) => { c.style.color = savedDesc[i].color; c.style.visibility = savedDesc[i].visibility; });
             if (!dataUrl || dataUrl.length < 500) return null;
             return dataUrl;
           } catch { return null; }
@@ -488,6 +534,21 @@ async function handleClientSidePNGExport() {
           activeTabDecorations.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 100));
           try {
+            const buf = 3;
+            const navCs = iframeDoc!.defaultView!.getComputedStyle(nav);
+            const navSaved = {
+              paddingTop: nav.style.paddingTop, paddingRight: nav.style.paddingRight,
+              paddingBottom: nav.style.paddingBottom, paddingLeft: nav.style.paddingLeft,
+              marginTop: nav.style.marginTop, marginBottom: nav.style.marginBottom,
+            };
+            const pn = (v: string) => parseFloat(v) || 0;
+            nav.style.paddingTop = `${pn(navCs.paddingTop) + buf}px`;
+            nav.style.paddingRight = `${pn(navCs.paddingRight) + buf}px`;
+            nav.style.paddingBottom = `${pn(navCs.paddingBottom) + buf}px`;
+            nav.style.paddingLeft = `${pn(navCs.paddingLeft) + buf}px`;
+            nav.style.marginTop = `${Math.max(0, pn(navCs.marginTop) - buf)}px`;
+            nav.style.marginBottom = `${Math.max(0, pn(navCs.marginBottom) - buf)}px`;
+            await new Promise(r => setTimeout(r, 30));
             const { w, h } = elSize(nav);
             if (w > 20 && h > 20) {
               const navUrl = await htmlToImage.toPng(nav, {
@@ -498,6 +559,7 @@ async function handleClientSidePNGExport() {
               });
               if (navUrl && navUrl.length > 1000) await addToZip(navUrl, "nav_complete.png");
             }
+            Object.assign(nav.style, navSaved);
           } catch { /* skip */ }
           activeTabDecorations.forEach(el => { el.style.visibility = ""; });
 
