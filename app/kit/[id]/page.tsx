@@ -294,23 +294,23 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Capture plain container — swap innerHTML to empty, lock dimensions, capture shell, restore
+        // Capture plain container — hide all descendants, capture with explicit dimensions, restore
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
-            const w = el.offsetWidth;
-            const h = el.offsetHeight + 4; // +4px buffer for border rendering
-            if (w < 20 || h < 20) return null;
-            const originalHTML = el.innerHTML;
-            const originalMinHeight = el.style.minHeight;
-            const originalMinWidth = el.style.minWidth;
-            el.style.minHeight = `${h}px`;
-            el.style.minWidth = `${w}px`;
-            el.innerHTML = "";
+            const rect = el.getBoundingClientRect();
+            if (!rect || rect.width < 20 || rect.height < 20) return null;
+            const w = Math.ceil(rect.width);
+            const h = Math.ceil(rect.height);
+            const descendants = Array.from(el.querySelectorAll("*")) as HTMLElement[];
+            descendants.forEach(c => { c.style.visibility = "hidden"; });
             await new Promise(r => setTimeout(r, 80));
-            const dataUrl = await htmlToImage.toPng(el, { ...captureOpts, backgroundColor: undefined });
-            el.innerHTML = originalHTML;
-            el.style.minHeight = originalMinHeight;
-            el.style.minWidth = originalMinWidth;
+            const dataUrl = await htmlToImage.toPng(el, {
+              ...captureOpts,
+              backgroundColor: undefined,
+              width: w,
+              height: h,
+            });
+            descendants.forEach(c => { c.style.visibility = ""; });
             if (!dataUrl || dataUrl.length < 1000) return null;
             return dataUrl;
           } catch { return null; }
@@ -395,19 +395,20 @@ async function handleClientSidePNGExport() {
         let scoreCount = 0;
         for (const el of scoreBadges) {
           try {
-            const originalHTML = el.innerHTML;
-            const originalMinHeight = el.style.minHeight;
-            const originalMinWidth = el.style.minWidth;
-            const w = el.offsetWidth;
-            const h = el.offsetHeight;
-            el.style.minHeight = `${h}px`;
-            el.style.minWidth = `${w}px`;
-            el.innerHTML = "";
+            const rect = el.getBoundingClientRect();
+            if (!rect || rect.width < 10) continue;
+            const w = Math.ceil(rect.width);
+            const h = Math.ceil(rect.height);
+            const descendants = Array.from(el.querySelectorAll("*")) as HTMLElement[];
+            descendants.forEach(c => { c.style.visibility = "hidden"; });
             await new Promise(r => setTimeout(r, 80));
-            const dataUrl = await htmlToImage.toPng(el, { ...captureOpts, backgroundColor: undefined });
-            el.innerHTML = originalHTML;
-            el.style.minHeight = originalMinHeight;
-            el.style.minWidth = originalMinWidth;
+            const dataUrl = await htmlToImage.toPng(el, {
+              ...captureOpts,
+              backgroundColor: undefined,
+              width: w,
+              height: h,
+            });
+            descendants.forEach(c => { c.style.visibility = ""; });
             if (dataUrl && dataUrl.length > 1000) {
               scoreCount++;
               await addToZip(dataUrl, `score_badge_${scoreCount}_plain.png`);
