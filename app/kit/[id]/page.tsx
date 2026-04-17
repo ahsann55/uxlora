@@ -267,16 +267,22 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Capture plain container — swap innerHTML to empty, capture shell, restore
+        // Capture plain container — swap innerHTML to empty, lock dimensions, capture shell, restore
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
             const rect = el.getBoundingClientRect();
             if (!rect || rect.width < 20 || rect.height < 20) return null;
             const originalHTML = el.innerHTML;
+            const originalMinHeight = el.style.minHeight;
+            const originalMinWidth = el.style.minWidth;
+            el.style.minHeight = `${rect.height}px`;
+            el.style.minWidth = `${rect.width}px`;
             el.innerHTML = "";
             await new Promise(r => setTimeout(r, 80));
             const dataUrl = await htmlToImage.toPng(el, { ...captureOpts, backgroundColor: undefined });
             el.innerHTML = originalHTML;
+            el.style.minHeight = originalMinHeight;
+            el.style.minWidth = originalMinWidth;
             if (!dataUrl || dataUrl.length < 3000) return null;
             return dataUrl;
           } catch { return null; }
@@ -292,24 +298,19 @@ async function handleClientSidePNGExport() {
           iframeDoc.querySelectorAll('[data-uxlora^="ui:button"]:not([data-uxlora="ui:button:icon"]):not([data-uxlora="ui:button:tab"])')
         ) as HTMLElement[];
 
-        // Deduplicate by background-color + height — different styled buttons always export
-        const seenBtnStyles = new Set<string>();
         let btnCount = 0;
         for (const el of buttons) {
-          const style = iframeDoc.defaultView?.getComputedStyle(el);
-          const key = `${Math.round(el.getBoundingClientRect().height)}_${style?.backgroundColor ?? ""}`;
-          if (seenBtnStyles.has(key)) continue;
-          seenBtnStyles.add(key);
           btnCount++;
           const completeUrl = await captureEl(el);
           if (completeUrl) await addToZip(completeUrl, `button_${btnCount}_complete.png`);
           const plainUrl = await capturePlainContainer(el);
           if (plainUrl) await addToZip(plainUrl, `button_${btnCount}_plain.png`);
-          // Find icon — any svg that is NOT a decoration
-          const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement ?? null;
+          const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement | null;
           if (icon) {
-            const iconUrl = await captureEl(icon);
-            if (iconUrl) await addToZip(iconUrl, `button_${btnCount}_icon.png`);
+            try {
+              const iconUrl = await htmlToImage.toPng(icon, { ...captureOpts, backgroundColor: undefined });
+              if (iconUrl && iconUrl.length > 3000) await addToZip(iconUrl, `button_${btnCount}_icon.png`);
+            } catch { /* skip */ }
           }
         }
 
@@ -318,22 +319,19 @@ async function handleClientSidePNGExport() {
         const iconBtns = Array.from(
           iframeDoc.querySelectorAll('[data-uxlora="ui:button:icon"]')
         ) as HTMLElement[];
-        const seenIconBtnStyles = new Set<string>();
         let iconBtnCount = 0;
         for (const el of iconBtns) {
-          const style = iframeDoc.defaultView?.getComputedStyle(el);
-          const key = `${Math.round(el.getBoundingClientRect().height)}_${style?.backgroundColor ?? ""}`;
-          if (seenIconBtnStyles.has(key)) continue;
-          seenIconBtnStyles.add(key);
           iconBtnCount++;
           const completeUrl = await captureEl(el);
           if (completeUrl) await addToZip(completeUrl, `icon_button_${iconBtnCount}_complete.png`);
           const plainUrl = await capturePlainContainer(el);
           if (plainUrl) await addToZip(plainUrl, `icon_button_${iconBtnCount}_plain.png`);
-          const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement ?? null;
+          const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement | null;
           if (icon) {
-            const iconUrl = await captureEl(icon);
-            if (iconUrl) await addToZip(iconUrl, `icon_button_${iconBtnCount}_icon.png`);
+            try {
+              const iconUrl = await htmlToImage.toPng(icon, { ...captureOpts, backgroundColor: undefined });
+              if (iconUrl && iconUrl.length > 3000) await addToZip(iconUrl, `icon_button_${iconBtnCount}_icon.png`);
+            } catch { /* skip */ }
           }
         }
 
@@ -357,15 +355,14 @@ async function handleClientSidePNGExport() {
           const plainUrl = await capturePlainContainer(el);
           if (plainUrl) await addToZip(plainUrl, `chip_${chipCount}_plain.png`);
         }
-        // All chip icons exported individually — bypass HUD skip logic
+        // All chip icons exported individually — bypass HUD skip logic, no dedup
         let chipIconCount = 0;
         for (const el of gameChipEls) {
-          const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement ?? null;
+          const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement | null;
           if (!icon) continue;
           try {
             const dataUrl = await htmlToImage.toPng(icon, { ...captureOpts, backgroundColor: undefined });
-            if (dataUrl && dataUrl.length > 3000 && !capturedDataUrls.has(dataUrl)) {
-              capturedDataUrls.add(dataUrl);
+            if (dataUrl && dataUrl.length > 3000) {
               chipIconCount++;
               await addToZip(dataUrl, `chip_icon_${chipIconCount}.png`);
             }
@@ -441,8 +438,7 @@ async function handleClientSidePNGExport() {
             if (!icon) continue;
             try {
               const dataUrl = await htmlToImage.toPng(icon, { ...captureOpts, backgroundColor: undefined });
-              if (dataUrl && dataUrl.length > 3000 && !capturedDataUrls.has(dataUrl)) {
-                capturedDataUrls.add(dataUrl);
+              if (dataUrl && dataUrl.length > 3000) {
                 tabCount++;
                 await addToZip(dataUrl, `nav_icon_${tabCount}.png`);
               }
