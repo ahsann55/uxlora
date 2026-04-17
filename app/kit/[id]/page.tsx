@@ -267,14 +267,20 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Capture plain container — hide all children, capture shell, restore
+        // Capture plain container — hide ALL descendants, capture shell, restore
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
-            const children = Array.from(el.children) as HTMLElement[];
-            children.forEach(c => { c.style.visibility = "hidden"; });
-            await new Promise(r => setTimeout(r, 50));
-            const dataUrl = await captureEl(el);
-            children.forEach(c => { c.style.visibility = ""; });
+            const descendants = Array.from(el.querySelectorAll("*")) as HTMLElement[];
+            descendants.forEach(c => { c.style.visibility = "hidden"; });
+            await new Promise(r => setTimeout(r, 80));
+            const rect = el.getBoundingClientRect();
+            if (!rect || rect.width < 20 || rect.height < 20) {
+              descendants.forEach(c => { c.style.visibility = ""; });
+              return null;
+            }
+            const dataUrl = await htmlToImage.toPng(el, { ...captureOpts, backgroundColor: undefined });
+            descendants.forEach(c => { c.style.visibility = ""; });
+            if (!dataUrl || dataUrl.length < 3000) return null;
             return dataUrl;
           } catch { return null; }
         }
@@ -292,61 +298,86 @@ async function handleClientSidePNGExport() {
         await addToZip(fullScreenDataUrl, "full_screen.png");
 
         // ── 2. BUTTONS (primary, secondary, ghost, back, danger) ────
-        // Rule 3: plain container + complete button + icon
+        // Rule 3: complete + plain container + icon
         const buttons = Array.from(
           iframeDoc.querySelectorAll('[data-uxlora^="ui:button"]:not([data-uxlora="ui:button:icon"]):not([data-uxlora="ui:button:tab"])')
         ) as HTMLElement[];
 
-        // Deduplicate by height — keep one per unique height
-        const seenBtnHeights = new Set<number>();
-        let btnCount = 0;
+        // Deduplicate by height — keep smallest width per unique height
+        const btnByHeight = new Map<number, HTMLElement>();
         for (const el of buttons) {
           const h = Math.round(el.getBoundingClientRect().height);
-          if (seenBtnHeights.has(h)) continue;
-          seenBtnHeights.add(h);
+          const existing = btnByHeight.get(h);
+          if (!existing || el.getBoundingClientRect().width < existing.getBoundingClientRect().width) {
+            btnByHeight.set(h, el);
+          }
+        }
+        let btnCount = 0;
+        for (const el of btnByHeight.values()) {
           btnCount++;
-          const plainUrl = await capturePlainContainer(el);
-          if (plainUrl) await addToZip(plainUrl, `button_${btnCount}_plain.png`);
           const completeUrl = await captureEl(el);
           if (completeUrl) await addToZip(completeUrl, `button_${btnCount}_complete.png`);
+          const plainUrl = await capturePlainContainer(el);
+          if (plainUrl) await addToZip(plainUrl, `button_${btnCount}_plain.png`);
           const iconUrl = await captureIconOnly(el);
           if (iconUrl) await addToZip(iconUrl, `button_${btnCount}_icon.png`);
         }
 
         // ── 3. ICON BUTTONS ─────────────────────────────────────────
-        // Rule: plain container + complete button
+        // Rule: complete + plain container + icon
         const iconBtns = Array.from(
           iframeDoc.querySelectorAll('[data-uxlora="ui:button:icon"]')
         ) as HTMLElement[];
-        const seenIconBtnHeights = new Set<number>();
-        let iconBtnCount = 0;
+        const iconBtnByHeight = new Map<number, HTMLElement>();
         for (const el of iconBtns) {
           const h = Math.round(el.getBoundingClientRect().height);
-          if (seenIconBtnHeights.has(h)) continue;
-          seenIconBtnHeights.add(h);
+          const existing = iconBtnByHeight.get(h);
+          if (!existing || el.getBoundingClientRect().width < existing.getBoundingClientRect().width) {
+            iconBtnByHeight.set(h, el);
+          }
+        }
+        let iconBtnCount = 0;
+        for (const el of iconBtnByHeight.values()) {
           iconBtnCount++;
-          const plainUrl = await capturePlainContainer(el);
-          if (plainUrl) await addToZip(plainUrl, `icon_button_${iconBtnCount}_plain.png`);
           const completeUrl = await captureEl(el);
           if (completeUrl) await addToZip(completeUrl, `icon_button_${iconBtnCount}_complete.png`);
+          const plainUrl = await capturePlainContainer(el);
+          if (plainUrl) await addToZip(plainUrl, `icon_button_${iconBtnCount}_plain.png`);
+          const iconUrl = await captureIconOnly(el);
+          if (iconUrl) await addToZip(iconUrl, `icon_button_${iconBtnCount}_icon.png`);
         }
 
         // ── 4. CURRENCY & SCORE (game) ──────────────────────────────
-        // Rule 4: plain container + icon only
+        // Rule 4: plain container + icon only. Dedupe by height, keep smallest width.
         const gameChipEls = Array.from(
           iframeDoc.querySelectorAll('[data-uxlora="ui:game:currency"], [data-uxlora="ui:game:score"]')
         ) as HTMLElement[];
-        const seenChipHeights = new Set<number>();
-        let chipCount = 0;
+        const chipByHeight = new Map<number, HTMLElement>();
         for (const el of gameChipEls) {
           const h = Math.round(el.getBoundingClientRect().height);
-          if (seenChipHeights.has(h)) continue;
-          seenChipHeights.add(h);
+          const existing = chipByHeight.get(h);
+          if (!existing || el.getBoundingClientRect().width < existing.getBoundingClientRect().width) {
+            chipByHeight.set(h, el);
+          }
+        }
+        // Always export each icon separately regardless of dedup
+        const allChipIcons = new Set<HTMLElement>();
+        for (const el of gameChipEls) {
+          const icon = el.querySelector('[data-uxlora^="vec:icon"], svg') as HTMLElement | null;
+          if (icon) allChipIcons.add(icon);
+        }
+        let chipCount = 0;
+        // Plain container — one per unique height
+        for (const el of chipByHeight.values()) {
           chipCount++;
           const plainUrl = await capturePlainContainer(el);
           if (plainUrl) await addToZip(plainUrl, `chip_${chipCount}_plain.png`);
-          const iconUrl = await captureIconOnly(el);
-          if (iconUrl) await addToZip(iconUrl, `chip_${chipCount}_icon.png`);
+        }
+        // All icons separately
+        let chipIconCount = 0;
+        for (const icon of allChipIcons) {
+          const iconUrl = await captureEl(icon);
+          if (iconUrl) { chipIconCount++; await addToZip(iconUrl, `chip_icon_${chipIconCount}.png`); }
         }
 
         // ── 5. LAYOUT — DYNAMIC (card:dynamic, panel:dynamic) ───────
@@ -397,15 +428,24 @@ async function handleClientSidePNGExport() {
           const navUrl = await canvasCrop(nav);
           if (navUrl) await addToZip(navUrl, "nav_complete.png");
 
-          // Each tab icon separately
+          // Each tab icon separately — query all SVGs inside tabs
           const tabs = Array.from(
             nav.querySelectorAll('[data-uxlora="ui:button:tab"]')
           ) as HTMLElement[];
           let tabCount = 0;
           for (const tab of tabs) {
-            const icon = tab.querySelector('[data-uxlora^="vec:icon"], svg') as HTMLElement | null;
+            // Try data-uxlora vec:icon first, fall back to any svg
+            const icon = (
+              tab.querySelector('[data-uxlora^="vec:icon"]') ??
+              tab.querySelector('svg')
+            ) as HTMLElement | null;
             if (!icon) continue;
+            // Temporarily show only this icon
+            const siblings = Array.from(tab.children).filter(c => c !== icon) as HTMLElement[];
+            siblings.forEach(s => { s.style.visibility = "hidden"; });
+            await new Promise(r => setTimeout(r, 30));
             const iconUrl = await captureEl(icon);
+            siblings.forEach(s => { s.style.visibility = ""; });
             if (iconUrl) { tabCount++; await addToZip(iconUrl, `nav_icon_${tabCount}.png`); }
           }
         }
