@@ -230,50 +230,74 @@ async function handleClientSidePNGExport() {
           zip.file(`${folderName}/${filename}`, await blob.arrayBuffer());
         }
 
-        // Capture an SVG element by wrapping it in a sized div
-        async function captureSvg(svgEl: HTMLElement): Promise<string | null> {
-          try {
-            const rect = svgEl.getBoundingClientRect();
-            const w = rect.width > 0 ? rect.width : parseFloat((svgEl as unknown as Element).getAttribute?.('width') ?? '24');
-            const h = rect.height > 0 ? rect.height : parseFloat((svgEl as unknown as Element).getAttribute?.('height') ?? '24');
-            const wrapper = iframeDoc!.createElement('div');
-            wrapper.style.position = 'fixed';
-            wrapper.style.left = '0px';
-            wrapper.style.top = '0px';
-            wrapper.style.width = `${w}px`;
-            wrapper.style.height = `${h}px`;
-            wrapper.style.overflow = 'hidden';
-            wrapper.style.background = 'transparent';
-            const clone = svgEl.cloneNode(true) as HTMLElement;
-            wrapper.appendChild(clone);
-            iframeDoc!.body.appendChild(wrapper);
-            await new Promise(r => setTimeout(r, 50));
-            const dataUrl = await htmlToImage.toPng(wrapper, { ...captureOpts, backgroundColor: undefined });
-            iframeDoc!.body.removeChild(wrapper);
-            if (!dataUrl || dataUrl.length < 1000) return null;
-            return dataUrl;
-          } catch { return null; }
+        // Universal element size — uses offsetWidth/offsetHeight which includes borders
+        function elSize(el: HTMLElement) {
+          return {
+            w: el.offsetWidth + 4,
+            h: el.offsetHeight + 4,
+          };
         }
 
-        // Direct capture — transparent bg, universal 4px buffer to prevent border clipping
+        // Universal direct capture — transparent bg, uses offsetWidth/offsetHeight + buffer
         async function captureEl(el: HTMLElement): Promise<string | null> {
           try {
-            const rect = el.getBoundingClientRect();
-            if (!rect || rect.width < 20 || rect.height < 20) return null;
-            if (rect.left < -width || rect.top < -height || rect.top > height || rect.left > width) return null;
+            const { w, h } = elSize(el);
+            if (w < 20 || h < 20) return null;
             const dataUrl = await htmlToImage.toPng(el, {
               ...captureOpts,
               backgroundColor: undefined,
-              width: Math.ceil(rect.width) + 4,
-              height: Math.ceil(rect.height) + 4,
+              width: w,
+              height: h,
             });
-            if (!dataUrl || dataUrl.length < 3000 || capturedDataUrls.has(dataUrl)) return null;
+            if (!dataUrl || dataUrl.length < 1000 || capturedDataUrls.has(dataUrl)) return null;
             capturedDataUrls.add(dataUrl);
             return dataUrl;
           } catch { return null; }
         }
 
-        // Canvas crop from full screen image
+        // Universal SVG capture — clones into fixed wrapper to ensure correct rendering
+        async function captureSvg(svgEl: HTMLElement): Promise<string | null> {
+          try {
+            const w = svgEl.offsetWidth || parseFloat((svgEl as unknown as Element).getAttribute?.('width') ?? '24');
+            const h = svgEl.offsetHeight || parseFloat((svgEl as unknown as Element).getAttribute?.('height') ?? '24');
+            if (w < 4 || h < 4) return null;
+            const wrapper = iframeDoc!.createElement('div');
+            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:hidden;background:transparent`;
+            wrapper.appendChild(svgEl.cloneNode(true) as HTMLElement);
+            iframeDoc!.body.appendChild(wrapper);
+            await new Promise(r => setTimeout(r, 50));
+            const dataUrl = await htmlToImage.toPng(wrapper, { ...captureOpts, backgroundColor: undefined });
+            iframeDoc!.body.removeChild(wrapper);
+            if (!dataUrl || dataUrl.length < 500) return null;
+            return dataUrl;
+          } catch { return null; }
+        }
+
+        // Universal plain container — hides all content, captures shell only
+        async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
+          try {
+            const { w, h } = elSize(el);
+            if (w < 20 || h < 20) return null;
+            const descendants = Array.from(el.querySelectorAll("*")) as HTMLElement[];
+            const saved = descendants.map(c => ({ color: c.style.color, visibility: c.style.visibility }));
+            descendants.forEach(c => { c.style.color = "transparent"; c.style.visibility = "hidden"; });
+            const savedElColor = el.style.color;
+            el.style.color = "transparent";
+            await new Promise(r => setTimeout(r, 80));
+            const dataUrl = await htmlToImage.toPng(el, {
+              ...captureOpts,
+              backgroundColor: undefined,
+              width: w,
+              height: h,
+            });
+            descendants.forEach((c, i) => { c.style.color = saved[i].color; c.style.visibility = saved[i].visibility; });
+            el.style.color = savedElColor;
+            if (!dataUrl || dataUrl.length < 500) return null;
+            return dataUrl;
+          } catch { return null; }
+        }
+
+        // Canvas crop — only for backgrounds (includes background color)
         async function canvasCrop(el: HTMLElement): Promise<string | null> {
           try {
             const rect = el.getBoundingClientRect();
@@ -296,42 +320,6 @@ async function handleClientSidePNGExport() {
             if (!croppedUrl || croppedUrl.length < 3000 || capturedDataUrls.has(croppedUrl)) return null;
             capturedDataUrls.add(croppedUrl);
             return croppedUrl;
-          } catch { return null; }
-        }
-
-        // Capture plain container — make all content transparent, capture shell, restore
-        async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
-          try {
-            const rect = el.getBoundingClientRect();
-            if (!rect || rect.width < 20 || rect.height < 20) return null;
-            // Use scrollWidth/scrollHeight to capture full rendered size including borders
-            const w = Math.max(Math.ceil(rect.width), el.scrollWidth) + 4;
-            const h = Math.max(Math.ceil(rect.height), el.scrollHeight) + 4;
-            const descendants = Array.from(el.querySelectorAll("*")) as HTMLElement[];
-            const savedColors: string[] = [];
-            const savedVisibility: string[] = [];
-            descendants.forEach(c => {
-              savedColors.push(c.style.color);
-              savedVisibility.push(c.style.visibility);
-              c.style.color = "transparent";
-              c.style.visibility = "hidden";
-            });
-            const savedElColor = el.style.color;
-            el.style.color = "transparent";
-            await new Promise(r => setTimeout(r, 80));
-            const dataUrl = await htmlToImage.toPng(el, {
-              ...captureOpts,
-              backgroundColor: undefined,
-              width: w,
-              height: h,
-            });
-            descendants.forEach((c, i) => {
-              c.style.color = savedColors[i];
-              c.style.visibility = savedVisibility[i];
-            });
-            el.style.color = savedElColor;
-            if (!dataUrl || dataUrl.length < 1000) return null;
-            return dataUrl;
           } catch { return null; }
         }
 
@@ -468,47 +456,17 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           activeTabDecorations.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 100));
-          // Nav bypasses dedup — capture directly
-          activeTabDecorations.forEach(el => { el.style.visibility = ""; });
           try {
-            const navRect = nav.getBoundingClientRect();
-            if (navRect && navRect.width > 20 && navRect.height > 20) {
-              const navUrl = await htmlToImage.toPng(nav, {
-                ...captureOpts,
-                backgroundColor: undefined,
-                width: Math.ceil(navRect.width) + 4,
-                height: Math.ceil(navRect.height) + 4,
-              });
-              if (navUrl && navUrl.length > 2000) await addToZip(navUrl, "nav_complete.png");
-            }
+            const navUrl = await captureEl(nav);
+            if (navUrl) await addToZip(navUrl, "nav_complete.png");
           } catch { /* skip */ }
+          activeTabDecorations.forEach(el => { el.style.visibility = ""; });
 
-          // Export active tab decoration separately using offsetWidth/offsetHeight
+          // Export active tab decoration separately
           let decorCount = 0;
           for (const decor of activeTabDecorations) {
-            try {
-              const w = decor.offsetWidth;
-              const h = decor.offsetHeight;
-              if (w < 5 || h < 5) continue;
-              const wrapper = iframeDoc!.createElement('div');
-              wrapper.style.position = 'fixed';
-              wrapper.style.left = '0px';
-              wrapper.style.top = '0px';
-              wrapper.style.width = `${w}px`;
-              wrapper.style.height = `${h}px`;
-              wrapper.style.overflow = 'visible';
-              wrapper.style.background = 'transparent';
-              const clone = decor.cloneNode(true) as HTMLElement;
-              wrapper.appendChild(clone);
-              iframeDoc!.body.appendChild(wrapper);
-              await new Promise(r => setTimeout(r, 50));
-              const dataUrl = await htmlToImage.toPng(wrapper, { ...captureOpts, backgroundColor: undefined });
-              iframeDoc!.body.removeChild(wrapper);
-              if (dataUrl && dataUrl.length > 1000) {
-                decorCount++;
-                await addToZip(dataUrl, `nav_active_decoration_${decorCount}.png`);
-              }
-            } catch { /* skip */ }
+            const decorUrl = await captureSvg(decor);
+            if (decorUrl) { decorCount++; await addToZip(decorUrl, `nav_active_decoration_${decorCount}.png`); }
           }
 
           // Each tab icon separately
