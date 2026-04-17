@@ -35,7 +35,7 @@ export async function generateScreen(
   const isLandscape = orientation === "Landscape";
 
   const dimensions = context.category === "game"
-      ? isLandscape ? "844x390px (mobile game landscape)" : "390x844px (mobile game portrait)"
+      ? isLandscape ? "844x390px (mobile game landscape)"   : "390x844px (mobile game portrait)"
       : isMobile
       ? isLandscape ? "844x390px (mobile landscape)" : "390x844px (mobile portrait)"
       : "1440x900px (desktop web)";
