@@ -299,21 +299,37 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Capture plain container — hide descendants, capture with universal buffer, restore
+        // Capture plain container — make all content transparent, capture shell, restore
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
             const rect = el.getBoundingClientRect();
             if (!rect || rect.width < 20 || rect.height < 20) return null;
+            // Use scrollWidth/scrollHeight to capture full rendered size including borders
+            const w = Math.max(Math.ceil(rect.width), el.scrollWidth) + 4;
+            const h = Math.max(Math.ceil(rect.height), el.scrollHeight) + 4;
             const descendants = Array.from(el.querySelectorAll("*")) as HTMLElement[];
-            descendants.forEach(c => { c.style.visibility = "hidden"; });
+            const savedColors: string[] = [];
+            const savedVisibility: string[] = [];
+            descendants.forEach(c => {
+              savedColors.push(c.style.color);
+              savedVisibility.push(c.style.visibility);
+              c.style.color = "transparent";
+              c.style.visibility = "hidden";
+            });
+            const savedElColor = el.style.color;
+            el.style.color = "transparent";
             await new Promise(r => setTimeout(r, 80));
             const dataUrl = await htmlToImage.toPng(el, {
               ...captureOpts,
               backgroundColor: undefined,
-              width: Math.ceil(rect.width) + 4,
-              height: Math.ceil(rect.height) + 4,
+              width: w,
+              height: h,
             });
-            descendants.forEach(c => { c.style.visibility = ""; });
+            descendants.forEach((c, i) => {
+              c.style.color = savedColors[i];
+              c.style.visibility = savedVisibility[i];
+            });
+            el.style.color = savedElColor;
             if (!dataUrl || dataUrl.length < 1000) return null;
             return dataUrl;
           } catch { return null; }
@@ -452,9 +468,20 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           activeTabDecorations.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 100));
-          const navUrl = await captureEl(nav);
+          // Nav bypasses dedup — capture directly
           activeTabDecorations.forEach(el => { el.style.visibility = ""; });
-          if (navUrl) await addToZip(navUrl, "nav_complete.png");
+          try {
+            const navRect = nav.getBoundingClientRect();
+            if (navRect && navRect.width > 20 && navRect.height > 20) {
+              const navUrl = await htmlToImage.toPng(nav, {
+                ...captureOpts,
+                backgroundColor: undefined,
+                width: Math.ceil(navRect.width) + 4,
+                height: Math.ceil(navRect.height) + 4,
+              });
+              if (navUrl && navUrl.length > 2000) await addToZip(navUrl, "nav_complete.png");
+            }
+          } catch { /* skip */ }
 
           // Export active tab decoration separately using offsetWidth/offsetHeight
           let decorCount = 0;
