@@ -255,13 +255,41 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Direct capture — transparent bg
+        // Direct capture — transparent bg with padding wrapper to prevent clipping
         async function captureEl(el: HTMLElement): Promise<string | null> {
           try {
             const rect = el.getBoundingClientRect();
             if (!rect || rect.width < 20 || rect.height < 20) return null;
             if (rect.left < -width || rect.top < -height || rect.top > height || rect.left > width) return null;
-            const dataUrl = await htmlToImage.toPng(el, { ...captureOpts, backgroundColor: undefined });
+            const pad = 3;
+            const w = Math.ceil(rect.width) + pad * 2;
+            const h = Math.ceil(rect.height) + pad * 2;
+            const wrapper = iframeDoc!.createElement('div');
+            wrapper.style.position = 'fixed';
+            wrapper.style.left = '0px';
+            wrapper.style.top = '0px';
+            wrapper.style.width = `${w}px`;
+            wrapper.style.height = `${h}px`;
+            wrapper.style.padding = `${pad}px`;
+            wrapper.style.background = 'transparent';
+            wrapper.style.boxSizing = 'content-box';
+            const parent = el.parentElement!;
+            const nextSibling = el.nextSibling;
+            wrapper.appendChild(el);
+            iframeDoc!.body.appendChild(wrapper);
+            await new Promise(r => setTimeout(r, 30));
+            const dataUrl = await htmlToImage.toPng(wrapper, {
+              ...captureOpts,
+              backgroundColor: undefined,
+              width: w,
+              height: h,
+            });
+            if (nextSibling) {
+              parent.insertBefore(el, nextSibling);
+            } else {
+              parent.appendChild(el);
+            }
+            iframeDoc!.body.removeChild(wrapper);
             if (!dataUrl || dataUrl.length < 3000 || capturedDataUrls.has(dataUrl)) return null;
             capturedDataUrls.add(dataUrl);
             return dataUrl;
@@ -294,23 +322,45 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Capture plain container — hide all descendants, capture with explicit dimensions, restore
+        // Capture plain container — wrap in padded div, hide descendants, capture, restore
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
             const rect = el.getBoundingClientRect();
             if (!rect || rect.width < 20 || rect.height < 20) return null;
-            const w = Math.ceil(rect.width);
-            const h = Math.ceil(rect.height);
+            const pad = 4;
+            const w = Math.ceil(rect.width) + pad * 2;
+            const h = Math.ceil(rect.height) + pad * 2;
+            // Wrap element in a padded container
+            const wrapper = iframeDoc!.createElement('div');
+            wrapper.style.position = 'fixed';
+            wrapper.style.left = '0px';
+            wrapper.style.top = '0px';
+            wrapper.style.width = `${w}px`;
+            wrapper.style.height = `${h}px`;
+            wrapper.style.padding = `${pad}px`;
+            wrapper.style.background = 'transparent';
+            wrapper.style.boxSizing = 'content-box';
+            const parent = el.parentElement!;
+            const nextSibling = el.nextSibling;
+            wrapper.appendChild(el);
+            iframeDoc!.body.appendChild(wrapper);
             const descendants = Array.from(el.querySelectorAll("*")) as HTMLElement[];
             descendants.forEach(c => { c.style.visibility = "hidden"; });
             await new Promise(r => setTimeout(r, 80));
-            const dataUrl = await htmlToImage.toPng(el, {
+            const dataUrl = await htmlToImage.toPng(wrapper, {
               ...captureOpts,
               backgroundColor: undefined,
               width: w,
               height: h,
             });
             descendants.forEach(c => { c.style.visibility = ""; });
+            // Restore element to original position
+            if (nextSibling) {
+              parent.insertBefore(el, nextSibling);
+            } else {
+              parent.appendChild(el);
+            }
+            iframeDoc!.body.removeChild(wrapper);
             if (!dataUrl || dataUrl.length < 1000) return null;
             return dataUrl;
           } catch { return null; }
