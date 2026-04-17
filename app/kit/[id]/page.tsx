@@ -255,13 +255,18 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Direct capture — transparent bg
+        // Direct capture — transparent bg, universal 4px buffer to prevent border clipping
         async function captureEl(el: HTMLElement): Promise<string | null> {
           try {
             const rect = el.getBoundingClientRect();
             if (!rect || rect.width < 20 || rect.height < 20) return null;
             if (rect.left < -width || rect.top < -height || rect.top > height || rect.left > width) return null;
-            const dataUrl = await htmlToImage.toPng(el, { ...captureOpts, backgroundColor: undefined });
+            const dataUrl = await htmlToImage.toPng(el, {
+              ...captureOpts,
+              backgroundColor: undefined,
+              width: Math.ceil(rect.width) + 4,
+              height: Math.ceil(rect.height) + 4,
+            });
             if (!dataUrl || dataUrl.length < 3000 || capturedDataUrls.has(dataUrl)) return null;
             capturedDataUrls.add(dataUrl);
             return dataUrl;
@@ -294,7 +299,7 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Capture plain container — hide descendants, capture element directly, restore
+        // Capture plain container — hide descendants, capture with universal buffer, restore
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
             const rect = el.getBoundingClientRect();
@@ -305,8 +310,8 @@ async function handleClientSidePNGExport() {
             const dataUrl = await htmlToImage.toPng(el, {
               ...captureOpts,
               backgroundColor: undefined,
-              width: Math.ceil(rect.width),
-              height: Math.ceil(rect.height),
+              width: Math.ceil(rect.width) + 4,
+              height: Math.ceil(rect.height) + 4,
             });
             descendants.forEach(c => { c.style.visibility = ""; });
             if (!dataUrl || dataUrl.length < 1000) return null;
@@ -392,24 +397,8 @@ async function handleClientSidePNGExport() {
         ) as HTMLElement[];
         let scoreCount = 0;
         for (const el of scoreBadges) {
-          try {
-            const rect = el.getBoundingClientRect();
-            if (!rect || rect.width < 10) continue;
-            const descendants = Array.from(el.querySelectorAll("*")) as HTMLElement[];
-            descendants.forEach(c => { c.style.visibility = "hidden"; });
-            await new Promise(r => setTimeout(r, 80));
-            const dataUrl = await htmlToImage.toPng(el, {
-              ...captureOpts,
-              backgroundColor: undefined,
-              width: Math.ceil(rect.width),
-              height: Math.ceil(rect.height),
-            });
-            descendants.forEach(c => { c.style.visibility = ""; });
-            if (dataUrl && dataUrl.length > 1000) {
-              scoreCount++;
-              await addToZip(dataUrl, `score_badge_${scoreCount}_plain.png`);
-            }
-          } catch { /* skip */ }
+          const plainUrl = await capturePlainContainer(el);
+          if (plainUrl) { scoreCount++; await addToZip(plainUrl, `score_badge_${scoreCount}_plain.png`); }
         }
 
         // ── 5. LAYOUT — DYNAMIC (card:dynamic, panel:dynamic) ───────
@@ -463,7 +452,7 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           activeTabDecorations.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 100));
-          const navUrl = await canvasCrop(nav);
+          const navUrl = await captureEl(nav);
           activeTabDecorations.forEach(el => { el.style.visibility = ""; });
           if (navUrl) await addToZip(navUrl, "nav_complete.png");
 
