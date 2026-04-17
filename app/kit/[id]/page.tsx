@@ -298,7 +298,7 @@ async function handleClientSidePNGExport() {
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
             const w = el.offsetWidth;
-            const h = el.offsetHeight;
+            const h = el.offsetHeight + 2; // +2px buffer for border rendering
             if (w < 20 || h < 20) return null;
             const originalHTML = el.innerHTML;
             const originalMinHeight = el.style.minHeight;
@@ -460,10 +460,24 @@ async function handleClientSidePNGExport() {
           iframeDoc.querySelectorAll('[data-uxlora="ui:nav:bar"]')
         ) as HTMLElement[];
         for (const nav of navEls) {
+          // Hide active tab decoration before capturing nav
+          const activeTabDecorations = Array.from(
+            nav.querySelectorAll('[data-uxlora="vec:decoration"]')
+          ) as HTMLElement[];
+          activeTabDecorations.forEach(el => { el.style.visibility = "hidden"; });
+          await new Promise(r => setTimeout(r, 50));
           const navUrl = await canvasCrop(nav);
+          activeTabDecorations.forEach(el => { el.style.visibility = ""; });
           if (navUrl) await addToZip(navUrl, "nav_complete.png");
 
-          // Each tab icon separately — query all SVGs inside tabs
+          // Export active tab decoration separately
+          let decorCount = 0;
+          for (const decor of activeTabDecorations) {
+            const decorUrl = await captureSvg(decor);
+            if (decorUrl) { decorCount++; await addToZip(decorUrl, `nav_active_decoration_${decorCount}.png`); }
+          }
+
+          // Each tab icon separately
           const tabs = Array.from(
             nav.querySelectorAll('[data-uxlora="ui:button:tab"]')
           ) as HTMLElement[];

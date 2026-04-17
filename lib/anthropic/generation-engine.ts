@@ -62,6 +62,32 @@ export async function runGenerationEngine(
 
   try {
     // --------------------------------------------------------
+    // STEP 1: Log suggestion tokens if present
+    // --------------------------------------------------------
+    const { data: kitMeta } = await adminSupabase
+      .from("kits")
+      .select("suggestion_tokens")
+      .eq("id", context.kitId)
+      .single();
+
+    const suggTokens = kitMeta?.suggestion_tokens as { input: number; output: number } | null;
+    console.log("Suggestion tokens from DB:", suggTokens);
+    if (suggTokens && suggTokens.input > 0) {
+      const { error: suggLogError } = await adminSupabase.from("generation_logs").insert({
+        kit_id: context.kitId,
+        step: "suggestion",
+        model_used: "claude-sonnet-4-6",
+        input_tokens: suggTokens.input,
+        output_tokens: suggTokens.output,
+        duration_ms: 0,
+        status: "success",
+        error_message: null,
+        prompt_template_id: null,
+      });
+      console.log("Suggestion log insert error:", suggLogError);
+    }
+
+    // --------------------------------------------------------
     // STEP 2: Generate design system
     // --------------------------------------------------------
     await updateKitStatus("generating", {
@@ -211,15 +237,21 @@ export async function runGenerationEngine(
       const screenStart = Date.now();
 
       try {
-        const result = await generateScreen(
-          context,
-          designSystem,
-          screenName,
-          globalIndex,
-          finalTotalScreens,
-          selectedIcons,
-          iconAuthorMap
+        const screenTimeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Screen generation timeout")), 360000) // 6 min hard limit
         );
+        const result = await Promise.race([
+          generateScreen(
+            context,
+            designSystem,
+            screenName,
+            globalIndex,
+            finalTotalScreens,
+            selectedIcons,
+            iconAuthorMap
+          ),
+          screenTimeout,
+        ]);
 
         const { error: insertError } = await adminSupabase
           .from("screens")
