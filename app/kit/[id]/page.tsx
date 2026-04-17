@@ -228,6 +228,31 @@ async function handleClientSidePNGExport() {
           zip.file(`${folderName}/${filename}`, await blob.arrayBuffer());
         }
 
+        // Capture an SVG element by wrapping it in a sized div
+        async function captureSvg(svgEl: HTMLElement): Promise<string | null> {
+          try {
+            const rect = svgEl.getBoundingClientRect();
+            const w = rect.width > 0 ? rect.width : parseFloat((svgEl as unknown as Element).getAttribute?.('width') ?? '24');
+            const h = rect.height > 0 ? rect.height : parseFloat((svgEl as unknown as Element).getAttribute?.('height') ?? '24');
+            const wrapper = iframeDoc!.createElement('div');
+            wrapper.style.position = 'fixed';
+            wrapper.style.left = '0px';
+            wrapper.style.top = '0px';
+            wrapper.style.width = `${w}px`;
+            wrapper.style.height = `${h}px`;
+            wrapper.style.overflow = 'hidden';
+            wrapper.style.background = 'transparent';
+            const clone = svgEl.cloneNode(true) as HTMLElement;
+            wrapper.appendChild(clone);
+            iframeDoc!.body.appendChild(wrapper);
+            await new Promise(r => setTimeout(r, 50));
+            const dataUrl = await htmlToImage.toPng(wrapper, { ...captureOpts, backgroundColor: undefined });
+            iframeDoc!.body.removeChild(wrapper);
+            if (!dataUrl || dataUrl.length < 1000) return null;
+            return dataUrl;
+          } catch { return null; }
+        }
+
         // Direct capture — transparent bg
         async function captureEl(el: HTMLElement): Promise<string | null> {
           try {
@@ -270,20 +295,21 @@ async function handleClientSidePNGExport() {
         // Capture plain container — swap innerHTML to empty, lock dimensions, capture shell, restore
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
-            const rect = el.getBoundingClientRect();
-            if (!rect || rect.width < 20 || rect.height < 20) return null;
+            const w = el.offsetWidth;
+            const h = el.offsetHeight;
+            if (w < 20 || h < 20) return null;
             const originalHTML = el.innerHTML;
             const originalMinHeight = el.style.minHeight;
             const originalMinWidth = el.style.minWidth;
-            el.style.minHeight = `${rect.height}px`;
-            el.style.minWidth = `${rect.width}px`;
+            el.style.minHeight = `${h}px`;
+            el.style.minWidth = `${w}px`;
             el.innerHTML = "";
             await new Promise(r => setTimeout(r, 80));
             const dataUrl = await htmlToImage.toPng(el, { ...captureOpts, backgroundColor: undefined });
             el.innerHTML = originalHTML;
             el.style.minHeight = originalMinHeight;
             el.style.minWidth = originalMinWidth;
-            if (!dataUrl || dataUrl.length < 3000) return null;
+            if (!dataUrl || dataUrl.length < 1000) return null;
             return dataUrl;
           } catch { return null; }
         }
@@ -307,10 +333,8 @@ async function handleClientSidePNGExport() {
           if (plainUrl) await addToZip(plainUrl, `button_${btnCount}_plain.png`);
           const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement | null;
           if (icon) {
-            try {
-              const iconUrl = await htmlToImage.toPng(icon, { ...captureOpts, backgroundColor: undefined });
-              if (iconUrl && iconUrl.length > 3000) await addToZip(iconUrl, `button_${btnCount}_icon.png`);
-            } catch { /* skip */ }
+            const iconUrl = await captureSvg(icon);
+            if (iconUrl) await addToZip(iconUrl, `button_${btnCount}_icon.png`);
           }
         }
 
@@ -328,10 +352,8 @@ async function handleClientSidePNGExport() {
           if (plainUrl) await addToZip(plainUrl, `icon_button_${iconBtnCount}_plain.png`);
           const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement | null;
           if (icon) {
-            try {
-              const iconUrl = await htmlToImage.toPng(icon, { ...captureOpts, backgroundColor: undefined });
-              if (iconUrl && iconUrl.length > 3000) await addToZip(iconUrl, `icon_button_${iconBtnCount}_icon.png`);
-            } catch { /* skip */ }
+            const iconUrl = await captureSvg(icon);
+            if (iconUrl) await addToZip(iconUrl, `icon_button_${iconBtnCount}_icon.png`);
           }
         }
 
@@ -360,13 +382,8 @@ async function handleClientSidePNGExport() {
         for (const el of gameChipEls) {
           const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement | null;
           if (!icon) continue;
-          try {
-            const dataUrl = await htmlToImage.toPng(icon, { ...captureOpts, backgroundColor: undefined });
-            if (dataUrl && dataUrl.length > 3000) {
-              chipIconCount++;
-              await addToZip(dataUrl, `chip_icon_${chipIconCount}.png`);
-            }
-          } catch { /* skip */ }
+          const iconUrl = await captureSvg(icon);
+          if (iconUrl) { chipIconCount++; await addToZip(iconUrl, `chip_icon_${chipIconCount}.png`); }
         }
 
         // Level/score badge — plain container only (dynamic text)
@@ -375,8 +392,25 @@ async function handleClientSidePNGExport() {
         ) as HTMLElement[];
         let scoreCount = 0;
         for (const el of scoreBadges) {
-          const plainUrl = await capturePlainContainer(el);
-          if (plainUrl) { scoreCount++; await addToZip(plainUrl, `score_badge_${scoreCount}_plain.png`); }
+          try {
+            const originalHTML = el.innerHTML;
+            const originalMinHeight = el.style.minHeight;
+            const originalMinWidth = el.style.minWidth;
+            const w = el.offsetWidth;
+            const h = el.offsetHeight;
+            el.style.minHeight = `${h}px`;
+            el.style.minWidth = `${w}px`;
+            el.innerHTML = "";
+            await new Promise(r => setTimeout(r, 80));
+            const dataUrl = await htmlToImage.toPng(el, { ...captureOpts, backgroundColor: undefined });
+            el.innerHTML = originalHTML;
+            el.style.minHeight = originalMinHeight;
+            el.style.minWidth = originalMinWidth;
+            if (dataUrl && dataUrl.length > 1000) {
+              scoreCount++;
+              await addToZip(dataUrl, `score_badge_${scoreCount}_plain.png`);
+            }
+          } catch { /* skip */ }
         }
 
         // ── 5. LAYOUT — DYNAMIC (card:dynamic, panel:dynamic) ───────
@@ -433,16 +467,10 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           let tabCount = 0;
           for (const tab of tabs) {
-            // Only target vec:icon — skip vec:decoration (crest/shield SVGs)
             const icon = tab.querySelector('svg[data-uxlora^="vec:icon"]') as unknown as HTMLElement | null;
             if (!icon) continue;
-            try {
-              const dataUrl = await htmlToImage.toPng(icon, { ...captureOpts, backgroundColor: undefined });
-              if (dataUrl && dataUrl.length > 3000) {
-                tabCount++;
-                await addToZip(dataUrl, `nav_icon_${tabCount}.png`);
-              }
-            } catch { /* skip */ }
+            const iconUrl = await captureSvg(icon);
+            if (iconUrl) { tabCount++; await addToZip(iconUrl, `nav_icon_${tabCount}.png`); }
           }
         }
 
