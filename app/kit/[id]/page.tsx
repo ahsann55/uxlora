@@ -298,7 +298,7 @@ async function handleClientSidePNGExport() {
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
             const w = el.offsetWidth;
-            const h = el.offsetHeight + 2; // +2px buffer for border rendering
+            const h = el.offsetHeight + 4; // +4px buffer for border rendering
             if (w < 20 || h < 20) return null;
             const originalHTML = el.innerHTML;
             const originalMinHeight = el.style.minHeight;
@@ -462,19 +462,40 @@ async function handleClientSidePNGExport() {
         for (const nav of navEls) {
           // Hide active tab decoration before capturing nav
           const activeTabDecorations = Array.from(
-            nav.querySelectorAll('[data-uxlora="vec:decoration"]')
+            nav.querySelectorAll('[data-uxlora="vec:decoration"], .nav-active-crest')
           ) as HTMLElement[];
           activeTabDecorations.forEach(el => { el.style.visibility = "hidden"; });
-          await new Promise(r => setTimeout(r, 50));
+          await new Promise(r => setTimeout(r, 100));
           const navUrl = await canvasCrop(nav);
           activeTabDecorations.forEach(el => { el.style.visibility = ""; });
           if (navUrl) await addToZip(navUrl, "nav_complete.png");
 
-          // Export active tab decoration separately
+          // Export active tab decoration separately using offsetWidth/offsetHeight
           let decorCount = 0;
           for (const decor of activeTabDecorations) {
-            const decorUrl = await captureSvg(decor);
-            if (decorUrl) { decorCount++; await addToZip(decorUrl, `nav_active_decoration_${decorCount}.png`); }
+            try {
+              const w = decor.offsetWidth;
+              const h = decor.offsetHeight;
+              if (w < 5 || h < 5) continue;
+              const wrapper = iframeDoc!.createElement('div');
+              wrapper.style.position = 'fixed';
+              wrapper.style.left = '0px';
+              wrapper.style.top = '0px';
+              wrapper.style.width = `${w}px`;
+              wrapper.style.height = `${h}px`;
+              wrapper.style.overflow = 'visible';
+              wrapper.style.background = 'transparent';
+              const clone = decor.cloneNode(true) as HTMLElement;
+              wrapper.appendChild(clone);
+              iframeDoc!.body.appendChild(wrapper);
+              await new Promise(r => setTimeout(r, 50));
+              const dataUrl = await htmlToImage.toPng(wrapper, { ...captureOpts, backgroundColor: undefined });
+              iframeDoc!.body.removeChild(wrapper);
+              if (dataUrl && dataUrl.length > 1000) {
+                decorCount++;
+                await addToZip(dataUrl, `nav_active_decoration_${decorCount}.png`);
+              }
+            } catch { /* skip */ }
           }
 
           // Each tab icon separately
