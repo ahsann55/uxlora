@@ -110,7 +110,7 @@ export function ScreenCard({
           className="rounded-xl mb-2 overflow-hidden relative group cursor-pointer mx-auto"
           style={{ 
             width: isLandscape ? "296px" : "190px",
-            height: isLandscape ? "140px" : "380px"
+            height: isLandscape ? `${Math.ceil(390 * (296/844))}px` : `${Math.ceil(844 * (190/390))}px`
           }}
           onClick={handleViewScreen}
         >

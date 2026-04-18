@@ -44,7 +44,7 @@ export function ScreenCardSkeleton({ isLandscape = false }: { isLandscape?: bool
       {/* Screen preview skeleton — centered */}
       <div
         className="bg-surface-200 rounded-xl mb-2 mx-auto"
-        style={{ width: isLandscape ? "296px" : "190px", height: isLandscape ? "140px" : "380px" }}
+        style={{ width: isLandscape ? "296px" : "190px", height: isLandscape ? `${Math.ceil(390 * (296/844))}px` : `${Math.ceil(844 * (190/390))}px` }}
       />
       <div className="h-4 bg-surface-200 rounded w-2/3 mb-1.5" />
       <div className="flex gap-2">
