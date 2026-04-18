@@ -233,12 +233,11 @@ async function handleClientSidePNGExport() {
           iframe.contentWindow.scrollTo(0, 0);
         }
 
-        // DEBUG — remove after diagnosis
-        console.log('iframe style width:', iframe.style.width);
-        console.log('doc offsetWidth:', iframeDoc.documentElement.offsetWidth);
-        console.log('screen div width:', (iframeDoc.querySelector('.screen') as HTMLElement)?.offsetWidth);
-        console.log('viewport meta:', (iframeDoc.querySelector('meta[name="viewport"]') as HTMLMetaElement)?.content);
-        console.log('body width:', iframeDoc.body?.offsetWidth);
+        // Move iframe into visible area for accurate capture
+        iframe.style.top = '0px';
+        iframe.style.left = '0px';
+        iframe.style.zIndex = '-1';
+        await new Promise(r => setTimeout(r, 200));
 
         const htmlEl = iframeDoc.documentElement as HTMLElement;
         const screenEl = (iframeDoc.querySelector('.screen') ?? iframeDoc.body) as HTMLElement;
