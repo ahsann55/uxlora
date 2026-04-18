@@ -482,7 +482,14 @@ async function handleClientSidePNGExport() {
             if (iconUrl) await addToZip(iconUrl, `icon_button_${iconBtnCount}_icon.png`);
           }
         }
-
+        // ── 3.5. HUD PLAIN BACKGROUND ───────────────────────────────
+        const hudEls = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora="ui:game:hud"]')
+        ) as HTMLElement[];
+        for (const el of hudEls) {
+          const plainUrl = await capturePlainContainer(el);
+          if (plainUrl) await addToZip(plainUrl, 'hud_plain.png');
+        }
         // ── 4. CURRENCY & SCORE (game) ──────────────────────────────
         // Rule 4: plain container + icon only. Dedupe by height, keep smallest width.
         const gameChipEls = Array.from(
