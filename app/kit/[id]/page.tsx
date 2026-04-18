@@ -189,6 +189,7 @@ async function handleClientSidePNGExport() {
       const folderName = `${paddedIndex}_${sanitizedName}`;
 
       const iframe = document.createElement("iframe");
+      iframe.setAttribute("scrolling", "no");
       iframe.style.position = "fixed";
       iframe.style.left = "0px";
       iframe.style.top = `-${height + 100}px`;
@@ -255,30 +256,6 @@ async function handleClientSidePNGExport() {
           el.style.maxHeight = `${height}px`;
           el.style.overflow = 'hidden';
         });
-
-        // Also fix any CSS class that might have wrong height baked in
-        const styleOverride = iframeDoc.createElement('style');
-        styleOverride.textContent = `
-          .bg-base, [data-uxlora^="bg:"] {
-            width: ${width}px !important;
-            height: ${height}px !important;
-            max-width: ${width}px !important;
-            max-height: ${height}px !important;
-            overflow: hidden !important;
-          }
-          html, body, .screen {
-            width: ${width}px !important;
-            height: ${height}px !important;
-            max-width: ${width}px !important;
-            max-height: ${height}px !important;
-            overflow: hidden !important;
-          }
-        `;
-        iframeDoc.head.appendChild(styleOverride);
-
-        // Force reflow
-        void screenEl.offsetHeight;
-        await new Promise(r => setTimeout(r, 300));
 
         const captureOpts = { pixelRatio: isMobile ? 3 : 2, skipFonts: true };
         const capturedDataUrls = new Set<string>();
