@@ -256,6 +256,30 @@ async function handleClientSidePNGExport() {
           el.style.overflow = 'hidden';
         });
 
+        // Also fix any CSS class that might have wrong height baked in
+        const styleOverride = iframeDoc.createElement('style');
+        styleOverride.textContent = `
+          .bg-base, [data-uxlora^="bg:"] {
+            width: ${width}px !important;
+            height: ${height}px !important;
+            max-width: ${width}px !important;
+            max-height: ${height}px !important;
+            overflow: hidden !important;
+          }
+          html, body, .screen {
+            width: ${width}px !important;
+            height: ${height}px !important;
+            max-width: ${width}px !important;
+            max-height: ${height}px !important;
+            overflow: hidden !important;
+          }
+        `;
+        iframeDoc.head.appendChild(styleOverride);
+
+        // Force reflow
+        void screenEl.offsetHeight;
+        await new Promise(r => setTimeout(r, 300));
+
         const captureOpts = { pixelRatio: isMobile ? 3 : 2, skipFonts: true };
         const capturedDataUrls = new Set<string>();
 
@@ -306,7 +330,6 @@ async function handleClientSidePNGExport() {
         // Universal direct capture — adds temporary padding to expand layout box for full border capture
         async function captureEl(el: HTMLElement): Promise<string | null> {
           try {
-            const overflowSaved = unlockOverflow(el);
             const buf = 3;
             const cs = iframeDoc!.defaultView!.getComputedStyle(el);
             const savedStyle = {
@@ -342,7 +365,6 @@ async function handleClientSidePNGExport() {
             const { w, h } = elSize(el);
             if (w < 20 || h < 20) {
               Object.assign(el.style, savedStyle);
-              restoreOverflow(overflowSaved);
               return null;
             }
             const dataUrl = await htmlToImage.toPng(el, {
@@ -352,7 +374,6 @@ async function handleClientSidePNGExport() {
               height: h,
             });
             Object.assign(el.style, savedStyle);
-            restoreOverflow(overflowSaved);
             if (!dataUrl || dataUrl.length < 1000 || capturedDataUrls.has(dataUrl)) return null;
             capturedDataUrls.add(dataUrl);
             return dataUrl;
