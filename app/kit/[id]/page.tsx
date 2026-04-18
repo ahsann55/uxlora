@@ -241,6 +241,14 @@ async function handleClientSidePNGExport() {
 
         const htmlEl = iframeDoc.documentElement as HTMLElement;
         const screenEl = (iframeDoc.querySelector('.screen') ?? iframeDoc.body) as HTMLElement;
+
+        // Clamp screenEl to exact dimensions — prevents scrollHeight bleed on landscape screens
+        screenEl.style.width = `${width}px`;
+        screenEl.style.height = `${height}px`;
+        screenEl.style.overflow = 'hidden';
+        screenEl.style.minHeight = `${height}px`;
+        screenEl.style.maxHeight = `${height}px`;
+
         const captureOpts = { pixelRatio: isMobile ? 3 : 2, skipFonts: true };
         const capturedDataUrls = new Set<string>();
 
