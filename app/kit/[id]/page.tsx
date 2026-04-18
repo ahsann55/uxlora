@@ -35,6 +35,7 @@ export default function KitPage({
   const [exportProgress, setExportProgress] = useState<string>("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeModalTrigger, setUpgradeModalTrigger] = useState<"download" | "generate" | "export" | "revision">("download");
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>("inactive");
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
 
@@ -971,7 +972,7 @@ async function handleClientSidePNGExport() {
               </button>
               <button
                 onClick={() => handleGatedAction(
-                  () => router.push(`/dashboard/new/${kit.category}/guided?kitId=${kit.id}&regenerate=true`),
+                  () => setShowRegenerateConfirm(true),
                   "generate"
                 )}
                 className="btn-secondary text-sm py-1.5 px-4"
@@ -1031,6 +1032,34 @@ async function handleClientSidePNGExport() {
           onClose={() => setShowUpgradeModal(false)}
           trigger={upgradeModalTrigger}
         />
+      )}
+
+      {showRegenerateConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="card max-w-sm w-full mx-4 py-8 px-6">
+            <h3 className="text-white font-semibold text-lg mb-2">Regenerate UI Kit?</h3>
+            <p className="text-white/50 text-sm mb-6">
+              This will consume <span className="text-white font-semibold">1 generation token</span> from your monthly limit and generate a new version of this kit. Your current screens will be replaced.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRegenerateConfirm(false)}
+                className="btn-secondary flex-1 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowRegenerateConfirm(false);
+                  router.push(`/dashboard/new/${kit.category}/guided?kitId=${kit.id}&regenerate=true`);
+                }}
+                className="btn-primary flex-1 py-2"
+              >
+                Regenerate →
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {exporting && (

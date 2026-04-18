@@ -96,32 +96,16 @@ export async function POST(
       isDemo,
     };
     // Mark kit as generating immediately before starting background engine
-    // This prevents fetchKit() from pulling stale collecting_input status
     await (supabase as any)
       .from("kits")
       .update({ status: "generating", current_step: "Starting...", updated_at: new Date().toISOString() })
       .eq("id", id);
 
-    // Mark kit as generating immediately before starting background engine
-    // This prevents fetchKit() from pulling stale collecting_input status
+    // Reset revision counts on all existing screens so user gets fresh revisions
     await (supabase as any)
-      .from("kits")
-      .update({ status: "generating", current_step: "Starting...", updated_at: new Date().toISOString() })
-      .eq("id", id);
-
-    // Mark kit as generating immediately before starting background engine
-    // This prevents fetchKit() from pulling stale collecting_input status
-    await (supabase as any)
-      .from("kits")
-      .update({ status: "generating", current_step: "Starting...", updated_at: new Date().toISOString() })
-      .eq("id", id);
-
-    // Mark kit as generating immediately before starting background engine
-    // This prevents fetchKit() from pulling stale collecting_input status
-    await (supabase as any)
-      .from("kits")
-      .update({ status: "generating", current_step: "Starting...", updated_at: new Date().toISOString() })
-      .eq("id", id);
+      .from("screens")
+      .update({ revision_count: 0, revision_notes: null })
+      .eq("kit_id", id);
 
     // Run generation in background — don't await
     // Client polls /api/kits/[id]/status every 3 seconds

@@ -87,58 +87,42 @@ export function ScreenCard({
       <div className="card">
         {/* Screen preview */}
         <div
-          className={`w-full rounded-lg mb-4 overflow-hidden bg-gradient-to-br ${gradientClass} relative group`}
+          className="w-full rounded-lg mb-4 overflow-hidden relative group"
           style={{ height: "200px" }}
         >
-          {pngUrl ? (
-            <img
-              src={pngUrl}
-              alt={currentScreen.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center p-4">
-              <p className="text-white/20 text-xs font-medium uppercase tracking-widest mb-3">
-                {currentScreen.name}
-              </p>
-              <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-3">
-                <svg
-                  className="w-6 h-6 text-white/40"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
+          {currentScreen.html_css ? (
+            <div className="w-full h-full relative">
+              <iframe
+                srcDoc={currentScreen.html_css}
+                className="absolute top-0 left-0 border-none pointer-events-none"
+                style={{
+                  width: isLandscape ? "844px" : "390px",
+                  height: isLandscape ? "390px" : "844px",
+                  transformOrigin: "top left",
+                  transform: isLandscape
+                    ? `scale(${200 / 390})`
+                    : `scale(${200 / 844})`,
+                }}
+                scrolling="no"
+              />
+              {/* Revision count badge */}
               {!isDemo && (
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <span className="text-xs text-white/60 bg-white/10 px-3 py-1 rounded-full">
-                    Click to preview
+                <div className="absolute top-2 right-2 z-10">
+                  <span className={`badge text-xs ${
+                    revisionsLeft === 0
+                      ? "bg-surface-200 text-white/30 border border-surface-300"
+                      : "badge-brand"
+                  }`}>
+                    {revisionsLeft} revision{revisionsLeft === 1 ? "" : "s"} left
                   </span>
                 </div>
               )}
-              {isDemo && (
-                <span className="text-xs text-white/40">Upgrade to preview</span>
-              )}
             </div>
-          )}
-
-          {/* Revision count badge */}
-          {!isDemo && (
-            <div className="absolute top-2 right-2">
-              <span className={`badge text-xs ${
-                revisionsLeft === 0
-                  ? "bg-surface-200 text-white/30 border border-surface-300"
-                  : "badge-brand"
-              }`}>
-                {revisionsLeft} revision{revisionsLeft === 1 ? "" : "s"} left
-              </span>
+          ) : (
+            <div className={`w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br ${gradientClass}`}>
+              <p className="text-white/20 text-xs font-medium uppercase tracking-widest">
+                {currentScreen.name}
+              </p>
             </div>
           )}
         </div>
