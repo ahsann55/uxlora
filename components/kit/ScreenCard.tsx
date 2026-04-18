@@ -14,6 +14,7 @@ interface ScreenCardProps {
   onScreenUpdated: (screen: Screen) => void;
   isSubscriptionActive: boolean;
   isLandscape?: boolean;
+  subscriptionTier?: string;
 }
 
 const categoryColors: Record<string, string> = {
@@ -33,7 +34,12 @@ const categoryColors: Record<string, string> = {
   "Data Table / List View": "from-cyan-900 to-teal-950",
 };
 
-const MAX_REVISIONS = 2;
+const REVISION_LIMITS: Record<string, number> = {
+  free: 0,
+  starter: 1,
+  pro: 2,
+  studio: 3,
+};
 
 export function ScreenCard({ 
   screen, 
@@ -41,7 +47,8 @@ export function ScreenCard({
   kitId, 
   onScreenUpdated, 
   isSubscriptionActive,
-  isLandscape = false }: ScreenCardProps) {
+  isLandscape = false,
+  subscriptionTier = "free" }: ScreenCardProps) {
   const [showReviseModal, setShowReviseModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<Screen>(screen);
@@ -50,7 +57,8 @@ export function ScreenCard({
   const uxmlUrl = currentScreen.uxml_url ?? "";
   const figmaUrl = currentScreen.figma_url ?? "";
   const gradientClass = categoryColors[currentScreen.name] ?? "from-surface-100 to-surface-200";
-  const revisionsLeft = MAX_REVISIONS - currentScreen.revision_count;
+  const maxRevisions = REVISION_LIMITS[subscriptionTier] ?? 2;
+  const revisionsLeft = Math.max(0, maxRevisions - currentScreen.revision_count);
 
   function handleViewScreen() {
     if (!currentScreen.html_css) return;
@@ -84,13 +92,25 @@ export function ScreenCard({
 
   return (
     <>
-      <div className="card" style={{ width: isLandscape ? "340px" : "236px" }}>
+      <div className="card" style={{ width: isLandscape ? "320px" : "220px" }}>
+        {/* Revision badge — above preview */}
+        {!isDemo && (
+          <div className="flex justify-end mb-2">
+            <span className={`badge text-xs ${
+              revisionsLeft === 0
+                ? "bg-surface-200 text-white/30 border border-surface-300"
+                : "badge-brand"
+            }`}>
+              {revisionsLeft} revision{revisionsLeft === 1 ? "" : "s"} left
+            </span>
+          </div>
+        )}
         {/* Screen preview */}
         <div
-          className="rounded-xl mb-4 overflow-hidden relative group cursor-pointer"
+          className="rounded-xl mb-4 overflow-hidden relative group cursor-pointer mx-auto"
           style={{ 
-            width: isLandscape ? "316px" : "212px",
-            height: isLandscape ? "149px" : "459px"
+            width: isLandscape ? "296px" : "196px",
+            height: isLandscape ? "140px" : "350px"
           }}
           onClick={handleViewScreen}
         >
@@ -104,25 +124,13 @@ export function ScreenCard({
                   height: isLandscape ? "390px" : "844px",
                   transformOrigin: "top left",
                   transform: isLandscape
-                    ? `scale(${316 / 844})`
-                    : `scale(${212 / 390})`,
+                    ? `scale(${296 / 844})`
+                    : `scale(${196 / 390})`,
                 }}
                 scrolling="no"
               />
               {/* Dark overlay for hover effect */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200" />
-              {/* Revision count badge */}
-              {!isDemo && (
-                <div className="absolute top-2 right-2 z-10">
-                  <span className={`badge text-xs ${
-                    revisionsLeft === 0
-                      ? "bg-surface-200 text-white/30 border border-surface-300"
-                      : "badge-brand"
-                  }`}>
-                    {revisionsLeft} revision{revisionsLeft === 1 ? "" : "s"} left
-                  </span>
-                </div>
-              )}
             </div>
           ) : (
             <div className={`w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br ${gradientClass}`}>
@@ -163,9 +171,9 @@ export function ScreenCard({
                   }
                   setShowReviseModal(true);
                 }}
-                disabled={revisionsLeft === 0 && isSubscriptionActive}
-                className={`text-xs py-1.5 px-3 flex-1 rounded-lg font-semibold transition-all duration-200 ${
-                  revisionsLeft === 0 && isSubscriptionActive
+                disabled={revisionsLeft === 0}
+              className={`text-xs py-1.5 px-3 flex-1 rounded-lg font-semibold transition-all duration-200 ${
+                revisionsLeft === 0
                     ? "bg-surface-100 text-white/20 border border-surface-200 cursor-not-allowed"
                     : "btn-secondary"
                 }`}

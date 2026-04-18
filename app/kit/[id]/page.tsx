@@ -1019,6 +1019,7 @@ async function handleClientSidePNGExport() {
                   onScreenUpdated={handleScreenUpdated}
                   isSubscriptionActive={isSubscriptionActive()}
                   isLandscape={(kit.checklist_data as Record<string, unknown>)?.orientation === "Landscape"}
+                  subscriptionTier={subscriptionTier}
                 />
               ))}
               </div>
