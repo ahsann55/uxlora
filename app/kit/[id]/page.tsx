@@ -235,6 +235,7 @@ async function handleClientSidePNGExport() {
         iframe.style.top = '0px';
         iframe.style.left = '0px';
         iframe.style.zIndex = '-1';
+        iframe.style.opacity = '1';
         await new Promise(r => setTimeout(r, 200));
 
         const htmlEl = iframeDoc.documentElement as HTMLElement;
@@ -487,12 +488,29 @@ async function handleClientSidePNGExport() {
           iframeDoc.querySelectorAll('[data-uxlora="ui:game:hud"]')
         ) as HTMLElement[];
         for (const hud of hudEls) {
-          const hudChildren = Array.from(hud.querySelectorAll('*')) as HTMLElement[];
-          hudChildren.forEach(el => { el.style.visibility = 'hidden'; });
-          await new Promise(r => setTimeout(r, 100));
-          const hudUrl = await canvasCrop(hud);
-          hudChildren.forEach(el => { el.style.visibility = ''; });
-          if (hudUrl) await addToZip(hudUrl, 'hud_plain.png');
+          try {
+            const rect = hud.getBoundingClientRect();
+            if (rect && rect.width > 20 && rect.height > 20) {
+              // Hide children and re-capture just the HUD area
+              const hudChildren = Array.from(hud.querySelectorAll('*')) as HTMLElement[];
+              hudChildren.forEach(el => { el.style.visibility = 'hidden'; });
+              await new Promise(r => setTimeout(r, 100));
+              const hudScreenshot = await htmlToImage.toPng(screenEl, { ...captureOpts, width, height });
+              hudChildren.forEach(el => { el.style.visibility = ''; });
+              const hudImg = new Image();
+              await new Promise<void>(res => { hudImg.onload = () => res(); hudImg.src = hudScreenshot; });
+              const canvas = document.createElement("canvas");
+              const px = captureOpts.pixelRatio ?? 1;
+              canvas.width = rect.width * px;
+              canvas.height = rect.height * px;
+              const ctx = canvas.getContext("2d");
+              if (ctx) {
+                ctx.drawImage(hudImg, rect.left * px, rect.top * px, rect.width * px, rect.height * px, 0, 0, canvas.width, canvas.height);
+                const hudUrl = canvas.toDataURL("image/png");
+                if (hudUrl && hudUrl.length > 1000) await addToZip(hudUrl, 'hud_plain.png');
+              }
+            }
+          } catch { /* skip */ }
         }
         // ── 4. CURRENCY & SCORE (game) ──────────────────────────────
         // Rule 4: plain container + icon only. Dedupe by height, keep smallest width.
