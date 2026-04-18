@@ -259,8 +259,14 @@ async function handleClientSidePNGExport() {
         const captureOpts = { pixelRatio: isMobile ? 3 : 2, skipFonts: true };
         const capturedDataUrls = new Set<string>();
 
-        // Capture full screen once — capture .screen div directly for correct dimensions
-        const fullScreenDataUrl = await htmlToImage.toPng(screenEl, { ...captureOpts, width, height });
+        // Capture full screen — use screenEl with explicit canvas dimensions
+        const fullScreenDataUrl = await htmlToImage.toPng(screenEl, { 
+          ...captureOpts, 
+          width, 
+          height,
+          canvasWidth: width * (isMobile ? 3 : 2),
+          canvasHeight: height * (isMobile ? 3 : 2),
+        });
         const fullScreenImg = new Image();
         await new Promise<void>((res) => { fullScreenImg.onload = () => res(); fullScreenImg.src = fullScreenDataUrl; });
 
@@ -300,6 +306,7 @@ async function handleClientSidePNGExport() {
         // Universal direct capture — adds temporary padding to expand layout box for full border capture
         async function captureEl(el: HTMLElement): Promise<string | null> {
           try {
+            const overflowSaved = unlockOverflow(el);
             const buf = 3;
             const cs = iframeDoc!.defaultView!.getComputedStyle(el);
             const savedStyle = {
@@ -335,6 +342,7 @@ async function handleClientSidePNGExport() {
             const { w, h } = elSize(el);
             if (w < 20 || h < 20) {
               Object.assign(el.style, savedStyle);
+              restoreOverflow(overflowSaved);
               return null;
             }
             const dataUrl = await htmlToImage.toPng(el, {
@@ -344,6 +352,7 @@ async function handleClientSidePNGExport() {
               height: h,
             });
             Object.assign(el.style, savedStyle);
+            restoreOverflow(overflowSaved);
             if (!dataUrl || dataUrl.length < 1000 || capturedDataUrls.has(dataUrl)) return null;
             capturedDataUrls.add(dataUrl);
             return dataUrl;
@@ -676,7 +685,7 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           hideForPlain.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 150));
-          const plainUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+          const plainUrl = await htmlToImage.toPng(screenEl, { ...captureOpts, width, height });
           hideForPlain.forEach(el => { el.style.visibility = ""; });
           if (plainUrl && plainUrl.length > 2000) await addToZip(plainUrl, "background_plain.png");
         } catch { /* skip */ }
@@ -695,7 +704,7 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           hideForDecor.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 150));
-          const decorUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+          const decorUrl = await htmlToImage.toPng(screenEl, { ...captureOpts, width, height });
           hideForDecor.forEach(el => { el.style.visibility = ""; });
           if (decorUrl && decorUrl.length > 2000) await addToZip(decorUrl, "background_with_decoratives.png");
         } catch { /* skip */ }
