@@ -87,11 +87,12 @@ export function ScreenCard({
       <div className="card">
         {/* Screen preview */}
         <div
-          className="w-full rounded-lg mb-4 overflow-hidden relative group"
-          style={{ height: "200px" }}
+          className="w-full rounded-xl mb-4 overflow-hidden relative group cursor-pointer"
+          style={{ height: isLandscape ? "160px" : "220px" }}
+          onClick={handleViewScreen}
         >
           {currentScreen.html_css ? (
-            <div className="w-full h-full relative">
+            <div className="w-full h-full relative overflow-hidden">
               <iframe
                 srcDoc={currentScreen.html_css}
                 className="absolute top-0 left-0 border-none pointer-events-none"
@@ -105,6 +106,8 @@ export function ScreenCard({
                 }}
                 scrolling="no"
               />
+              {/* Dark overlay for hover effect */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200" />
               {/* Revision count badge */}
               {!isDemo && (
                 <div className="absolute top-2 right-2 z-10">
