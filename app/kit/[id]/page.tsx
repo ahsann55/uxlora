@@ -534,15 +534,8 @@ async function handleClientSidePNGExport() {
           activeTabDecorations.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 100));
           try {
-            const { w, h } = elSize(nav);
-            if (w > 20 && h > 20) {
-              const navUrl = await htmlToImage.toPng(nav, {
-                ...captureOpts,
-                width: w,
-                height: h,
-              });
-              if (navUrl && navUrl.length > 1000) await addToZip(navUrl, "nav_complete.png");
-            }
+            const navUrl = await canvasCrop(nav);
+            if (navUrl) await addToZip(navUrl, "nav_complete.png");
           } catch { /* skip */ }
           activeTabDecorations.forEach(el => { el.style.visibility = ""; });
 
