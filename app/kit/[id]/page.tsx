@@ -483,29 +483,28 @@ async function handleClientSidePNGExport() {
             if (iconUrl) await addToZip(iconUrl, `icon_button_${iconBtnCount}_icon.png`);
           }
         }
-        // ── 3.5. HUD PLAIN BACKGROUND ───────────────────────────────
+       // ── 3.5. HUD PLAIN BACKGROUND ───────────────────────────────
         const hudEls = Array.from(
           iframeDoc.querySelectorAll('[data-uxlora="ui:game:hud"]')
         ) as HTMLElement[];
         for (const hud of hudEls) {
           try {
-            const rect = hud.getBoundingClientRect();
-            if (rect && rect.width > 20 && rect.height > 20) {
-              // Hide children and re-capture just the HUD area
-              const hudChildren = Array.from(hud.querySelectorAll('*')) as HTMLElement[];
-              hudChildren.forEach(el => { el.style.visibility = 'hidden'; });
-              await new Promise(r => setTimeout(r, 100));
-              const hudScreenshot = await htmlToImage.toPng(screenEl, { ...captureOpts, width, height });
-              hudChildren.forEach(el => { el.style.visibility = ''; });
+            const hudChildren = Array.from(hud.querySelectorAll('*')) as HTMLElement[];
+            hudChildren.forEach(el => { el.style.visibility = 'hidden'; });
+            await new Promise(r => setTimeout(r, 100));
+            const hudPlainScreenshot = await htmlToImage.toPng(screenEl, { ...captureOpts, width, height });
+            hudChildren.forEach(el => { el.style.visibility = ''; });
+            const hudRect = hud.getBoundingClientRect();
+            if (hudRect && hudRect.width > 20 && hudRect.height > 20) {
               const hudImg = new Image();
-              await new Promise<void>(res => { hudImg.onload = () => res(); hudImg.src = hudScreenshot; });
+              await new Promise<void>(res => { hudImg.onload = () => res(); hudImg.src = hudPlainScreenshot; });
               const canvas = document.createElement("canvas");
               const px = captureOpts.pixelRatio ?? 1;
-              canvas.width = rect.width * px;
-              canvas.height = rect.height * px;
+              canvas.width = hudRect.width * px;
+              canvas.height = hudRect.height * px;
               const ctx = canvas.getContext("2d");
               if (ctx) {
-                ctx.drawImage(hudImg, rect.left * px, rect.top * px, rect.width * px, rect.height * px, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(hudImg, hudRect.left * px, hudRect.top * px, hudRect.width * px, hudRect.height * px, 0, 0, canvas.width, canvas.height);
                 const hudUrl = canvas.toDataURL("image/png");
                 if (hudUrl && hudUrl.length > 1000) await addToZip(hudUrl, 'hud_plain.png');
               }
@@ -622,8 +621,9 @@ async function handleClientSidePNGExport() {
           let decorCount = 0;
           for (const decor of activeTabDecorations) {
             try {
-              const w = decor.offsetWidth + 4;
-              const h = decor.offsetHeight + 4;
+              const rect = decor.getBoundingClientRect();
+              const w = Math.max(decor.offsetWidth, rect.width) + 4;
+              const h = Math.max(decor.offsetHeight, rect.height) + 4;
               if (w < 5 || h < 5) continue;
               const wrapper = iframeDoc!.createElement('div');
               wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box`;
