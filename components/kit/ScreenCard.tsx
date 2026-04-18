@@ -93,9 +93,9 @@ export function ScreenCard({
   return (
     <>
       <div className="card" style={{ width: isLandscape ? "320px" : "220px" }}>
-        {/* Revision badge — above preview */}
+        {/* Revision badge — top of card */}
         {!isDemo && (
-          <div className="flex justify-end mb-2">
+          <div className="flex justify-center mb-3">
             <span className={`badge text-xs ${
               revisionsLeft === 0
                 ? "bg-surface-200 text-white/30 border border-surface-300"
@@ -109,8 +109,8 @@ export function ScreenCard({
         <div
           className="rounded-xl mb-4 overflow-hidden relative group cursor-pointer mx-auto"
           style={{ 
-            width: isLandscape ? "296px" : "196px",
-            height: isLandscape ? "140px" : "350px"
+            width: isLandscape ? "296px" : "190px",
+            height: isLandscape ? "140px" : "412px"
           }}
           onClick={handleViewScreen}
         >
@@ -125,7 +125,7 @@ export function ScreenCard({
                   transformOrigin: "top left",
                   transform: isLandscape
                     ? `scale(${296 / 844})`
-                    : `scale(${196 / 390})`,
+                    : `scale(${190 / 390})`,
                 }}
                 scrolling="no"
               />

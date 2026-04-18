@@ -36,10 +36,15 @@ export function DashboardSkeleton() {
 
 export function ScreenCardSkeleton({ isLandscape = false }: { isLandscape?: boolean }) {
   return (
-    <div className="card animate-pulse" style={{ width: isLandscape ? "340px" : "236px" }}>
-      <div 
-        className="bg-surface-200 rounded-xl mb-4" 
-        style={{ width: isLandscape ? "316px" : "212px", height: isLandscape ? "149px" : "459px" }}
+    <div className="card animate-pulse" style={{ width: isLandscape ? "320px" : "220px" }}>
+      {/* Revision badge skeleton */}
+      <div className="flex justify-center mb-3">
+        <div className="h-5 bg-surface-200 rounded-full w-32" />
+      </div>
+      {/* Screen preview skeleton — centered */}
+      <div
+        className="bg-surface-200 rounded-xl mb-4 mx-auto"
+        style={{ width: isLandscape ? "296px" : "190px", height: isLandscape ? "140px" : "412px" }}
       />
       <div className="h-4 bg-surface-200 rounded w-2/3 mb-3" />
       <div className="flex gap-2">
