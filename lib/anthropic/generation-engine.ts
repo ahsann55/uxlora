@@ -18,18 +18,7 @@ function getAdminClient() {
   );
 }
 
-const HARD_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
-
 export async function runGenerationEngine(
-  context: GenerationContext
-): Promise<void> {
-  const hardTimeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error("Generation timed out after 10 minutes")), HARD_TIMEOUT_MS)
-  );
-  return Promise.race([_runGenerationEngine(context), hardTimeout]);
-}
-
-async function _runGenerationEngine(
   context: GenerationContext
 ): Promise<void> {
   const adminSupabase = getAdminClient();
@@ -248,21 +237,15 @@ async function _runGenerationEngine(
       const screenStart = Date.now();
 
       try {
-        const screenTimeout = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Screen generation timeout")), 360000) // 6 min hard limit
+        const result = await generateScreen(
+          context,
+          designSystem,
+          screenName,
+          globalIndex,
+          finalTotalScreens,
+          selectedIcons,
+          iconAuthorMap
         );
-        const result = await Promise.race([
-          generateScreen(
-            context,
-            designSystem,
-            screenName,
-            globalIndex,
-            finalTotalScreens,
-            selectedIcons,
-            iconAuthorMap
-          ),
-          screenTimeout,
-        ]);
 
         const { error: insertError } = await adminSupabase
           .from("screens")

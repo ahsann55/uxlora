@@ -11,8 +11,8 @@ export function getAnthropicClient(): Anthropic {
   if (!client) {
     client = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY!,
-      timeout: 120000, // 2 minutes per call
-      maxRetries: 1,   // 1 retry = max 4 minutes per call
+      timeout: 90000, // 90 seconds per call
+      maxRetries: 0,  // no retries — fail fast
     });
   }
   return client;
