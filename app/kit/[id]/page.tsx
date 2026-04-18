@@ -189,7 +189,6 @@ async function handleClientSidePNGExport() {
       const folderName = `${paddedIndex}_${sanitizedName}`;
 
       const iframe = document.createElement("iframe");
-      iframe.setAttribute("scrolling", "no");
       iframe.style.position = "fixed";
       iframe.style.left = "0px";
       iframe.style.top = `-${height + 100}px`;
@@ -201,12 +200,10 @@ async function handleClientSidePNGExport() {
       document.body.appendChild(iframe);
 
       try {
+        iframe.srcdoc = screen.html_css;
+        await new Promise(r => setTimeout(r, 100));
         const iframeDoc = iframe.contentDocument ?? iframe.contentWindow?.document;
         if (!iframeDoc) continue;
-
-        iframeDoc.open();
-        iframeDoc.write(screen.html_css);
-        iframeDoc.close();
 
         // Fix viewport meta if model used device-width instead of exact px
         const viewportMeta = iframeDoc.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
