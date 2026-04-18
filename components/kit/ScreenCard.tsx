@@ -84,11 +84,14 @@ export function ScreenCard({
 
   return (
     <>
-      <div className="card">
+      <div className="card" style={{ width: isLandscape ? "340px" : "236px" }}>
         {/* Screen preview */}
         <div
-          className="w-full rounded-xl mb-4 overflow-hidden relative group cursor-pointer"
-          style={{ height: isLandscape ? "160px" : "220px" }}
+          className="rounded-xl mb-4 overflow-hidden relative group cursor-pointer"
+          style={{ 
+            width: isLandscape ? "316px" : "212px",
+            height: isLandscape ? "149px" : "459px"
+          }}
           onClick={handleViewScreen}
         >
           {currentScreen.html_css ? (
@@ -101,8 +104,8 @@ export function ScreenCard({
                   height: isLandscape ? "390px" : "844px",
                   transformOrigin: "top left",
                   transform: isLandscape
-                    ? `scale(${200 / 390})`
-                    : `scale(${200 / 844})`,
+                    ? `scale(${316 / 844})`
+                    : `scale(${212 / 390})`,
                 }}
                 scrolling="no"
               />

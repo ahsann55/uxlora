@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { KitList } from "@/components/dashboard/KitList";
 import { OnboardingChecklist } from "@/components/ui/OnboardingChecklist";
+import { DashboardSkeleton } from "@/components/ui/LoadingSkeleton";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -57,8 +59,11 @@ const profile = profileData as { subscription_tier: string } | null;
         hasSubscription={(profile?.subscription_tier ?? "free") !== "free"}
         emailVerified={!!user.email_confirmed_at}
       />
+
       {/* Kit list */}
-      <KitList kits={kitList} />
+      <Suspense fallback={<DashboardSkeleton />}>
+        <KitList kits={kitList} />
+      </Suspense>
 
     </div>
   );

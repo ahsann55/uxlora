@@ -79,8 +79,37 @@ export default function PromptsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-white/50">Loading prompts...</p>
+      <div className="max-w-6xl mx-auto animate-pulse">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <div className="h-8 bg-surface-200 rounded w-48 mb-2" />
+            <div className="h-4 bg-surface-200 rounded w-40" />
+          </div>
+          <div className="h-10 bg-surface-200 rounded w-36" />
+        </div>
+        <div className="flex gap-2 mb-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-8 bg-surface-200 rounded w-24" />
+          ))}
+        </div>
+        <div className="card overflow-hidden p-0">
+          <div className="border-b border-surface-300 flex gap-4 p-4">
+            {["Step", "Category", "Version", "Model", "Status", "Updated", "Actions"].map((h) => (
+              <div key={h} className="h-4 bg-surface-200 rounded flex-1" />
+            ))}
+          </div>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="flex gap-4 p-4 border-b border-surface-200">
+              <div className="h-4 bg-surface-200 rounded flex-1" />
+              <div className="h-6 bg-surface-200 rounded w-20 self-center" />
+              <div className="h-4 bg-surface-200 rounded w-8 self-center" />
+              <div className="h-4 bg-surface-200 rounded w-32 self-center" />
+              <div className="h-6 bg-surface-200 rounded w-16 self-center" />
+              <div className="h-4 bg-surface-200 rounded w-20 self-center" />
+              <div className="h-4 bg-surface-200 rounded w-12 self-center" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { AdminTableSkeleton } from "@/components/ui/LoadingSkeleton";
 
 interface EnrichedLog {
   id: string;
@@ -171,7 +172,26 @@ export default function LogsPage() {
       )}
 
       {loading ? (
-        <div className="text-white/40 text-sm">Loading...</div>
+        <div className="space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="card p-0 overflow-hidden animate-pulse">
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 bg-surface-200 rounded" />
+                  <div>
+                    <div className="h-4 bg-surface-200 rounded w-48 mb-2" />
+                    <div className="h-3 bg-surface-200 rounded w-32" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-3 bg-surface-200 rounded w-16" />
+                  <div className="h-3 bg-surface-200 rounded w-16" />
+                  <div className="h-3 bg-surface-200 rounded w-12" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : kitGroups.length === 0 ? (
         <div className="card text-center py-12">
           <p className="text-white/40">No generation logs yet.</p>

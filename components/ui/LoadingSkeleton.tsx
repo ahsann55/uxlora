@@ -34,10 +34,13 @@ export function DashboardSkeleton() {
   );
 }
 
-export function ScreenCardSkeleton() {
+export function ScreenCardSkeleton({ isLandscape = false }: { isLandscape?: boolean }) {
   return (
-    <div className="card animate-pulse">
-      <div className="w-full h-48 bg-surface-200 rounded-lg mb-4" />
+    <div className="card animate-pulse" style={{ width: isLandscape ? "340px" : "236px" }}>
+      <div 
+        className="bg-surface-200 rounded-xl mb-4" 
+        style={{ width: isLandscape ? "316px" : "212px", height: isLandscape ? "149px" : "459px" }}
+      />
       <div className="h-4 bg-surface-200 rounded w-2/3 mb-3" />
       <div className="flex gap-2">
         <div className="h-8 bg-surface-200 rounded flex-1" />
@@ -69,7 +72,7 @@ export function KitPageSkeleton() {
         </div>
 
         {/* Screen grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="flex flex-wrap gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <ScreenCardSkeleton key={i} />
           ))}
