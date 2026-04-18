@@ -207,13 +207,24 @@ async function handleClientSidePNGExport() {
         iframeDoc.write(screen.html_css);
         iframeDoc.close();
 
+        // Force exact dimensions — overrides any viewport meta
+        iframeDoc.documentElement.style.width = `${width}px`;
+        iframeDoc.documentElement.style.height = `${height}px`;
+        iframeDoc.documentElement.style.overflow = "hidden";
+        iframeDoc.documentElement.style.minWidth = `${width}px`;
+        iframeDoc.documentElement.style.maxWidth = `${width}px`;
+        if (iframeDoc.body) {
+          iframeDoc.body.style.width = `${width}px`;
+          iframeDoc.body.style.height = `${height}px`;
+          iframeDoc.body.style.overflow = "hidden";
+          iframeDoc.body.style.minWidth = `${width}px`;
+          iframeDoc.body.style.maxWidth = `${width}px`;
+        }
+
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
         if (iframe.contentWindow) {
           iframe.contentWindow.scrollTo(0, 0);
-          iframeDoc.documentElement.style.width = `${width}px`;
-          iframeDoc.documentElement.style.height = `${height}px`;
-          iframeDoc.documentElement.style.overflow = "hidden";
         }
 
         const htmlEl = iframeDoc.documentElement as HTMLElement;
@@ -555,7 +566,7 @@ async function handleClientSidePNGExport() {
           for (const decor of activeTabDecorations) {
             try {
               const w = decor.offsetWidth + 4;
-              const h = decor.offsetHeight + 20; // extra top buffer for negative positioning
+              const h = decor.offsetHeight + 4;
               if (w < 5 || h < 5) continue;
               const wrapper = iframeDoc!.createElement('div');
               wrapper.style.cssText = `position:fixed;left:0;top:20px;width:${w}px;height:${h}px;overflow:visible;background:transparent;padding-top:20px;box-sizing:border-box`;
@@ -646,7 +657,7 @@ async function handleClientSidePNGExport() {
             iframeDoc.querySelectorAll(
               '[data-uxlora^="ui:button"], [data-uxlora^="ui:text"], ' +
               '[data-uxlora^="ui:form"], [data-uxlora^="ui:nav"], ' +
-              '[data-uxlora^="ui:layout"], [data-uxlora^="ui:status"], ' +
+              '[data-uxlora^="ui:layout"], [data-uxlora^="ui:container"], [data-uxlora^="ui:status"], ' +
               '[data-uxlora^="ui:game"], [data-uxlora^="ui:mobile"], ' +
               '[data-uxlora^="ui:web"], [data-uxlora^="media:image:thumbnail"], ' +
               '[data-uxlora^="media:image:item"], [data-uxlora^="media:image:avatar"]'
