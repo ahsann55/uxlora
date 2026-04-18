@@ -62,8 +62,8 @@ export function ScreenCard({
   const maxRevisions = REVISION_LIMITS[subscriptionTier] ?? 2;
   const revisionsLeft = Math.max(0, maxRevisions - currentScreen.revision_count);
 
-  // Universal preview — aspect ratio derived from actual screen dimensions
-  const previewW = 190;
+  // Universal preview — landscape gets wider container to match visual weight of portrait cards
+  const previewW = screenW > screenH ? 340 : 190;
   const scale = previewW / screenW;
   const previewH = Math.ceil(screenH * scale);
   const cardW = previewW + 30;

@@ -35,7 +35,7 @@ export function DashboardSkeleton() {
 }
 
 export function ScreenCardSkeleton({ screenW = 390, screenH = 844 }: { screenW?: number; screenH?: number }) {
-  const previewW = 190;
+  const previewW = screenW > screenH ? 340 : 190;
   const scale = previewW / screenW;
   const previewH = Math.ceil(screenH * scale);
   const cardW = previewW + 30;
@@ -82,7 +82,15 @@ export function KitPageSkeleton() {
         {/* Screen grid */}
         <div className="flex flex-wrap gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <ScreenCardSkeleton key={i} />
+            <div key={i} className="card animate-pulse" style={{ width: "220px" }}>
+              <div className="w-full h-40 bg-surface-200 rounded-lg mb-4" />
+              <div className="h-4 bg-surface-200 rounded w-3/4 mb-2" />
+              <div className="h-3 bg-surface-200 rounded w-1/2 mb-4" />
+              <div className="flex gap-2">
+                <div className="h-8 bg-surface-200 rounded flex-1" />
+                <div className="h-8 bg-surface-200 rounded flex-1" />
+              </div>
+            </div>
           ))}
         </div>
       </div>
