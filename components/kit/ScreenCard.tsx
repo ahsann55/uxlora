@@ -13,7 +13,8 @@ interface ScreenCardProps {
   kitId: string;
   onScreenUpdated: (screen: Screen) => void;
   isSubscriptionActive: boolean;
-  isLandscape?: boolean;
+  screenW?: number;
+  screenH?: number;
   subscriptionTier?: string;
 }
 
@@ -47,7 +48,8 @@ export function ScreenCard({
   kitId, 
   onScreenUpdated, 
   isSubscriptionActive,
-  isLandscape = false,
+  screenW = 390,
+  screenH = 844,
   subscriptionTier = "free" }: ScreenCardProps) {
   const [showReviseModal, setShowReviseModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -60,28 +62,24 @@ export function ScreenCard({
   const maxRevisions = REVISION_LIMITS[subscriptionTier] ?? 2;
   const revisionsLeft = Math.max(0, maxRevisions - currentScreen.revision_count);
 
-  // Universal screen dimensions — derived from actual kit screen size
-  const screenW = isLandscape ? 844 : 390;
-  const screenH = isLandscape ? 390 : 844;
-  const previewW = 190; // fixed preview width in px
+  // Universal preview — aspect ratio derived from actual screen dimensions
+  const previewW = 190;
   const scale = previewW / screenW;
   const previewH = Math.ceil(screenH * scale);
-  const cardW = previewW + 30; // preview + padding on both sides
+  const cardW = previewW + 30;
 
   function handleViewScreen() {
     if (!currentScreen.html_css) return;
     const win = window.open("", "_blank");
     if (!win) return;
-    const w = isLandscape ? "844px" : "390px";
-    const h = isLandscape ? "390px" : "844px";
     win.document.open();
     win.document.write(currentScreen.html_css);
     win.document.close();
-    win.document.documentElement.style.width = w;
-    win.document.documentElement.style.height = h;
+    win.document.documentElement.style.width = `${screenW}px`;
+    win.document.documentElement.style.height = `${screenH}px`;
     win.document.documentElement.style.overflow = "hidden";
-    win.document.body.style.width = w;
-    win.document.body.style.height = h;
+    win.document.body.style.width = `${screenW}px`;
+    win.document.body.style.height = `${screenH}px`;
     win.document.body.style.overflow = "hidden";
   }
 

@@ -727,6 +727,9 @@ async function handleClientSidePNGExport() {
       : 0;
 
   const checklistData = kit.checklist_data as Record<string, unknown>;
+const isMobile = kit.category === "mobile" || kit.category === "game";
+const kitScreenW = isMobile ? ((checklistData?.orientation as string) === "Landscape" ? 844 : 390) : 1440;
+const kitScreenH = isMobile ? ((checklistData?.orientation as string) === "Landscape" ? 390 : 844) : 900;
 
   return (
     <div className="min-h-screen bg-surface p-6">
@@ -1018,7 +1021,8 @@ async function handleClientSidePNGExport() {
                   kitId={id}
                   onScreenUpdated={handleScreenUpdated}
                   isSubscriptionActive={isSubscriptionActive()}
-                  isLandscape={(kit.checklist_data as Record<string, unknown>)?.orientation === "Landscape"}
+                  screenW={kitScreenW}
+                  screenH={kitScreenH}
                   subscriptionTier={subscriptionTier}
                 />
               ))}

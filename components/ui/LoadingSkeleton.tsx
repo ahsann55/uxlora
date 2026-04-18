@@ -34,9 +34,7 @@ export function DashboardSkeleton() {
   );
 }
 
-export function ScreenCardSkeleton({ isLandscape = false }: { isLandscape?: boolean }) {
-  const screenW = isLandscape ? 844 : 390;
-  const screenH = isLandscape ? 390 : 844;
+export function ScreenCardSkeleton({ screenW = 390, screenH = 844 }: { screenW?: number; screenH?: number }) {
   const previewW = 190;
   const scale = previewW / screenW;
   const previewH = Math.ceil(screenH * scale);
