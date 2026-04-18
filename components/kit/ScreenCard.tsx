@@ -92,10 +92,10 @@ export function ScreenCard({
 
   return (
     <>
-      <div className="card" style={{ width: isLandscape ? "320px" : "220px" }}>
+      <div className="card" style={{ width: isLandscape ? "320px" : "220px", padding: "12px" }}>
         {/* Revision badge — top of card */}
         {!isDemo && (
-          <div className="flex justify-center mb-3">
+          <div className="flex justify-center mb-2">
             <span className={`badge text-xs ${
               revisionsLeft === 0
                 ? "bg-surface-200 text-white/30 border border-surface-300"
@@ -107,10 +107,10 @@ export function ScreenCard({
         )}
         {/* Screen preview */}
         <div
-          className="rounded-xl mb-4 overflow-hidden relative group cursor-pointer mx-auto"
+          className="rounded-xl mb-2 overflow-hidden relative group cursor-pointer mx-auto"
           style={{ 
             width: isLandscape ? "296px" : "190px",
-            height: isLandscape ? "140px" : "412px"
+            height: isLandscape ? "140px" : "380px"
           }}
           onClick={handleViewScreen}
         >
@@ -118,14 +118,18 @@ export function ScreenCard({
             <div className="w-full h-full relative overflow-hidden">
               <iframe
                 srcDoc={currentScreen.html_css}
-                className="absolute top-0 left-0 border-none pointer-events-none"
+                className="border-none pointer-events-none"
                 style={{
                   width: isLandscape ? "844px" : "390px",
                   height: isLandscape ? "390px" : "844px",
-                  transformOrigin: "top left",
+                  transformOrigin: "top center",
                   transform: isLandscape
                     ? `scale(${296 / 844})`
                     : `scale(${190 / 390})`,
+                  position: "absolute",
+                  left: "50%",
+                  top: "0",
+                  marginLeft: isLandscape ? `-${844 / 2}px` : `-${390 / 2}px`,
                 }}
                 scrolling="no"
               />
@@ -142,13 +146,13 @@ export function ScreenCard({
         </div>
 
         {/* Screen name */}
-        <p className="text-sm font-medium text-white mb-3">
+        <p className="text-sm font-medium text-white mb-1.5">
           {currentScreen.name}
         </p>
 
         {/* Revision notes */}
         {currentScreen.revision_notes && (
-          <p className="text-xs text-white/30 mb-3 italic">
+          <p className="text-xs text-white/30 mb-1.5 italic">
             Last revision: {currentScreen.revision_notes}
           </p>
         )}
