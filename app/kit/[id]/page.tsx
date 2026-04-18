@@ -483,15 +483,21 @@ async function handleClientSidePNGExport() {
           if (plainUrl) { scoreCount++; await addToZip(plainUrl, `score_badge_${scoreCount}_plain.png`); }
         }
 
-        // ── 5. LAYOUT — DYNAMIC (card:dynamic, panel:dynamic) ───────
-        // Rule 1: plain container only
+        // ── 5. DYNAMIC CONTAINERS (ui:container:dynamic) ────────────
+        // Plain container + icon only — no text, exported like buttons
         const dynamicLayouts = Array.from(
-          iframeDoc.querySelectorAll('[data-uxlora="ui:layout:card:dynamic"], [data-uxlora="ui:layout:panel:dynamic"]')
+          iframeDoc.querySelectorAll('[data-uxlora="ui:container:dynamic"]')
         ) as HTMLElement[];
         let dynCount = 0;
         for (const el of dynamicLayouts.slice(0, 8)) {
+          dynCount++;
           const plainUrl = await capturePlainContainer(el);
-          if (plainUrl) { dynCount++; await addToZip(plainUrl, `container_dynamic_${dynCount}.png`); }
+          if (plainUrl) await addToZip(plainUrl, `container_dynamic_${dynCount}_plain.png`);
+          const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement | null;
+          if (icon) {
+            const iconUrl = await captureSvg(icon);
+            if (iconUrl) await addToZip(iconUrl, `container_dynamic_${dynCount}_icon.png`);
+          }
         }
 
         // ── 6. LAYOUT — STATIC (card:static, panel:static) ──────────
@@ -527,7 +533,11 @@ async function handleClientSidePNGExport() {
         const navEls = Array.from(
           iframeDoc.querySelectorAll('[data-uxlora="ui:nav:bar"]')
         ) as HTMLElement[];
-        for (const nav of navEls) {
+        // Fallback: if model missed the tag, find nav by element type
+        const navToProcess = navEls.length > 0
+          ? navEls
+          : Array.from(iframeDoc.querySelectorAll('nav')) as HTMLElement[];
+        for (const nav of navToProcess) {
           // Hide active tab decoration before capturing nav
           const activeTabDecorations = Array.from(
             nav.querySelectorAll('[data-uxlora="vec:decoration"], .nav-active-crest')
