@@ -207,6 +207,12 @@ async function handleClientSidePNGExport() {
         iframeDoc.write(screen.html_css);
         iframeDoc.close();
 
+        // Fix viewport meta if model used device-width instead of exact px
+        const viewportMeta = iframeDoc.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
+        if (viewportMeta) {
+          viewportMeta.content = `width=${width}, initial-scale=1.0`;
+        }
+
         // Force exact dimensions — overrides any viewport meta
         iframeDoc.documentElement.style.width = `${width}px`;
         iframeDoc.documentElement.style.height = `${height}px`;
@@ -326,8 +332,10 @@ async function handleClientSidePNGExport() {
         // Universal SVG capture — clones into fixed wrapper to ensure correct rendering
         async function captureSvg(svgEl: HTMLElement): Promise<string | null> {
           try {
-            const w = svgEl.offsetWidth || parseFloat((svgEl as unknown as Element).getAttribute?.('width') ?? '24');
-            const h = svgEl.offsetHeight || parseFloat((svgEl as unknown as Element).getAttribute?.('height') ?? '24');
+            const svgElement = svgEl as unknown as SVGSVGElement;
+            const viewBox = svgElement.viewBox?.baseVal;
+            const w = svgEl.offsetWidth || parseFloat(svgElement.getAttribute?.('width') ?? '0') || (viewBox?.width ?? 0) || 24;
+            const h = svgEl.offsetHeight || parseFloat(svgElement.getAttribute?.('height') ?? '0') || (viewBox?.height ?? 0) || 24;
             if (w < 4 || h < 4) return null;
             const wrapper = iframeDoc!.createElement('div');
             wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:hidden;background:transparent`;
