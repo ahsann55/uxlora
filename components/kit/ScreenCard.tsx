@@ -60,6 +60,14 @@ export function ScreenCard({
   const maxRevisions = REVISION_LIMITS[subscriptionTier] ?? 2;
   const revisionsLeft = Math.max(0, maxRevisions - currentScreen.revision_count);
 
+  // Universal screen dimensions — derived from actual kit screen size
+  const screenW = isLandscape ? 844 : 390;
+  const screenH = isLandscape ? 390 : 844;
+  const previewW = 190; // fixed preview width in px
+  const scale = previewW / screenW;
+  const previewH = Math.ceil(screenH * scale);
+  const cardW = previewW + 30; // preview + padding on both sides
+
   function handleViewScreen() {
     if (!currentScreen.html_css) return;
     const win = window.open("", "_blank");
@@ -92,7 +100,7 @@ export function ScreenCard({
 
   return (
     <>
-      <div className="card" style={{ width: isLandscape ? "320px" : "220px", padding: "12px" }}>
+      <div className="card" style={{ width: `${cardW}px`, padding: "12px" }}>
         {/* Revision badge — top of card */}
         {!isDemo && (
           <div className="flex justify-center mb-2">
@@ -105,13 +113,10 @@ export function ScreenCard({
             </span>
           </div>
         )}
-        {/* Screen preview */}
+        {/* Screen preview — universally calculated from actual screen dimensions */}
         <div
           className="rounded-xl mb-2 overflow-hidden relative group cursor-pointer mx-auto"
-          style={{ 
-            width: isLandscape ? "296px" : "190px",
-            height: isLandscape ? `${Math.ceil(390 * (296/844))}px` : `${Math.ceil(844 * (190/390))}px`
-          }}
+          style={{ width: `${previewW}px`, height: `${previewH}px` }}
           onClick={handleViewScreen}
         >
           {currentScreen.html_css ? (
@@ -120,20 +125,17 @@ export function ScreenCard({
                 srcDoc={currentScreen.html_css}
                 className="border-none pointer-events-none"
                 style={{
-                  width: isLandscape ? "844px" : "390px",
-                  height: isLandscape ? "390px" : "844px",
+                  width: `${screenW}px`,
+                  height: `${screenH}px`,
                   transformOrigin: "top center",
-                  transform: isLandscape
-                    ? `scale(${296 / 844})`
-                    : `scale(${190 / 390})`,
+                  transform: `scale(${scale})`,
                   position: "absolute",
                   left: "50%",
                   top: "0",
-                  marginLeft: isLandscape ? `-${844 / 2}px` : `-${390 / 2}px`,
+                  marginLeft: `-${screenW / 2}px`,
                 }}
                 scrolling="no"
               />
-              {/* Dark overlay for hover effect */}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200" />
             </div>
           ) : (

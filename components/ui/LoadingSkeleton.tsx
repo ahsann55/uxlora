@@ -35,16 +35,21 @@ export function DashboardSkeleton() {
 }
 
 export function ScreenCardSkeleton({ isLandscape = false }: { isLandscape?: boolean }) {
+  const screenW = isLandscape ? 844 : 390;
+  const screenH = isLandscape ? 390 : 844;
+  const previewW = 190;
+  const scale = previewW / screenW;
+  const previewH = Math.ceil(screenH * scale);
+  const cardW = previewW + 30;
+
   return (
-    <div className="card animate-pulse" style={{ width: isLandscape ? "320px" : "220px", padding: "12px" }}>
-      {/* Revision badge skeleton */}
+    <div className="card animate-pulse" style={{ width: `${cardW}px`, padding: "12px" }}>
       <div className="flex justify-center mb-2">
         <div className="h-5 bg-surface-200 rounded-full w-32" />
       </div>
-      {/* Screen preview skeleton — centered */}
       <div
         className="bg-surface-200 rounded-xl mb-2 mx-auto"
-        style={{ width: isLandscape ? "296px" : "190px", height: isLandscape ? `${Math.ceil(390 * (296/844))}px` : `${Math.ceil(844 * (190/390))}px` }}
+        style={{ width: `${previewW}px`, height: `${previewH}px` }}
       />
       <div className="h-4 bg-surface-200 rounded w-2/3 mb-1.5" />
       <div className="flex gap-2">
