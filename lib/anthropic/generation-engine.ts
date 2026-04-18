@@ -18,7 +18,18 @@ function getAdminClient() {
   );
 }
 
+const HARD_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+
 export async function runGenerationEngine(
+  context: GenerationContext
+): Promise<void> {
+  const hardTimeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("Generation timed out after 10 minutes")), HARD_TIMEOUT_MS)
+  );
+  return Promise.race([_runGenerationEngine(context), hardTimeout]);
+}
+
+async function _runGenerationEngine(
   context: GenerationContext
 ): Promise<void> {
   const adminSupabase = getAdminClient();
@@ -354,6 +365,10 @@ export async function runGenerationEngine(
       error_message: userMessage,
       current_step: "Failed",
     });
+    // Refund credit on failure
+    try {
+      await adminSupabase.rpc("refund_generation", { p_user_id: context.userId });
+    } catch { /* ignore */ }
     throw error;
   }
 }

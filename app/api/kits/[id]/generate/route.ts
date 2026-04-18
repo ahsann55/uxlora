@@ -90,10 +90,39 @@ export async function POST(
     // Build generation context
     const context: GenerationContext = {
       kitId: id,
+      userId: user.id,
       category: kit.category,
       checklistData: kit.checklist_data as Record<string, unknown>,
       isDemo,
     };
+    // Mark kit as generating immediately before starting background engine
+    // This prevents fetchKit() from pulling stale collecting_input status
+    await (supabase as any)
+      .from("kits")
+      .update({ status: "generating", current_step: "Starting...", updated_at: new Date().toISOString() })
+      .eq("id", id);
+
+    // Mark kit as generating immediately before starting background engine
+    // This prevents fetchKit() from pulling stale collecting_input status
+    await (supabase as any)
+      .from("kits")
+      .update({ status: "generating", current_step: "Starting...", updated_at: new Date().toISOString() })
+      .eq("id", id);
+
+    // Mark kit as generating immediately before starting background engine
+    // This prevents fetchKit() from pulling stale collecting_input status
+    await (supabase as any)
+      .from("kits")
+      .update({ status: "generating", current_step: "Starting...", updated_at: new Date().toISOString() })
+      .eq("id", id);
+
+    // Mark kit as generating immediately before starting background engine
+    // This prevents fetchKit() from pulling stale collecting_input status
+    await (supabase as any)
+      .from("kits")
+      .update({ status: "generating", current_step: "Starting...", updated_at: new Date().toISOString() })
+      .eq("id", id);
+
     // Run generation in background — don't await
     // Client polls /api/kits/[id]/status every 3 seconds
     runGenerationEngine(context).catch((error) => {

@@ -95,6 +95,7 @@ export async function POST(
     // Build generation context
     const context = {
       kitId,
+      userId: user.id,
       category: kit.category as "game" | "mobile" | "web",
       checklistData: kit.checklist_data as Record<string, unknown>,
       isDemo: kit.is_demo,

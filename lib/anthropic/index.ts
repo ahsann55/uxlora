@@ -11,8 +11,8 @@ export function getAnthropicClient(): Anthropic {
   if (!client) {
     client = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY!,
-      timeout: 300000, // 5 minutes
-      maxRetries: 1,
+      timeout: 120000, // 2 minutes per call
+      maxRetries: 1,   // 1 retry = max 4 minutes per call
     });
   }
   return client;
@@ -24,6 +24,7 @@ export function getAnthropicClient(): Anthropic {
 
 export interface GenerationContext {
   kitId: string;
+  userId: string;
   category: "game" | "mobile" | "web";
   checklistData: Record<string, unknown>;
   isDemo: boolean;
