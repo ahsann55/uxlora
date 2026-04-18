@@ -227,12 +227,31 @@ async function handleClientSidePNGExport() {
           iframe.contentWindow.scrollTo(0, 0);
         }
 
+        // Force screen div to exact dimensions — prevents content overflow affecting capture size
+        const screenDiv = iframeDoc.querySelector('.screen') as HTMLElement | null;
+        if (screenDiv) {
+          screenDiv.style.width = `${width}px`;
+          screenDiv.style.height = `${height}px`;
+          screenDiv.style.overflow = 'hidden';
+          screenDiv.style.position = 'relative';
+        }
+
         const htmlEl = iframeDoc.documentElement as HTMLElement;
-        const captureOpts = { pixelRatio: isMobile ? 3 : 2, skipFonts: true };
+        const captureOpts = { 
+          pixelRatio: isMobile ? 3 : 2, 
+          skipFonts: true,
+          width,
+          height,
+          style: {
+            width: `${width}px`,
+            height: `${height}px`,
+            overflow: 'hidden',
+          }
+        };
         const capturedDataUrls = new Set<string>();
 
         // Capture full screen once — reused for canvas crops
-        const fullScreenDataUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+        const fullScreenDataUrl = await htmlToImage.toPng(htmlEl, captureOpts);
         const fullScreenImg = new Image();
         await new Promise<void>((res) => { fullScreenImg.onload = () => res(); fullScreenImg.src = fullScreenDataUrl; });
 
@@ -569,7 +588,7 @@ async function handleClientSidePNGExport() {
               const h = decor.offsetHeight + 4;
               if (w < 5 || h < 5) continue;
               const wrapper = iframeDoc!.createElement('div');
-              wrapper.style.cssText = `position:fixed;left:0;top:20px;width:${w}px;height:${h}px;overflow:visible;background:transparent;padding-top:20px;box-sizing:border-box`;
+              wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box`;
               wrapper.appendChild(decor.cloneNode(true) as HTMLElement);
               iframeDoc!.body.appendChild(wrapper);
               await new Promise(r => setTimeout(r, 50));
@@ -646,7 +665,7 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           hideForPlain.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 150));
-          const plainUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+          const plainUrl = await htmlToImage.toPng(htmlEl, captureOpts);
           hideForPlain.forEach(el => { el.style.visibility = ""; });
           if (plainUrl && plainUrl.length > 2000) await addToZip(plainUrl, "background_plain.png");
         } catch { /* skip */ }
@@ -665,7 +684,7 @@ async function handleClientSidePNGExport() {
           ) as HTMLElement[];
           hideForDecor.forEach(el => { el.style.visibility = "hidden"; });
           await new Promise(r => setTimeout(r, 150));
-          const decorUrl = await htmlToImage.toPng(htmlEl, { ...captureOpts, width, height });
+          const decorUrl = await htmlToImage.toPng(htmlEl, captureOpts);
           hideForDecor.forEach(el => { el.style.visibility = ""; });
           if (decorUrl && decorUrl.length > 2000) await addToZip(decorUrl, "background_with_decoratives.png");
         } catch { /* skip */ }
