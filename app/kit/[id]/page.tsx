@@ -486,9 +486,13 @@ async function handleClientSidePNGExport() {
         const hudEls = Array.from(
           iframeDoc.querySelectorAll('[data-uxlora="ui:game:hud"]')
         ) as HTMLElement[];
-        for (const el of hudEls) {
-          const plainUrl = await capturePlainContainer(el);
-          if (plainUrl) await addToZip(plainUrl, 'hud_plain.png');
+        for (const hud of hudEls) {
+          const hudChildren = Array.from(hud.querySelectorAll('*')) as HTMLElement[];
+          hudChildren.forEach(el => { el.style.visibility = 'hidden'; });
+          await new Promise(r => setTimeout(r, 100));
+          const hudUrl = await canvasCrop(hud);
+          hudChildren.forEach(el => { el.style.visibility = ''; });
+          if (hudUrl) await addToZip(hudUrl, 'hud_plain.png');
         }
         // ── 4. CURRENCY & SCORE (game) ──────────────────────────────
         // Rule 4: plain container + icon only. Dedupe by height, keep smallest width.
