@@ -242,12 +242,19 @@ async function handleClientSidePNGExport() {
         const htmlEl = iframeDoc.documentElement as HTMLElement;
         const screenEl = (iframeDoc.querySelector('.screen') ?? iframeDoc.body) as HTMLElement;
 
-        // Clamp screenEl to exact dimensions — prevents scrollHeight bleed on landscape screens
+        // Clamp screen and all bg elements to exact dimensions
+        // Fixes case where .bg-base CSS class has wrong height (e.g. 844px on a 390px landscape screen)
         screenEl.style.width = `${width}px`;
         screenEl.style.height = `${height}px`;
         screenEl.style.overflow = 'hidden';
-        screenEl.style.minHeight = `${height}px`;
-        screenEl.style.maxHeight = `${height}px`;
+        const bgEls = Array.from(iframeDoc.querySelectorAll('[data-uxlora^="bg:"]')) as HTMLElement[];
+        bgEls.forEach(el => {
+          el.style.width = `${width}px`;
+          el.style.height = `${height}px`;
+          el.style.maxWidth = `${width}px`;
+          el.style.maxHeight = `${height}px`;
+          el.style.overflow = 'hidden';
+        });
 
         const captureOpts = { pixelRatio: isMobile ? 3 : 2, skipFonts: true };
         const capturedDataUrls = new Set<string>();
