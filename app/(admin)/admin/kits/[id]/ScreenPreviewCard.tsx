@@ -11,11 +11,12 @@ interface ScreenPreviewCardProps {
   };
   screenW: number;
   screenH: number;
+  previewW: number;
   scale: number;
   previewH: number;
 }
 
-export function ScreenPreviewCard({ screen, screenW, screenH, scale, previewH }: ScreenPreviewCardProps) {
+export function ScreenPreviewCard({ screen, screenW, screenH, previewW, scale, previewH }: ScreenPreviewCardProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -26,10 +27,10 @@ export function ScreenPreviewCard({ screen, screenW, screenH, scale, previewH }:
   }
 
   return (
-    <div className="card" style={{ width: `${320 + 24}px`, padding: "12px" }}>
+    <div className="card" style={{ width: `${previewW + 24}px`, padding: "12px" }}>
       <div
         className="rounded-xl mb-3 overflow-hidden"
-        style={{ width: "320px", height: `${previewH}px`, position: "relative" }}
+        style={{ width: `${previewW}px`, height: `${previewH}px`, position: "relative" }}
       >
         {screen.html_css ? (
           <iframe

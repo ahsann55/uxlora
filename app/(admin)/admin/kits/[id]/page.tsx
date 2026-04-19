@@ -66,7 +66,8 @@ export default async function AdminKitPreviewPage({
   }
 
   const { w: screenW, h: screenH } = parseRes();
-  const scale = 320 / screenW;
+  const previewW = screenW > screenH ? 600 : 320;
+  const scale = previewW / screenW;
   const previewH = Math.ceil(screenH * scale);
 
   return (
@@ -86,13 +87,14 @@ export default async function AdminKitPreviewPage({
           <p className="text-white/40">No screens generated yet.</p>
         </div>
       ) : (
-        <div className="flex flex-wrap gap-6">
+        <div className="flex flex-wrap gap-6" style={{ maxWidth: screenW > screenH ? "1260px" : "100%" }}>
           {screens.map((screen) => (
             <ScreenPreviewCard
               key={screen.id}
               screen={screen}
               screenW={screenW}
               screenH={screenH}
+              previewW={previewW}
               scale={scale}
               previewH={previewH}
             />
