@@ -137,7 +137,9 @@ Return a JSON object with these fields (set to null if not found):
       const jsonText = responseText.replace(/GDD_SUMMARY:[\s\S]+$/m, "").trim();
       const cleaned = jsonText.replace(/```json|```/g, "").trim();
       checklistData = JSON.parse(cleaned);
-    } catch {
+    } catch (parseError) {
+      console.error("Parse error:", parseError);
+      console.error("Raw response:", responseText.slice(0, 500));
       return NextResponse.json(
         { error: "Failed to parse document information. Please try again." },
         { status: 422 }
