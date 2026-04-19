@@ -10,6 +10,7 @@ interface GuidedStepProps {
   isDemo?: boolean;
   existingScreens?: string[];
   addScreensMode?: boolean;
+  errors?: Record<string, string>;
 }
 
 const MAX_FREE_SCREENS = 2;
@@ -21,6 +22,7 @@ export function GuidedStep({
   isDemo = true,
   existingScreens = [],
   addScreensMode = false,
+  errors = {},
 }: GuidedStepProps) {
   const [screenLimitWarningShown, setScreenLimitWarningShown] = useState(false);
   const [customScreenInput, setCustomScreenInput] = useState("");
@@ -233,6 +235,9 @@ export function GuidedStep({
             className="input"
           />
         )}
+      {errors[field.id] && (
+        <p className="text-red-400 text-xs mt-1">{errors[field.id]}</p>
+      )}
       </div>
     );
   }

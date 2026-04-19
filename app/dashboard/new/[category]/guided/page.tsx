@@ -32,6 +32,7 @@ export default function GuidedPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(addScreensMode || regenerateMode);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Suggestion state
   const [suggestionQuestions, setSuggestionQuestions] = useState<SuggestionQuestion[]>([]);
@@ -97,6 +98,11 @@ export default function GuidedPage() {
 
   function updateField(id: string, value: unknown) {
     setError(null);
+    setFieldErrors(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     setFormData((prev) => {
       const updated = { ...prev, [id]: value };
       if (id === "product_name" && typeof value === "string" && value.trim()) {
@@ -113,21 +119,23 @@ export default function GuidedPage() {
 
   async function handleNext() {
     // Validate required fields in current section
-    const missingFields = currentSection.fields.filter(field => {
-      if (!field.required) return false;
-      // Skip custom_resolution validation — it's conditional
-      if (field.id === "custom_resolution") return false;
+    const newFieldErrors: Record<string, string> = {};
+    currentSection.fields.forEach(field => {
+      if (!field.required) return;
+      if (field.id === "custom_resolution") return;
       const value = formData[field.id];
-      if (value === undefined || value === null || value === "") return true;
-      if (Array.isArray(value) && value.length === 0) return true;
-      return false;
+      if (value === undefined || value === null || value === "") {
+        newFieldErrors[field.id] = `${field.label} is required`;
+      } else if (Array.isArray(value) && value.length === 0) {
+        newFieldErrors[field.id] = `Please select at least one ${field.label.toLowerCase()}`;
+      }
     });
 
-    if (missingFields.length > 0) {
-      setError(`Please fill in: ${missingFields.map(f => f.label).join(", ")}`);
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
       return;
     }
-    setError(null);
+    setFieldErrors({});
 
     if (isLastSection) {
       // Skip suggestions for addScreens/regenerate modes
@@ -389,6 +397,7 @@ export default function GuidedPage() {
           isDemo={false}
           existingScreens={existingScreens}
           addScreensMode={addScreensMode}
+          errors={fieldErrors}
         />
 
         {loadingSuggestions && (
