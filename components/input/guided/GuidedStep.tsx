@@ -49,6 +49,11 @@ export function GuidedStep({
     if (field.id === "custom_resolution" && data.screen_resolution !== "Custom") {
       return null;
     }
+
+    // Hide custom_other fields unless "Other" is selected in parent field
+    if (field.id === "custom_genre" && data.genre_or_category !== "Other") return null;
+    if (field.id === "custom_visual_style" && data.visual_style !== "Other") return null;
+    if (field.id === "custom_typography" && data.typography_preferences !== "Other") return null;
     const customScreens = Array.isArray(data.custom_screens) ? (data.custom_screens as string[]) : [];
 
     return (

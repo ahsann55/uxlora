@@ -122,7 +122,11 @@ export default function GuidedPage() {
     const newFieldErrors: Record<string, string> = {};
     currentSection.fields.forEach(field => {
       if (!field.required) return;
-      if (field.id === "custom_resolution") return;
+      // Skip conditional fields if their parent isn't set to "Other"/"Custom"
+      if (field.id === "custom_resolution" && formData.screen_resolution !== "Custom") return;
+      if (field.id === "custom_genre" && formData.genre_or_category !== "Other") return;
+      if (field.id === "custom_visual_style" && formData.visual_style !== "Other") return;
+      if (field.id === "custom_typography") return; // always optional even if shown
       const value = formData[field.id];
       if (value === undefined || value === null || value === "") {
         newFieldErrors[field.id] = `${field.label} is required`;
