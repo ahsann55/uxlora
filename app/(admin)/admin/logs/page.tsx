@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { AdminTableSkeleton } from "@/components/ui/LoadingSkeleton";
 
 interface EnrichedLog {
@@ -120,6 +121,13 @@ function KitAccordion({ kit }: { kit: KitGroup }) {
           <span>{kit.totalInputTokens.toLocaleString()} in</span>
           <span>{kit.totalOutputTokens.toLocaleString()} out</span>
           <span className="text-white/60">${totalCost}</span>
+          <Link
+            href={`/kit/${kit.kitId}`}
+            onClick={(e) => e.stopPropagation()}
+            className="text-brand-400 hover:text-brand-300 transition-colors font-medium"
+          >
+            View →
+          </Link>
           <span className="text-white/60 text-base">{open ? "▲" : "▼"}</span>
         </div>
       </button>
