@@ -195,8 +195,73 @@ export function GapFilling({ data, category, onComplete }: GapFillingProps) {
           />
         )}
 
+        {/* Show custom text input when Other is selected for multiselect fields */}
+        {field.id === "currencies" && Array.isArray(formData.currencies) && (formData.currencies as string[]).includes("Other") && (
+          <input
+            type="text"
+            value={(formData.custom_currencies as string) ?? ""}
+            onChange={(e) => updateField("custom_currencies", e.target.value)}
+            placeholder="e.g. Diamonds, Crystals, Reputation Points"
+            className="input mt-2"
+          />
+        )}
+        {field.id === "monetization" && Array.isArray(formData.monetization) && (formData.monetization as string[]).includes("Other") && (
+          <input
+            type="text"
+            value={(formData.custom_monetization as string) ?? ""}
+            onChange={(e) => updateField("custom_monetization", e.target.value)}
+            placeholder="e.g. Season Pass, Loot Boxes, NFTs"
+            className="input mt-2"
+          />
+        )}
+        {field.id === "game_systems" && Array.isArray(formData.game_systems) && (formData.game_systems as string[]).includes("Other") && (
+          <input
+            type="text"
+            value={(formData.custom_game_systems as string) ?? ""}
+            onChange={(e) => updateField("custom_game_systems", e.target.value)}
+            placeholder="e.g. Trading System, Alliance Wars, Tournaments"
+            className="input mt-2"
+          />
+        )}
+
+        {field.id === "home_focus_element" && formData.home_focus_element === "Other" && (
+          <input
+            type="text"
+            value={(formData.custom_home_focus as string) ?? ""}
+            onChange={(e) => updateField("custom_home_focus", e.target.value)}
+            placeholder="e.g. Vehicle, Spaceship, Avatar"
+            className="input mt-2"
+          />
+        )}
+        {field.id === "genre_or_category" && formData.genre_or_category === "Other" && (
+          <input
+            type="text"
+            value={(formData.custom_genre as string) ?? ""}
+            onChange={(e) => updateField("custom_genre", e.target.value)}
+            placeholder="Describe your genre"
+            className="input mt-2"
+          />
+        )}
+        {field.id === "visual_style" && formData.visual_style === "Other" && (
+          <input
+            type="text"
+            value={(formData.custom_visual_style as string) ?? ""}
+            onChange={(e) => updateField("custom_visual_style", e.target.value)}
+            placeholder="Describe your art style"
+            className="input mt-2"
+          />
+        )}
+        {field.id === "typography_preferences" && formData.typography_preferences === "Other" && (
+          <input
+            type="text"
+            value={(formData.custom_typography as string) ?? ""}
+            onChange={(e) => updateField("custom_typography", e.target.value)}
+            placeholder="Describe your typography style"
+            className="input mt-2"
+          />
+        )}
         {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
-      </div>
+    </div>
     );
   }
 
