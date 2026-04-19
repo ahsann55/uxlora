@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { getChecklist } from "@/lib/checklist";
 import type { ChecklistField } from "@/lib/checklist";
 
@@ -45,26 +45,28 @@ export function GapFilling({ data, category, onComplete }: GapFillingProps) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const checklist = getChecklist(category);
 
-  // Collect all fields that need filling
-  const missingFields: ChecklistField[] = [];
-  for (const section of checklist.sections) {
-    for (const field of section.fields) {
-      // Skip purely conditional fields
-      if (field.id === "custom_resolution") continue;
-      if (field.id === "custom_genre") continue;
-      if (field.id === "custom_visual_style") continue;
-      if (field.id === "custom_typography") continue;
-      if (field.id === "custom_home_focus") continue;
-      if (field.id === "custom_currencies") continue;
-      if (field.id === "custom_monetization") continue;
-      if (field.id === "custom_game_systems") continue;
-
-      // Always show key_screens for review even if parser extracted some
-      if (isMissing(formData[field.id]) || field.id === "key_screens") {
-        missingFields.push(field);
+  // Compute missing fields only once on mount — not on every formData change
+  // This prevents fields from disappearing when user selects an option
+  const missingFields = useMemo(() => {
+    const fields: ChecklistField[] = [];
+    for (const section of checklist.sections) {
+      for (const field of section.fields) {
+        if (field.id === "custom_resolution") continue;
+        if (field.id === "custom_genre") continue;
+        if (field.id === "custom_visual_style") continue;
+        if (field.id === "custom_typography") continue;
+        if (field.id === "custom_home_focus") continue;
+        if (field.id === "custom_currencies") continue;
+        if (field.id === "custom_monetization") continue;
+        if (field.id === "custom_game_systems") continue;
+        if (isMissing(data[field.id]) || field.id === "key_screens") {
+          fields.push(field);
+        }
       }
     }
-  }
+    return fields;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // empty deps — compute once on mount using initial data
 
   function updateField(id: string, value: unknown) {
     setFieldErrors(prev => { const n = { ...prev }; delete n[id]; return n; });

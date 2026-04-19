@@ -79,9 +79,6 @@ const { getPromptTemplate, resolvTemplate } = await import("@/lib/anthropic/inde
       document_text: documentText.slice(0, 8000),
     };
 
-    console.log("Extracted text length:", documentText.length);
-    console.log("First 200 chars:", documentText.slice(0, 200));
-    console.log("Template found:", !!template);
 
     const systemPrompt = template
       ? resolvTemplate(template.system_prompt, variables)
@@ -112,8 +109,6 @@ Return a JSON object with these fields (set to null if not found):
   "genre_or_category": "string or null"
 }`;
 
-    console.log("User prompt length:", userPrompt.length);
-    console.log("User prompt start:", userPrompt.slice(0, 200));
 
     const model = template?.model ?? "claude-sonnet-4-6";
     const maxTokens = template?.max_tokens ?? 1024;
