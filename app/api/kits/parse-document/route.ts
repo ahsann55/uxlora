@@ -153,7 +153,7 @@ Return a JSON object with these fields (set to null if not found):
       const { createAdminClient } = await import("@/lib/supabase/server");
       const adminSupabase = await createAdminClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (adminSupabase as any).from("generation_logs").insert({
+      const { error: logInsertError } = await (adminSupabase as any).from("generation_logs").insert({
         step: "parser",
         model_used: model,
         input_tokens: message.usage.input_tokens,
@@ -163,6 +163,7 @@ Return a JSON object with these fields (set to null if not found):
         error_message: null,
         prompt_template_id: template?.id ?? null,
       });
+      if (logInsertError) console.error("Parser log insert error:", logInsertError);
     } catch (logError) {
       console.error("Failed to log parser call:", logError);
     }

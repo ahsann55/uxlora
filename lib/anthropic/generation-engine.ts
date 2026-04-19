@@ -197,25 +197,22 @@ export async function runGenerationEngine(
     // --------------------------------------------------------
     const allScreens = getScreenList(context.checklistData);
 
-    const { data: existingScreensData } = await adminSupabase
+    // Delete existing screens before regenerating — prevents duplicates
+    await adminSupabase
       .from("screens")
-      .select("name")
+      .delete()
       .eq("kit_id", context.kitId);
 
-    const existingNames = new Set(
-      (existingScreensData ?? []).map((s: { name: string }) => s.name)
-    );
+    const existingNames = new Set<string>();
 
     const allScreensToGenerate = context.isDemo
       ? allScreens.slice(0, 2)
       : allScreens;
 
-    const screens = allScreensToGenerate.filter(
-      (name) => !existingNames.has(name)
-    );
+    const screens = allScreensToGenerate;
 
     const finalTotalScreens = allScreensToGenerate.length;
-    const alreadyGeneratedCount = existingNames.size;
+    const alreadyGeneratedCount = 0;
 
     if (screens.length === 0) {
       await updateKitStatus("complete", {
