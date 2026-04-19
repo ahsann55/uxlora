@@ -66,9 +66,14 @@ export async function runGenerationEngine(
     // --------------------------------------------------------
     const { data: kitMeta } = await adminSupabase
       .from("kits")
-      .select("suggestion_tokens")
+      .select("suggestion_tokens, gdd_summary")
       .eq("id", context.kitId)
       .single();
+
+    // Pass gdd_summary to context for document upload flow
+    if (kitMeta?.gdd_summary) {
+      context.gddSummary = kitMeta.gdd_summary as string;
+    }
 
     const suggTokens = kitMeta?.suggestion_tokens as { input: number; output: number } | null;
     console.log("Suggestion tokens from DB:", suggTokens);

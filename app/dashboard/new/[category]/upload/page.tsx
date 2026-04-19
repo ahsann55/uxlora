@@ -18,6 +18,7 @@ export default function UploadPage() {
   const [step, setStep] = useState<Step>("upload");
   const [kitName, setKitName] = useState("");
   const [extractedData, setExtractedData] = useState<Record<string, unknown> | null>(null);
+  const [gddSummary, setGddSummary] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +50,7 @@ export default function UploadPage() {
       }
 
       setExtractedData(data.checklist_data);
+      setGddSummary(data.gdd_summary ?? "");
       setStep("gaps");
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -70,6 +72,7 @@ export default function UploadPage() {
           category,
           input_method: "upload",
           checklist_data: finalData,
+          gdd_summary: gddSummary || undefined,
         }),
       });
 

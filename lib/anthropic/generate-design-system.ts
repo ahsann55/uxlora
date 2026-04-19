@@ -14,7 +14,11 @@ export async function generateDesignSystem(
   context: GenerationContext
 ): Promise<DesignSystemResult> {
   const client = getAnthropicClient();
-  const summary = buildChecklistSummary(context.checklistData);
+  const checklistSummary = buildChecklistSummary(context.checklistData);
+  // For document uploads, append gdd_summary as extra context
+  const summary = context.gddSummary
+    ? `${checklistSummary}\n\nDocument context (game/app details not in checklist):\n${context.gddSummary}`
+    : checklistSummary;
 
   const template = await getPromptTemplate("design_system", context.category);
 
@@ -83,7 +87,7 @@ Customise the values for this specific product. Keep all string values short. Re
 
   // Extract compressed summary from after the JSON
   let compressedSummary = "";
-  const summaryMatch = responseText.match(/SUMMARY:(.+)/);
+  const summaryMatch = responseText.match(/COMPRESSED_SUMMARY:(.+)/);
   if (summaryMatch) {
     compressedSummary = summaryMatch[1].trim();
   }

@@ -29,6 +29,7 @@ export interface GenerationContext {
   checklistData: Record<string, unknown>;
   isDemo: boolean;
   compressedSummary?: string;
+  gddSummary?: string;
 }
 
 export interface DesignSystem {

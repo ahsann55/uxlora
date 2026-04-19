@@ -122,10 +122,20 @@ Return a JSON object with these fields (set to null if not found):
       ? message.content[0].text
       : "";
 
-    // Parse JSON response
+    // Parse JSON response and extract GDD summary
     let checklistData: Record<string, unknown> = {};
+    let gddSummary = "";
+
     try {
-      const cleaned = responseText.replace(/```json|```/g, "").trim();
+      // Extract GDD_SUMMARY before parsing JSON
+      const gddMatch = responseText.match(/GDD_SUMMARY:([\s\S]+)$/m);
+      if (gddMatch) {
+        gddSummary = gddMatch[1].trim();
+      }
+
+      // Clean and parse JSON — remove GDD_SUMMARY line before parsing
+      const jsonText = responseText.replace(/GDD_SUMMARY:[\s\S]+$/m, "").trim();
+      const cleaned = jsonText.replace(/```json|```/g, "").trim();
       checklistData = JSON.parse(cleaned);
     } catch {
       return NextResponse.json(
@@ -137,6 +147,7 @@ Return a JSON object with these fields (set to null if not found):
     return NextResponse.json({
       success: true,
       checklist_data: checklistData,
+      gdd_summary: gddSummary,
       document_length: documentText.length,
     });
 

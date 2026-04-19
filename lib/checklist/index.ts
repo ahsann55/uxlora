@@ -90,7 +90,7 @@ export const gameChecklist: ChecklistDefinition = {
           label: "Platform",
           type: "select",
           required: true,
-          options: ["Mobile (iOS/Android)", "PC", "Console", "Web", "Cross-Platform"],
+          options: ["Mobile (iOS/Android)", "PC", "Console", "Web"],
           default: "Mobile (iOS/Android)",
         },
         {

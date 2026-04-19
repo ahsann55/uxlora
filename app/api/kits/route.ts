@@ -31,9 +31,10 @@ export async function POST(request: NextRequest) {
       input_method?: string;
       checklist_data?: Record<string, unknown>;
       suggestion_tokens?: { input: number; output: number };
+      gdd_summary?: string;
     };
 
-    const { name, category, input_method, checklist_data, suggestion_tokens } = body;
+    const { name, category, input_method, checklist_data, suggestion_tokens, gdd_summary } = body;
 
     // Validate
     if (!category || !["game", "mobile", "web"].includes(category)) {
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
     const adminDb = adminSupabase as any;
     const { data: kit, error: kitError } = await adminDb
       .from("kits")
-      .insert(kitInsert)
+      .insert({ ...kitInsert, gdd_summary: gdd_summary ?? null })
       .select()
       .single();
 
