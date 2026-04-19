@@ -54,6 +54,7 @@ export function GuidedStep({
     if (field.id === "custom_genre" && data.genre_or_category !== "Other") return null;
     if (field.id === "custom_visual_style" && data.visual_style !== "Other") return null;
     if (field.id === "custom_typography" && data.typography_preferences !== "Other") return null;
+    if (field.id === "custom_home_focus" && data.home_focus_element !== "Other") return null;
     const customScreens = Array.isArray(data.custom_screens) ? (data.custom_screens as string[]) : [];
 
     return (

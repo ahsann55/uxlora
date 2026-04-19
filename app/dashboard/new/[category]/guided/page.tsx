@@ -126,7 +126,8 @@ export default function GuidedPage() {
       if (field.id === "custom_resolution" && formData.screen_resolution !== "Custom") return;
       if (field.id === "custom_genre" && formData.genre_or_category !== "Other") return;
       if (field.id === "custom_visual_style" && formData.visual_style !== "Other") return;
-      if (field.id === "custom_typography") return; // always optional even if shown
+      if (field.id === "custom_typography" && formData.typography_preferences !== "Other") return;
+      if (field.id === "custom_home_focus" && formData.home_focus_element !== "Other") return;
       const value = formData[field.id];
       if (value === undefined || value === null || value === "") {
         newFieldErrors[field.id] = `${field.label} is required`;
