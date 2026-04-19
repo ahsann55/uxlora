@@ -132,9 +132,17 @@ export function buildScreenSummary(
     "";
 
   const desc = (data.product_description as string) || (data.game_description as string) || "";
-  const currencies = Array.isArray(data.currencies) ? (data.currencies as string[]).join(", ") : "";
-  const monetization = Array.isArray(data.monetization) ? (data.monetization as string[]).join(", ") : "";
-  const gameSystems = Array.isArray(data.game_systems) ? (data.game_systems as string[]).join(", ") : "";
+const currenciesBase = Array.isArray(data.currencies) ? (data.currencies as string[]).filter(v => v !== "Other").join(", ") : "";
+  const customCurrencies = (data.custom_currencies as string) || "";
+  const currencies = [currenciesBase, customCurrencies].filter(Boolean).join(", ");
+
+  const monetizationBase = Array.isArray(data.monetization) ? (data.monetization as string[]).filter(v => v !== "Other").join(", ") : "";
+  const customMonetization = (data.custom_monetization as string) || "";
+  const monetization = [monetizationBase, customMonetization].filter(Boolean).join(", ");
+
+  const gameSystemsBase = Array.isArray(data.game_systems) ? (data.game_systems as string[]).filter(v => v !== "Other").join(", ") : "";
+  const customGameSystems = (data.custom_game_systems as string) || "";
+  const gameSystems = [gameSystemsBase, customGameSystems].filter(Boolean).join(", ");
   const homeFocus = (data.home_focus_element as string) || "";
   const resolution = (data.screen_resolution as string) || (data.custom_resolution as string) || "";
   const navPattern = (data.nav_pattern as string) || "";

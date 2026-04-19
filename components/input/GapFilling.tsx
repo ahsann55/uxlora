@@ -38,6 +38,9 @@ export function GapFilling({ data, category, onComplete }: GapFillingProps) {
       if (field.id === "custom_visual_style") continue;
       if (field.id === "custom_typography") continue;
       if (field.id === "custom_home_focus") continue;
+      if (field.id === "custom_currencies") continue;
+      if (field.id === "custom_monetization") continue;
+      if (field.id === "custom_game_systems") continue;
 
       const missing = isMissing(formData[field.id]);
       const shouldAsk = field.required || ALWAYS_ASK_IF_MISSING.includes(field.id);
