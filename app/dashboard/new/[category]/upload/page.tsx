@@ -5,9 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { FileUpload } from "@/components/input/FileUpload";
 import { ExtractionReview } from "@/components/input/ExtractionReview";
+import { GapFilling } from "@/components/input/GapFilling";
 import { generateKitName } from "@/lib/utils";
 
-type Step = "upload" | "review";
+type Step = "upload" | "gaps" | "review";
 
 export default function UploadPage() {
   const params = useParams();
@@ -48,7 +49,7 @@ export default function UploadPage() {
       }
 
       setExtractedData(data.checklist_data);
-      setStep("review");
+      setStep("gaps");
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -103,14 +104,21 @@ export default function UploadPage() {
         <div className="flex items-center gap-3 mb-8">
           <div className={`flex items-center gap-2 text-sm font-medium ${step === "upload" ? "text-white" : "text-white/40"}`}>
             <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "upload" ? "bg-brand-500" : "bg-success/20 text-success"}`}>
-              {step === "review" ? "✓" : "1"}
+              {step !== "upload" ? "✓" : "1"}
             </span>
             Upload
           </div>
           <div className="flex-1 h-px bg-surface-300" />
+          <div className={`flex items-center gap-2 text-sm font-medium ${step === "gaps" ? "text-white" : "text-white/40"}`}>
+            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "gaps" ? "bg-brand-500" : step === "review" ? "bg-success/20 text-success" : "bg-surface-200"}`}>
+              {step === "review" ? "✓" : "2"}
+            </span>
+            Fill Gaps
+          </div>
+          <div className="flex-1 h-px bg-surface-300" />
           <div className={`flex items-center gap-2 text-sm font-medium ${step === "review" ? "text-white" : "text-white/40"}`}>
             <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step === "review" ? "bg-brand-500" : "bg-surface-200"}`}>
-              2
+              3
             </span>
             Review
           </div>
@@ -124,7 +132,7 @@ export default function UploadPage() {
         )}
 
         {/* Kit name input */}
-        {step === "review" && (
+        {(step === "gaps" || step === "review") && (
           <div className="mb-6">
             <label className="label">Kit name</label>
             <input
@@ -142,6 +150,17 @@ export default function UploadPage() {
           <FileUpload
             onFileAccepted={handleFileAccepted}
             loading={loading}
+          />
+        )}
+
+        {step === "gaps" && extractedData && (
+          <GapFilling
+            data={extractedData}
+            category={category as "game" | "mobile" | "web"}
+            onComplete={(filledData) => {
+              setExtractedData(filledData);
+              setStep("review");
+            }}
           />
         )}
 

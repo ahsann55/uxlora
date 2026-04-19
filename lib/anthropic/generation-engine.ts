@@ -103,12 +103,14 @@ export async function runGenerationEngine(
       const dsResult = await generateDesignSystem(context);
       designSystem = dsResult.designSystem;
       designSystemPrompt = dsResult.userPrompt;
+      context.compressedSummary = dsResult.compressedSummary;
 
       await adminSupabase
         .from("kits")
         .update({
           design_system: designSystem as unknown as Record<string, unknown>,
           design_system_prompt: designSystemPrompt,
+          compressed_summary: dsResult.compressedSummary,
           updated_at: new Date().toISOString(),
         })
         .eq("id", context.kitId);

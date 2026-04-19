@@ -131,6 +131,15 @@ export const gameChecklist: ChecklistDefinition = {
           hint: "Describe your art style",
         },
         {
+          id: "theme",
+          label: "Theme",
+          type: "select",
+          required: true,
+          options: ["Dark", "Light"],
+          default: "Dark",
+          hint: "Dark themes are standard for games. Light is less common but valid.",
+        },
+        {
           id: "color_preferences",
           label: "Color Preferences",
           type: "text",
@@ -425,6 +434,15 @@ export const mobileChecklist: ChecklistDefinition = {
           hint: "Describe your design style",
         },
         {
+          id: "theme",
+          label: "Theme",
+          type: "select",
+          required: true,
+          options: ["Light", "Dark"],
+          default: "Light",
+          hint: "Light themes are standard for most apps.",
+        },
+        {
           id: "color_preferences",
           label: "Color Preferences",
           type: "text",
@@ -635,6 +653,15 @@ export const webChecklist: ChecklistDefinition = {
           required: true,
           placeholder: "e.g. Brutalist, Neo-Brutalist, Magazine",
           hint: "Describe your design style",
+        },
+        {
+          id: "theme",
+          label: "Theme",
+          type: "select",
+          required: true,
+          options: ["Light", "Dark"],
+          default: "Light",
+          hint: "Light is standard for SaaS and dashboards.",
         },
         {
           id: "color_preferences",

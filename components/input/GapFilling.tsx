@@ -2,73 +2,105 @@
 
 import { useState } from "react";
 import { getChecklist } from "@/lib/checklist";
-import { getMissingFields } from "@/lib/checklist/validate";
 import type { ChecklistField } from "@/lib/checklist";
 
 interface GapFillingProps {
   data: Record<string, unknown>;
-  category: string;
+  category: "game" | "mobile" | "web";
   onComplete: (filledData: Record<string, unknown>) => void;
-  loading?: boolean;
 }
 
-export function GapFilling({
-  data,
-  category,
-  onComplete,
-  loading = false,
-}: GapFillingProps) {
-  const [filledData, setFilledData] = useState<Record<string, unknown>>(data);
+// Fields important enough to always ask if missing
+const ALWAYS_ASK_IF_MISSING = [
+  "product_name", "product_description", "genre_or_category",
+  "visual_style", "theme", "orientation", "key_screens",
+  "platform", "currencies", "monetization",
+];
 
-  const missingFields = getMissingFields(
-    category as "game" | "mobile" | "web",
-    filledData
-  );
+function isMissing(value: unknown): boolean {
+  if (value === null || value === undefined || value === "") return true;
+  if (Array.isArray(value) && value.length === 0) return true;
+  return false;
+}
 
-  const checklist = getChecklist(category as "game" | "mobile" | "web");
+export function GapFilling({ data, category, onComplete }: GapFillingProps) {
+  const [formData, setFormData] = useState<Record<string, unknown>>({ ...data });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const checklist = getChecklist(category);
 
-  const allFields = checklist.sections.flatMap((s) => s.fields);
+  // Collect all fields that need filling
+  const missingFields: ChecklistField[] = [];
+  for (const section of checklist.sections) {
+    for (const field of section.fields) {
+      // Skip purely conditional fields
+      if (field.id === "custom_resolution") continue;
+      if (field.id === "custom_genre") continue;
+      if (field.id === "custom_visual_style") continue;
+      if (field.id === "custom_typography") continue;
+      if (field.id === "custom_home_focus") continue;
 
-  function getField(id: string): ChecklistField | undefined {
-    return allFields.find((f) => f.id === id);
+      const missing = isMissing(formData[field.id]);
+      const shouldAsk = field.required || ALWAYS_ASK_IF_MISSING.includes(field.id);
+
+      if (missing && shouldAsk) {
+        missingFields.push(field);
+      }
+    }
   }
 
   function updateField(id: string, value: unknown) {
-    setFilledData((prev) => ({ ...prev, [id]: value }));
+    setFieldErrors(prev => { const n = { ...prev }; delete n[id]; return n; });
+    setFormData(prev => ({ ...prev, [id]: value }));
+  }
+
+  function handleContinue() {
+    // Validate required fields
+    const errors: Record<string, string> = {};
+    missingFields.forEach(field => {
+      if (!field.required) return;
+      const value = formData[field.id];
+      if (isMissing(value)) {
+        errors[field.id] = `${field.label} is required`;
+      }
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+
+    onComplete(formData);
   }
 
   function renderField(field: ChecklistField) {
-    const value = filledData[field.id];
+    const value = formData[field.id];
+    const error = fieldErrors[field.id];
 
     return (
-      <div key={field.id} className="card space-y-2">
-        <div>
-          <label className="label">{field.label}</label>
-          {field.hint && (
-            <p className="text-white/40 text-xs mb-2">{field.hint}</p>
-          )}
-        </div>
+      <div key={field.id} className="space-y-2">
+        <label className="label">
+          {field.label}
+          {field.required && <span className="text-brand-400 ml-1">*</span>}
+        </label>
+        {field.hint && <p className="text-white/40 text-xs">{field.hint}</p>}
 
         {field.type === "textarea" ? (
           <textarea
             value={(value as string) ?? ""}
             onChange={(e) => updateField(field.id, e.target.value)}
-            placeholder={field.placeholder ?? `Enter ${field.label.toLowerCase()}`}
+            placeholder={field.placeholder}
             className="input min-h-[80px] resize-none"
-            disabled={loading}
+            rows={3}
           />
         ) : field.type === "select" ? (
           <select
             value={(value as string) ?? ""}
             onChange={(e) => updateField(field.id, e.target.value)}
             className="input"
-            disabled={loading}
           >
             <option value="">Select {field.label}</option>
             {field.options?.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
+              <option key={opt} value={opt}>{opt}</option>
             ))}
           </select>
         ) : field.type === "multiselect" ? (
@@ -79,20 +111,20 @@ export function GapFilling({
                 <button
                   key={opt}
                   type="button"
-                  disabled={loading}
                   onClick={() => {
                     const current = Array.isArray(value) ? value : [];
-                    const next = selected
-                      ? current.filter((v) => v !== opt)
-                      : [...current, opt];
-                    updateField(field.id, next);
+                    updateField(field.id, selected
+                      ? current.filter(v => v !== opt)
+                      : [...current, opt]
+                    );
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     selected
                       ? "bg-brand-500/30 text-brand-300 border border-brand-500/50"
-                      : "bg-surface-200 text-white/50 border border-surface-300 hover:border-brand-500/30"
+                      : "bg-surface-200 text-white/50 border border-surface-300 hover:border-brand-500/30 hover:text-white/70"
                   }`}
                 >
+                  {selected && <span className="mr-1">✓</span>}
                   {opt}
                 </button>
               );
@@ -103,45 +135,23 @@ export function GapFilling({
             type="text"
             value={(value as string) ?? ""}
             onChange={(e) => updateField(field.id, e.target.value)}
-            placeholder={field.placeholder ?? `Enter ${field.label.toLowerCase()}`}
+            placeholder={field.placeholder}
             className="input"
-            disabled={loading}
           />
         )}
+
+        {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
       </div>
     );
   }
 
+  // If nothing is missing, skip straight to review
   if (missingFields.length === 0) {
     return (
-      <div className="text-center py-8">
-        <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg
-            className="w-8 h-8 text-success"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </div>
-        <h3 className="text-lg font-semibold text-white mb-2">
-          All required information filled
-        </h3>
-        <p className="text-white/50 text-sm mb-6">
-          Ready to generate your UI kit.
-        </p>
-        <button
-          onClick={() => onComplete(filledData)}
-          disabled={loading}
-          className="btn-primary px-8 py-3"
-        >
-          {loading ? "Creating kit..." : "Generate UI Kit →"}
+      <div className="card text-center py-8">
+        <p className="text-white/60 text-sm mb-2">✓ All required information was extracted from your document.</p>
+        <button onClick={() => onComplete(formData)} className="btn-primary mt-4 px-8">
+          Review & Generate →
         </button>
       </div>
     );
@@ -149,35 +159,25 @@ export function GapFilling({
 
   return (
     <div className="space-y-6">
-
-      {/* Header */}
-      <div className="bg-warning/10 border border-warning/30 rounded-lg px-4 py-3">
-        <p className="text-yellow-300 text-sm font-medium mb-1">
-          {missingFields.length} required field{missingFields.length === 1 ? "" : "s"} missing
+      <div className="bg-brand-500/10 border border-brand-500/30 rounded-lg px-4 py-3">
+        <p className="text-brand-300 text-sm font-medium mb-1">
+          {missingFields.length} field{missingFields.length === 1 ? "" : "s"} not found in your document
         </p>
-        <p className="text-white/50 text-xs">
-          Please fill in the following fields to continue.
+        <p className="text-white/40 text-xs">
+          Fill in the missing details below. Required fields must be completed.
         </p>
       </div>
 
-      {/* Missing fields */}
-      <div className="space-y-4">
-        {missingFields.map(({ id }) => {
-          const field = getField(id);
-          if (!field) return null;
-          return renderField(field);
-        })}
+      <div className="card space-y-5">
+        {missingFields.map(field => renderField(field))}
       </div>
 
-      {/* Submit */}
       <button
-        onClick={() => onComplete(filledData)}
-        disabled={loading || missingFields.length > 0}
+        onClick={handleContinue}
         className="btn-primary w-full py-3"
       >
-        {loading ? "Creating kit..." : "Generate UI Kit →"}
+        Continue to Review →
       </button>
-
     </div>
   );
 }

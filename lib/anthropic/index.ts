@@ -28,6 +28,7 @@ export interface GenerationContext {
   category: "game" | "mobile" | "web";
   checklistData: Record<string, unknown>;
   isDemo: boolean;
+  compressedSummary?: string;
 }
 
 export interface DesignSystem {
@@ -130,8 +131,51 @@ export function buildScreenSummary(
     (data.orientation as string) ||
     "";
 
-  const parts = [name, genre, style, colors, orientation].filter(Boolean);
-  return `${category} UI kit — ${parts.join(", ")}`;
+  const desc = (data.product_description as string) || (data.game_description as string) || "";
+  const currencies = Array.isArray(data.currencies) ? (data.currencies as string[]).join(", ") : "";
+  const monetization = Array.isArray(data.monetization) ? (data.monetization as string[]).join(", ") : "";
+  const gameSystems = Array.isArray(data.game_systems) ? (data.game_systems as string[]).join(", ") : "";
+  const homeFocus = (data.home_focus_element as string) || "";
+  const resolution = (data.screen_resolution as string) || (data.custom_resolution as string) || "";
+  const navPattern = (data.nav_pattern as string) || "";
+  const hasSidebar = (data.has_sidebar as string) || "";
+  const dataDensity = (data.data_density as string) || "";
+
+  const customGenre = (data.custom_genre as string) || "";
+  const customStyle = (data.custom_visual_style as string) || "";
+  const customTypo = (data.custom_typography as string) || "";
+  const customHomeFocus = (data.custom_home_focus as string) || "";
+  const typo = (data.typography_preferences as string) || "";
+  const colorScheme = (data.theme as string) || (data.color_scheme as string) || "";
+  const platform = Array.isArray(data.platform) ? (data.platform as string[]).join(", ") : (data.platform as string) || "";
+  const audience = (data.target_audience as string) || "";
+  const special = (data.special_requirements as string) || "";
+
+  const parts = [
+    name,
+    desc,
+    genre || customGenre,
+    customGenre && genre === "Other" ? customGenre : null,
+    style || customStyle,
+    customStyle && style === "Other" ? customStyle : null,
+    colors,
+    orientation,
+    resolution,
+    typo && `Typography: ${customTypo || typo}`,
+    colorScheme && `Theme: ${colorScheme}`,
+    platform && `Platform: ${platform}`,
+    audience && `Audience: ${audience}`,
+    currencies && `Currencies: ${currencies}`,
+    monetization && `Monetization: ${monetization}`,
+    gameSystems && `Game Systems: ${gameSystems}`,
+    homeFocus && `Home Focus: ${customHomeFocus || homeFocus}`,
+    navPattern && `Nav: ${navPattern}`,
+    hasSidebar && `Sidebar: ${hasSidebar}`,
+    dataDensity && `Density: ${dataDensity}`,
+    special && `Requirements: ${special}`,
+  ].filter(Boolean);
+
+  return `${category} UI kit — ${parts.join(" | ")}`;
 }
 
 /**

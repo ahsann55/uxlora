@@ -21,7 +21,7 @@ export async function generateScreen(
   revisionFeedback?: string
 ): Promise<GeneratedScreen> {
   const client = getAnthropicClient();
-  const summary = buildScreenSummary(context.checklistData, context.category);
+  const summary = context.compressedSummary || buildScreenSummary(context.checklistData, context.category);
   const strippedDesignSystem = stripDesignSystemForScreen(
     designSystem as unknown as Record<string, unknown>,
     context.category

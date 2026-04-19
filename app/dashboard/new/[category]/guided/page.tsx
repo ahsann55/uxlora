@@ -143,44 +143,7 @@ export default function GuidedPage() {
     setFieldErrors({});
 
     if (isLastSection) {
-      // Skip suggestions for addScreens/regenerate modes
-      if (addScreensMode || regenerateMode) {
-        setStep("review");
-        return;
-      }
-      // Fetch suggestions
-      setLoadingSuggestions(true);
-      try {
-        const response = await fetch("/api/kits/suggest", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            category,
-            checklist_data: formData,
-            kit_id: kitId ?? undefined,
-          }),
-        });
-        if (response.ok) {
-          const data = await response.json();
-          const questions: SuggestionQuestion[] = data.questions ?? [];
-          setSuggestionTokens({ input: data.inputTokens ?? 0, output: data.outputTokens ?? 0 });
-          if (questions.length > 0) {
-            setSuggestionQuestions(questions);
-            setStep("suggestions");
-          } else {
-            // No gaps found — go straight to review
-            setStep("review");
-          }
-        } else {
-          // API failed — skip suggestions silently
-          setStep("review");
-        }
-      } catch {
-        // Network error — skip suggestions silently
-        setStep("review");
-      } finally {
-        setLoadingSuggestions(false);
-      }
+      setStep("review");
     } else {
       setCurrentSectionIndex((i) => i + 1);
     }
@@ -405,11 +368,7 @@ export default function GuidedPage() {
           errors={fieldErrors}
         />
 
-        {loadingSuggestions && (
-          <div className="mt-4 text-center text-white/40 text-sm">
-            Analyzing your answers...
-          </div>
-        )}
+        {/* AI suggestions disabled — checklist is comprehensive */}
 
         <div className="flex gap-3 mt-8">
           {!isFirstSection && !addScreensMode && (
@@ -419,14 +378,10 @@ export default function GuidedPage() {
           )}
           <button
             onClick={handleNext}
-            disabled={loadingSuggestions}
+            disabled={false}
             className="btn-primary flex-1"
           >
-            {loadingSuggestions
-              ? "Analyzing..."
-              : isLastSection || addScreensMode
-              ? "Review & Generate →"
-              : "Next →"}
+            {isLastSection || addScreensMode ? "Review & Generate →" : "Next →"}
           </button>
         </div>
 

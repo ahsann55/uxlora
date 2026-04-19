@@ -3,6 +3,7 @@ import type { DesignSystem, GenerationContext } from "./index";
 
 export interface DesignSystemResult {
   designSystem: DesignSystem;
+  compressedSummary: string;
   userPrompt: string;
   inputTokens: number;
   outputTokens: number;
@@ -80,8 +81,23 @@ Customise the values for this specific product. Keep all string values short. Re
 
   const designSystem = extractDesignSystemJSON(responseText);
 
+  // Extract compressed summary from after the JSON
+  let compressedSummary = "";
+  const summaryMatch = responseText.match(/SUMMARY:(.+)/);
+  if (summaryMatch) {
+    compressedSummary = summaryMatch[1].trim();
+  }
+  // Fallback to buildChecklistSummary if no summary found
+  if (!compressedSummary) {
+    const { buildChecklistSummary } = await import("./index");
+    compressedSummary = buildChecklistSummary(
+      {} as Record<string, unknown>
+    ).slice(0, 300);
+  }
+
   return {
     designSystem,
+    compressedSummary,
     userPrompt,
     inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,
