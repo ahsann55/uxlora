@@ -122,7 +122,7 @@ function KitAccordion({ kit }: { kit: KitGroup }) {
           <span>{kit.totalOutputTokens.toLocaleString()} out</span>
           <span className="text-white/60">${totalCost}</span>
           <Link
-            href={`/kit/${kit.kitId}`}
+            href={`/admin/kits/${kit.kitId}`}
             onClick={(e) => e.stopPropagation()}
             className="text-brand-400 hover:text-brand-300 transition-colors font-medium"
           >
