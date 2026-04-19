@@ -59,8 +59,7 @@ export function ScreenCard({
   const uxmlUrl = currentScreen.uxml_url ?? "";
   const figmaUrl = currentScreen.figma_url ?? "";
   const gradientClass = categoryColors[currentScreen.name] ?? "from-surface-100 to-surface-200";
-console.log("subscriptionTier received:", subscriptionTier);
-const maxRevisions = REVISION_LIMITS[subscriptionTier] ?? 2;  const revisionsLeft = Math.max(0, maxRevisions - currentScreen.revision_count);
+  const maxRevisions = REVISION_LIMITS[subscriptionTier] ?? 2;  const revisionsLeft = Math.max(0, maxRevisions - currentScreen.revision_count);
 
   // Universal preview — landscape gets wider container to match visual weight of portrait cards
   const previewW = screenW > screenH ? 460 : 190;
@@ -251,6 +250,7 @@ const maxRevisions = REVISION_LIMITS[subscriptionTier] ?? 2;  const revisionsLef
           screenName={currentScreen.name}
           kitId={kitId}
           revisionCount={currentScreen.revision_count}
+          maxRevisions={maxRevisions}
           onClose={() => setShowReviseModal(false)}
           onRevised={handleScreenRevised}
         />

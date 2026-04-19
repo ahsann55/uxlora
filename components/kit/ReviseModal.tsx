@@ -7,17 +7,17 @@ interface ReviseModalProps {
   screenName: string;
   kitId: string;
   revisionCount: number;
+  maxRevisions?: number;
   onClose: () => void;
   onRevised: (updatedScreen: Record<string, unknown>) => void;
 }
-
-const MAX_REVISIONS = 2;
 
 export function ReviseModal({
   screenId,
   screenName,
   kitId,
   revisionCount,
+  maxRevisions = 2,
   onClose,
   onRevised,
 }: ReviseModalProps) {
@@ -25,7 +25,7 @@ export function ReviseModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const revisionsLeft = MAX_REVISIONS - revisionCount;
+  const revisionsLeft = maxRevisions - revisionCount;
 
   async function handleRevise() {
     if (!feedback.trim()) {
@@ -105,7 +105,7 @@ export function ReviseModal({
 
         {/* Revision count */}
         <div className="flex items-center gap-2 mb-4">
-          {Array.from({ length: MAX_REVISIONS }).map((_, i) => (
+          {Array.from({ length: maxRevisions }).map((_, i) => (
             <div
               key={i}
               className={`h-1.5 flex-1 rounded-full ${

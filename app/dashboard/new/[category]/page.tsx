@@ -101,10 +101,10 @@ export default async function CategoryInputPage({
             </h2>
             <p className="text-white/50 text-sm flex-1">
               Answer a few guided questions about your product. Takes about
-              5 minutes and gives the best results.
+              10 minutes and gives the best results.
             </p>
             <div className="mt-4 text-xs text-white/30">
-              8 steps · ~5 minutes
+              15 steps · ~10 minutes
             </div>
             <div className="mt-4 flex items-center gap-2 text-brand-400 text-sm font-medium">
               Start questionnaire →
