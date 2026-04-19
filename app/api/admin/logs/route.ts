@@ -86,7 +86,11 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {} as Record<string, { design: string | null; icons: string | null }>);
 
-    const logsByKit = logs.reduce((acc, log) => {
+    // Separate parser logs (no kit_id) from kit logs
+    const parserLogs = logs.filter((l) => !l.kit_id);
+    const kitLogs = logs.filter((l) => !!l.kit_id);
+
+    const logsByKit = kitLogs.reduce((acc, log) => {
       if (!acc[log.kit_id]) acc[log.kit_id] = [];
       acc[log.kit_id].push(log);
       return acc;
@@ -137,7 +141,7 @@ export async function GET(request: NextRequest) {
         };
       });
 
-    return NextResponse.json({ kits: grouped });
+    return NextResponse.json({ kits: grouped, parserLogs });
   } catch (error) {
     console.error("GET /api/admin/logs error:", error);
     return NextResponse.json(

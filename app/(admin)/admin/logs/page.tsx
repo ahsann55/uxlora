@@ -30,6 +30,18 @@ interface KitGroup {
   logs: EnrichedLog[];
 }
 
+interface ParserLog {
+  id: string;
+  step: string;
+  model_used: string;
+  input_tokens: number;
+  output_tokens: number;
+  duration_ms: number;
+  status: string;
+  error_message: string | null;
+  created_at: string;
+}
+
 function PromptBlock({ label, content }: { label: string; content: string }) {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -146,6 +158,7 @@ function KitAccordion({ kit }: { kit: KitGroup }) {
 
 export default function LogsPage() {
   const [kitGroups, setKitGroups] = useState<KitGroup[]>([]);
+  const [parserLogs, setParserLogs] = useState<ParserLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -154,6 +167,7 @@ export default function LogsPage() {
       .then((r) => r.json())
       .then((data) => {
         setKitGroups(data.kits ?? []);
+        setParserLogs(data.parserLogs ?? []);
         setLoading(false);
       })
       .catch(() => {
@@ -164,7 +178,9 @@ export default function LogsPage() {
 
   const totalInputTokens = kitGroups.reduce((s, k) => s + k.totalInputTokens, 0);
   const totalOutputTokens = kitGroups.reduce((s, k) => s + k.totalOutputTokens, 0);
-  const totalCost = ((totalInputTokens * 0.000003) + (totalOutputTokens * 0.000015)).toFixed(4);
+  const parserInputTokens = parserLogs.reduce((s, l) => s + l.input_tokens, 0);
+  const parserOutputTokens = parserLogs.reduce((s, l) => s + l.output_tokens, 0);
+  const totalCost = (((totalInputTokens + parserInputTokens) * 0.000003) + ((totalOutputTokens + parserOutputTokens) * 0.000015)).toFixed(4);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -205,9 +221,40 @@ export default function LogsPage() {
           <p className="text-white/40">No generation logs yet.</p>
         </div>
       ) : (
-        kitGroups.map((kit) => (
-          <KitAccordion key={kit.kitId} kit={kit} />
-        ))
+        <>
+          {parserLogs.length > 0 && (
+            <div className="mb-8">
+              <h2 className="section-title mb-4">Document Parser Calls ({parserLogs.length})</h2>
+              <div className="card p-0 overflow-hidden">
+                {parserLogs.map((log) => {
+                  const cost = ((log.input_tokens * 0.000003) + (log.output_tokens * 0.000015)).toFixed(4);
+                  return (
+                    <div key={log.id} className="flex items-center justify-between px-4 py-3 border-b border-surface-200 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${log.status === "success" ? "bg-green-400" : "bg-red-400"}`} />
+                        <div>
+                          <p className="text-sm text-white font-medium">Document Parser</p>
+                          <p className="text-xs text-white/40">{new Date(log.created_at).toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-white/40">
+                        <span>{log.input_tokens.toLocaleString()} in</span>
+                        <span>{log.output_tokens.toLocaleString()} out</span>
+                        <span>${cost}</span>
+                        {log.error_message && (
+                          <span className="text-red-400">{log.error_message}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {kitGroups.map((kit) => (
+            <KitAccordion key={kit.kitId} kit={kit} />
+          ))}
+        </>
       )}
     </div>
   );

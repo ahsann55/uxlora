@@ -144,6 +144,25 @@ Return a JSON object with these fields (set to null if not found):
       );
     }
 
+    // Log parser call to generation_logs
+    try {
+      const { createAdminClient } = await import("@/lib/supabase/server");
+      const adminSupabase = await createAdminClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (adminSupabase as any).from("generation_logs").insert({
+        step: "parser",
+        model_used: model,
+        input_tokens: message.usage.input_tokens,
+        output_tokens: message.usage.output_tokens,
+        duration_ms: 0,
+        status: "success",
+        error_message: null,
+        prompt_template_id: template?.id ?? null,
+      });
+    } catch (logError) {
+      console.error("Failed to log parser call:", logError);
+    }
+
     return NextResponse.json({
       success: true,
       checklist_data: checklistData,
