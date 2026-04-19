@@ -96,6 +96,7 @@ export default function GuidedPage() {
   const progress = ((currentSectionIndex + 1) / sections.length) * 100;
 
   function updateField(id: string, value: unknown) {
+    setError(null);
     setFormData((prev) => {
       const updated = { ...prev, [id]: value };
       if (id === "product_name" && typeof value === "string" && value.trim()) {
@@ -111,6 +112,23 @@ export default function GuidedPage() {
   }
 
   async function handleNext() {
+    // Validate required fields in current section
+    const missingFields = currentSection.fields.filter(field => {
+      if (!field.required) return false;
+      // Skip custom_resolution validation — it's conditional
+      if (field.id === "custom_resolution") return false;
+      const value = formData[field.id];
+      if (value === undefined || value === null || value === "") return true;
+      if (Array.isArray(value) && value.length === 0) return true;
+      return false;
+    });
+
+    if (missingFields.length > 0) {
+      setError(`Please fill in: ${missingFields.map(f => f.label).join(", ")}`);
+      return;
+    }
+    setError(null);
+
     if (isLastSection) {
       // Skip suggestions for addScreens/regenerate modes
       if (addScreensMode || regenerateMode) {

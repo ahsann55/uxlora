@@ -28,25 +28,38 @@ export async function generateScreen(
   );
   const designSystemStr = JSON.stringify(strippedDesignSystem);
 
-  const isMobile = context.category === "mobile" ||
-    (context.checklistData.platform as string[] | undefined)?.includes("Mobile (iOS/Android)");
+  // ── Universal resolution resolver ──────────────────────────
+  // Priority: custom_resolution > screen_resolution preset > category default
+  function parseResolution(checklistData: Record<string, unknown>, category: string): { w: number; h: number } {
+    const customRaw = checklistData.custom_resolution as string | undefined;
+    const presetRaw = checklistData.screen_resolution as string | undefined;
+    const orientation = (checklistData.orientation as string) ?? "Portrait";
+    const isLandscape = orientation === "Landscape";
 
-  const orientation = (context.checklistData?.orientation as string) ?? "Portrait";
-  const isLandscape = orientation === "Landscape";
+    // Try custom first
+    if (customRaw && customRaw.includes("×")) {
+      const parts = customRaw.split("×").map(s => parseInt(s.trim()));
+      if (parts.length === 2 && parts[0] > 0 && parts[1] > 0) {
+        return { w: parts[0], h: parts[1] };
+      }
+    }
 
-  const dimensions = context.category === "game"
-      ? isLandscape ? "844x390px (mobile game landscape)"   : "390x844px (mobile game portrait)"
-      : isMobile
-      ? isLandscape ? "844x390px (mobile landscape)" : "390x844px (mobile portrait)"
-      : "1440x900px (desktop web)";
+    // Try preset (format: "390×844 — iPhone Standard (default)")
+    if (presetRaw && presetRaw !== "Custom" && presetRaw.includes("×")) {
+      const match = presetRaw.match(/^(\d+)×(\d+)/);
+      if (match) return { w: parseInt(match[1]), h: parseInt(match[2]) };
+    }
+
+    // Category defaults
+    if (category === "web") return { w: 1440, h: 900 };
+    return isLandscape ? { w: 844, h: 390 } : { w: 390, h: 844 };
+  }
+
+  const { w: screenW, h: screenH } = parseResolution(context.checklistData, context.category);
+  const dimensions = `${screenW}x${screenH}px`;
+  const widthPx = String(screenW);
 
   const template = await getPromptTemplate("screen_generator", context.category);
-
-  const widthPx = context.category === "game"
-    ? (isLandscape ? "844" : "390")
-    : isMobile
-    ? (isLandscape ? "844" : "390")
-    : "1440";
 
   const variables = {
     category: context.category,

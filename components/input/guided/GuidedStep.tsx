@@ -42,6 +42,11 @@ export function GuidedStep({
   function renderField(field: ChecklistField) {
     const value = data[field.id];
     const isScreenField = field.id === "key_screens";
+
+    // Hide custom_resolution field unless "Custom" is selected in screen_resolution
+    if (field.id === "custom_resolution" && data.screen_resolution !== "Custom") {
+      return null;
+    }
     const customScreens = Array.isArray(data.custom_screens) ? (data.custom_screens as string[]) : [];
 
     return (
