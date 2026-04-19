@@ -82,15 +82,7 @@ export function KitPageSkeleton() {
         {/* Screen grid */}
         <div className="flex flex-wrap gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="card animate-pulse" style={{ width: "220px" }}>
-              <div className="w-full h-40 bg-surface-200 rounded-lg mb-4" />
-              <div className="h-4 bg-surface-200 rounded w-3/4 mb-2" />
-              <div className="h-3 bg-surface-200 rounded w-1/2 mb-4" />
-              <div className="flex gap-2">
-                <div className="h-8 bg-surface-200 rounded flex-1" />
-                <div className="h-8 bg-surface-200 rounded flex-1" />
-              </div>
-            </div>
+            <ScreenCardSkeleton key={i} />
           ))}
         </div>
       </div>

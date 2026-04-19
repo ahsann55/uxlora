@@ -42,6 +42,12 @@ export async function generateScreen(
 
   const template = await getPromptTemplate("screen_generator", context.category);
 
+  const widthPx = context.category === "game"
+    ? (isLandscape ? "844" : "390")
+    : isMobile
+    ? (isLandscape ? "844" : "390")
+    : "1440";
+
   const variables = {
     category: context.category,
     screen_name: screenName,
@@ -50,6 +56,7 @@ export async function generateScreen(
     summary,
     design_system: designSystemStr,
     dimensions,
+    width_px: widthPx,
   };
 
   const systemPrompt = template

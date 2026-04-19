@@ -173,11 +173,9 @@ async function handleClientSidePNGExport() {
 
   try {
     const zip = new JSZip();
-    const isMobile = kit.category === "mobile" || kit.category === "game";
     const kitChecklistData = kit.checklist_data as Record<string, unknown>;
-    const isLandscape = (kitChecklistData?.orientation as string) === "Landscape";
-    const width = isMobile ? (isLandscape ? 844 : 390) : 1440;
-    const height = isMobile ? (isLandscape ? 390 : 844) : 900;
+
+    const { width, height } = parseKitResolution(kitChecklistData, kit.category);
 
     for (let i = 0; i < sortedScreens.length; i++) {
       const screen = sortedScreens[i];
@@ -255,7 +253,7 @@ async function handleClientSidePNGExport() {
           el.style.overflow = 'hidden';
         });
 
-        const captureOpts = { pixelRatio: isMobile ? 3 : 2, skipFonts: true };
+        const captureOpts = { pixelRatio: (kit.category === "mobile" || kit.category === "game") ? 3 : 2, skipFonts: true };
         const capturedDataUrls = new Set<string>();
 
         // Capture full screen once — capture .screen div directly for correct dimensions
@@ -485,7 +483,7 @@ async function handleClientSidePNGExport() {
         }
        // ── 3.5. HUD PLAIN BACKGROUND ───────────────────────────────
         const hudEls = Array.from(
-          iframeDoc.querySelectorAll('[data-uxlora="ui:game:hud"]')
+          iframeDoc.querySelectorAll('[data-uxlora="ui:game:hud"], .hud')
         ) as HTMLElement[];
         for (const hud of hudEls) {
           try {
@@ -622,8 +620,11 @@ async function handleClientSidePNGExport() {
           for (const decor of activeTabDecorations) {
             try {
               const rect = decor.getBoundingClientRect();
-              const w = Math.max(decor.offsetWidth, rect.width) + 4;
-              const h = Math.max(decor.offsetHeight, rect.height) + 4;
+              const svgEl = decor.tagName === 'svg' ? decor : decor.querySelector('svg');
+              const svgW = svgEl ? (parseFloat(svgEl.getAttribute('width') ?? '0') || parseFloat(iframeDoc!.defaultView!.getComputedStyle(svgEl).width) || 0) : 0;
+              const svgH = svgEl ? (parseFloat(svgEl.getAttribute('height') ?? '0') || parseFloat(iframeDoc!.defaultView!.getComputedStyle(svgEl).height) || 0) : 0;
+              const w = Math.max(decor.offsetWidth, rect.width, svgW) + 4;
+              const h = Math.max(decor.offsetHeight, rect.height, svgH) + 4;
               if (w < 5 || h < 5) continue;
               const wrapper = iframeDoc!.createElement('div');
               wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box`;
@@ -805,9 +806,24 @@ async function handleClientSidePNGExport() {
       : 0;
 
   const checklistData = kit.checklist_data as Record<string, unknown>;
-const isMobile = kit.category === "mobile" || kit.category === "game";
-const kitScreenW = isMobile ? ((checklistData?.orientation as string) === "Landscape" ? 844 : 390) : 1440;
-const kitScreenH = isMobile ? ((checklistData?.orientation as string) === "Landscape" ? 390 : 844) : 900;
+function parseKitResolution(data: Record<string, unknown>, category: string): { width: number; height: number } {
+  const customRaw = data.custom_resolution as string | undefined;
+  const presetRaw = data.screen_resolution as string | undefined;
+  const orientation = (data.orientation as string) ?? "Portrait";
+  const isLandscape = orientation === "Landscape";
+  if (customRaw && customRaw.includes("×")) {
+    const parts = customRaw.split("×").map((s: string) => parseInt(s.trim()));
+    if (parts.length === 2 && parts[0] > 0 && parts[1] > 0) return { width: parts[0], height: parts[1] };
+  }
+  if (presetRaw && presetRaw !== "Custom" && presetRaw.includes("×")) {
+    const match = presetRaw.match(/^(\d+)×(\d+)/);
+    if (match) return { width: parseInt(match[1]), height: parseInt(match[2]) };
+  }
+  if (category === "web") return { width: 1440, height: 900 };
+  return isLandscape ? { width: 844, height: 390 } : { width: 390, height: 844 };
+}
+
+const { width: kitScreenW, height: kitScreenH } = parseKitResolution(checklistData, kit.category);
 
   return (
     <div className="min-h-screen bg-surface p-6">
