@@ -10,12 +10,29 @@ interface GapFillingProps {
   onComplete: (filledData: Record<string, unknown>) => void;
 }
 
-// Fields important enough to always ask if missing
-const ALWAYS_ASK_IF_MISSING = [
-  "product_name", "product_description", "genre_or_category",
-  "visual_style", "theme", "orientation", "key_screens",
-  "platform", "currencies", "monetization",
-];
+function CustomScreenInput({ value, onAdd }: { value: string[]; onAdd: (name: string) => void }) {
+  const [input, setInput] = useState("");
+  return (
+    <div className="flex gap-2 mt-2">
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (input.trim()) { onAdd(input.trim()); setInput(""); } } }}
+        placeholder="Add custom screen name..."
+        className="input flex-1 text-sm"
+      />
+      <button
+        type="button"
+        onClick={() => { if (input.trim()) { onAdd(input.trim()); setInput(""); } }}
+        disabled={!input.trim()}
+        className="btn-secondary text-sm px-4 py-2"
+      >
+        + Add
+      </button>
+    </div>
+  );
+}
 
 function isMissing(value: unknown): boolean {
   if (value === null || value === undefined || value === "") return true;
@@ -42,10 +59,8 @@ export function GapFilling({ data, category, onComplete }: GapFillingProps) {
       if (field.id === "custom_monetization") continue;
       if (field.id === "custom_game_systems") continue;
 
-      const missing = isMissing(formData[field.id]);
-      const shouldAsk = field.required || ALWAYS_ASK_IF_MISSING.includes(field.id);
-
-      if (missing && shouldAsk) {
+      // Always show key_screens for review even if parser extracted some
+      if (isMissing(formData[field.id]) || field.id === "key_screens") {
         missingFields.push(field);
       }
     }
@@ -107,31 +122,66 @@ export function GapFilling({ data, category, onComplete }: GapFillingProps) {
             ))}
           </select>
         ) : field.type === "multiselect" ? (
-          <div className="flex flex-wrap gap-2">
-            {field.options?.map((opt) => {
-              const selected = Array.isArray(value) && value.includes(opt);
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => {
-                    const current = Array.isArray(value) ? value : [];
-                    updateField(field.id, selected
-                      ? current.filter(v => v !== opt)
-                      : [...current, opt]
-                    );
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    selected
-                      ? "bg-brand-500/30 text-brand-300 border border-brand-500/50"
-                      : "bg-surface-200 text-white/50 border border-surface-300 hover:border-brand-500/30 hover:text-white/70"
-                  }`}
-                >
-                  {selected && <span className="mr-1">✓</span>}
-                  {opt}
-                </button>
-              );
-            })}
+          <div className="space-y-3">
+            {field.id === "key_screens" && (
+              <p className="text-white/40 text-xs">Currently selected screens are pre-checked. Add or remove as needed.</p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {/* Show all checklist options */}
+              {field.options?.map((opt) => {
+                const currentValue = formData[field.id];
+                const selected = Array.isArray(currentValue) && (currentValue as string[]).includes(opt);
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      const current = Array.isArray(formData[field.id]) ? (formData[field.id] as string[]) : [];
+                      const next = selected
+                        ? current.filter((v: string) => v !== opt)
+                        : [...current, opt];
+                      updateField(field.id, next);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      selected
+                        ? "bg-brand-500/30 text-brand-300 border border-brand-500/50"
+                        : "bg-surface-200 text-white/50 border border-surface-300 hover:border-brand-500/30 hover:text-white/70"
+                    }`}
+                  >
+                    {selected && <span className="mr-1">✓</span>}
+                    {opt}
+                  </button>
+                );
+              })}
+              {/* Show any custom screens extracted by parser that aren't in checklist options */}
+              {field.id === "key_screens" && Array.isArray(formData[field.id]) && 
+                (formData[field.id] as string[])
+                  .filter(s => !field.options?.includes(s))
+                  .map((customScreen) => (
+                    <button
+                      key={customScreen}
+                      type="button"
+                      onClick={() => {
+                        const current = formData[field.id] as string[];
+                        updateField(field.id, current.filter(v => v !== customScreen));
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium bg-brand-500/30 text-brand-300 border border-brand-500/50 transition-all"
+                    >
+                      ✓ {customScreen} ×
+                    </button>
+                  ))
+              }
+            </div>
+            {/* Custom screen input for key_screens */}
+            {field.id === "key_screens" && (
+              <CustomScreenInput
+                value={formData[field.id] as string[]}
+                onAdd={(name) => {
+                  const current = Array.isArray(formData[field.id]) ? (formData[field.id] as string[]) : [];
+                  if (!current.includes(name)) updateField(field.id, [...current, name]);
+                }}
+              />
+            )}
           </div>
         ) : (
           <input
