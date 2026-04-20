@@ -113,12 +113,19 @@ Return a JSON object with these fields (set to null if not found):
     const model = template?.model ?? "claude-sonnet-4-6";
     const maxTokens = template?.max_tokens ?? 1024;
 
-    const message = await anthropic.messages.create({
-      model,
-      max_tokens: maxTokens,
-      messages: [{ role: "user", content: userPrompt }],
-      system: systemPrompt,
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    let message;
+    try {
+      message = await anthropic.messages.create({
+        model,
+        max_tokens: maxTokens,
+        messages: [{ role: "user", content: userPrompt }],
+        system: systemPrompt,
+      }, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     const responseText = message.content[0].type === "text"
       ? message.content[0].text
@@ -154,6 +161,7 @@ Return a JSON object with these fields (set to null if not found):
       const adminSupabase = await createAdminClient();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: logInsertError } = await (adminSupabase as any).from("generation_logs").insert({
+        kit_id: null,
         step: "parser",
         model_used: model,
         input_tokens: message.usage.input_tokens,

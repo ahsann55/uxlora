@@ -101,10 +101,10 @@ export async function runGenerationEngine(
     });
 
     const step2Start = Date.now();
-    let designSystem;
+    let designSystem!: import("./index").DesignSystem;
     let designSystemPrompt = "";
 
-    try {
+    const runDesignSystem = async () => {
       const dsResult = await generateDesignSystem(context);
       designSystem = dsResult.designSystem;
       designSystemPrompt = dsResult.userPrompt;
@@ -120,6 +120,11 @@ export async function runGenerationEngine(
         })
         .eq("id", context.kitId);
 
+      return dsResult;
+    };
+
+    try {
+      const dsResult = await runDesignSystem();
       await logGeneration(
         "design_system",
         "claude-sonnet-4-6",
@@ -131,16 +136,37 @@ export async function runGenerationEngine(
         dsResult.promptTemplateId ?? undefined
       );
     } catch (error) {
-      await logGeneration(
-        "design_system",
-        "claude-sonnet-4-6",
-        0,
-        0,
-        Date.now() - step2Start,
-        "failed",
-        String(error)
-      );
-      throw new Error(`Design system generation failed: ${error}`);
+      console.error("Design system failed, retrying once:", error);
+      await updateKitStatus("generating", {
+        current_step: "Taking longer than usual, please be patient...",
+      });
+      try {
+        const dsResult = await runDesignSystem();
+        await updateKitStatus("generating", {
+          current_step: "Generating design system",
+        });
+        await logGeneration(
+          "design_system",
+          "claude-sonnet-4-6",
+          dsResult.inputTokens,
+          dsResult.outputTokens,
+          Date.now() - step2Start,
+          "success",
+          undefined,
+          dsResult.promptTemplateId ?? undefined
+        );
+      } catch (retryError) {
+        await logGeneration(
+          "design_system",
+          "claude-sonnet-4-6",
+          0,
+          0,
+          Date.now() - step2Start,
+          "failed",
+          String(retryError)
+        );
+        throw new Error(`Design system generation failed: ${retryError}`);
+      }
     }
 
     // --------------------------------------------------------
@@ -155,7 +181,7 @@ export async function runGenerationEngine(
       });
 
       const iconStart = Date.now();
-      try {
+      const runIconSelection = async () => {
         const { selectIcons } = await import("./icon-selection");
         const iconResult = await selectIcons(context, designSystem as unknown as Record<string, unknown>);
         selectedIcons = iconResult.selectedIcons;
@@ -170,6 +196,11 @@ export async function runGenerationEngine(
           })
           .eq("id", context.kitId);
 
+        return iconResult;
+      };
+
+      try {
+        const iconResult = await runIconSelection();
         await logGeneration(
           "icon_selection",
           "claude-haiku-4-5-20251001",
@@ -179,16 +210,35 @@ export async function runGenerationEngine(
           "success"
         );
       } catch (error) {
-        console.error("Icon selection failed, continuing without icons:", error);
-        await logGeneration(
-          "icon_selection",
-          "claude-haiku-4-5-20251001",
-          0,
-          0,
-          Date.now() - iconStart,
-          "failed",
-          String(error)
-        );
+        console.error("Icon selection failed, retrying once:", error);
+        await updateKitStatus("generating", {
+          current_step: "Taking longer than usual, please be patient...",
+        });
+        try {
+          const iconResult = await runIconSelection();
+          await updateKitStatus("generating", {
+            current_step: "Crafting your game's visual style",
+          });
+          await logGeneration(
+            "icon_selection",
+            "claude-haiku-4-5-20251001",
+            iconResult.inputTokens,
+            iconResult.outputTokens,
+            Date.now() - iconStart,
+            "success"
+          );
+        } catch (retryError) {
+          console.error("Icon selection failed on retry, continuing without icons:", retryError);
+          await logGeneration(
+            "icon_selection",
+            "claude-haiku-4-5-20251001",
+            0,
+            0,
+            Date.now() - iconStart,
+            "failed",
+            String(retryError)
+          );
+        }
       }
     }
 

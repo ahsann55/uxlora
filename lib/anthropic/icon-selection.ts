@@ -99,12 +99,19 @@ Return ONLY this JSON:
 
 Rules: Use ONLY names from ICONS list. Match game genre. Return JSON only.`;
 
-  const message = await client.messages.create({
-    model: template?.model ?? "claude-haiku-4-5-20251001",
-    max_tokens: template?.max_tokens ?? 512,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  let message;
+  try {
+    message = await client.messages.create({
+      model: template?.model ?? "claude-haiku-4-5-20251001",
+      max_tokens: template?.max_tokens ?? 512,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    }, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const responseText = message.content[0].type === "text" ? message.content[0].text : "";
 
