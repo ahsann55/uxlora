@@ -108,6 +108,10 @@ export default function GuidedPage() {
       if (id === "product_name" && typeof value === "string" && value.trim()) {
         setKitName(generateKitName(value));
       }
+      // Clear screen_resolution when orientation changes — options differ per orientation
+      if (id === "orientation") {
+        updated.screen_resolution = "";
+      }
       return updated;
     });
   }

@@ -119,7 +119,18 @@ export function GapFilling({ data, category, onComplete }: GapFillingProps) {
             className="input"
           >
             <option value="">Select {field.label}</option>
-            {field.options?.map((opt) => (
+            {(field.id === "screen_resolution"
+              ? field.options?.filter(opt => {
+                  if (opt === "Custom") return true;
+                  const match = opt.match(/^(\d+)×(\d+)/);
+                  if (!match) return true;
+                  const w = parseInt(match[1]);
+                  const h = parseInt(match[2]);
+                  const isLandscape = (formData.orientation as string) === "Landscape";
+                  return isLandscape ? w > h : h >= w;
+                })
+              : field.options
+            )?.map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
           </select>
