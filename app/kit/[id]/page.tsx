@@ -538,14 +538,16 @@ async function handleClientSidePNGExport() {
           if (iconUrl) { chipIconCount++; await addToZip(iconUrl, `chip_icon_${chipIconCount}.png`); }
         }
 
-        // Level/score badge — plain container only (dynamic text)
+        // Level/score badge — complete (with text) + plain container
         const scoreBadges = Array.from(
           iframeDoc.querySelectorAll('[data-uxlora="ui:game:score"]')
         ) as HTMLElement[];
         let scoreCount = 0;
         for (const el of scoreBadges) {
+          const completeUrl = await captureEl(el);
+          if (completeUrl) { scoreCount++; await addToZip(completeUrl, `score_badge_${scoreCount}_complete.png`); }
           const plainUrl = await capturePlainContainer(el);
-          if (plainUrl) { scoreCount++; await addToZip(plainUrl, `score_badge_${scoreCount}_plain.png`); }
+          if (plainUrl) await addToZip(plainUrl, `score_badge_${scoreCount}_plain.png`);
         }
 
         // ── 5. DYNAMIC CONTAINERS (ui:container:dynamic) ────────────
@@ -696,7 +698,25 @@ async function handleClientSidePNGExport() {
           const dataUrl = await captureEl(el);
           if (dataUrl) { statusCount++; await addToZip(dataUrl, `status_${statusCount}.png`); }
         }
-
+        // ── 12.5. UNIVERSAL FALLBACK — any ui: tagged element not yet captured ──
+        const allTagged = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora^="ui:"]')
+        ) as HTMLElement[];
+        let fallbackCount = 0;
+        for (const el of allTagged) {
+          // Skip if already inside an exported container
+          const alreadyExported = el.closest(
+            '[data-uxlora^="ui:button"], [data-uxlora="ui:nav:bar"], ' +
+            '[data-uxlora="ui:game:hud"], [data-uxlora^="ui:layout"], ' +
+            '[data-uxlora^="ui:container"], [data-uxlora^="ui:form"]'
+          );
+          if (alreadyExported) continue;
+          // Skip nav bar itself and hud itself — already exported as whole
+          if (el.getAttribute('data-uxlora') === 'ui:nav:bar') continue;
+          if (el.getAttribute('data-uxlora') === 'ui:game:hud') continue;
+          const dataUrl = await captureEl(el);
+          if (dataUrl) { fallbackCount++; await addToZip(dataUrl, `element_${fallbackCount}_${el.getAttribute('data-uxlora')?.replace(/:/g, '_')}.png`); }
+        }
         // ── 13. BACKGROUND PLAIN ────────────────────────────────────
         try {
           const hideForPlain = Array.from(

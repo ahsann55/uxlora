@@ -104,14 +104,21 @@ export async function POST(request: NextRequest) {
     if (input_method === "upload") {
       try {
         const adminDb = adminSupabase as any;
-        await adminDb
+        const { data: parserLog } = await adminDb
           .from("generation_logs")
-          .update({ kit_id: kit.id })
+          .select("id")
           .eq("step", "parser")
           .is("kit_id", null)
           .eq("status", "success")
           .order("created_at", { ascending: false })
-          .limit(1);
+          .limit(1)
+          .single();
+        if (parserLog?.id) {
+          await adminDb
+            .from("generation_logs")
+            .update({ kit_id: kit.id })
+            .eq("id", parserLog.id);
+        }
       } catch { /* ignore */ }
     }
 
