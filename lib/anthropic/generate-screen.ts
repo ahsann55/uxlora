@@ -134,23 +134,26 @@ Keep everything else the same. Only change what is explicitly requested above.`;
   const model = template?.model ?? "claude-sonnet-4-6";
   const maxTokens = template?.max_tokens ?? 8192;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120000);
-  
-  let message;
-  try {
-    message = await client.messages.create({
-      model,
-      max_tokens: maxTokens,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
-    }, { signal: controller.signal });
-  } finally {
-    clearTimeout(timeoutId);
-  } // 3 minutes for screen generation
+  let responseText = "";
+  let inputTokens = 0;
+  let outputTokens = 0;
 
-  const responseText =
-    message.content[0].type === "text" ? message.content[0].text : "";
+  const stream = client.messages.stream({
+    model,
+    max_tokens: maxTokens,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+
+  for await (const chunk of stream) {
+    if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+      responseText += chunk.delta.text;
+    }
+  }
+
+  const finalMessage = await stream.finalMessage();
+  inputTokens = finalMessage.usage.input_tokens;
+  outputTokens = finalMessage.usage.output_tokens;
 
   const htmlMatch = responseText.match(/<!DOCTYPE html>[\s\S]*/i);
   let htmlCss = htmlMatch
@@ -176,8 +179,8 @@ ${responseText}
     htmlCss,
     systemPrompt,
     userPrompt,
-    inputTokens: message.usage.input_tokens,
-    outputTokens: message.usage.output_tokens,
+    inputTokens,
+    outputTokens,
     promptTemplateId: template?.id ?? null,
   };
 }

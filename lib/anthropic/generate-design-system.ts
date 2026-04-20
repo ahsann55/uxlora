@@ -73,22 +73,22 @@ Customise the values for this specific product. Keep all string values short. Re
   const model = template?.model ?? "claude-sonnet-4-6";
   const maxTokens = template?.max_tokens ?? 8192;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
-  let message;
-  try {
-    message = await client.messages.create({
-      model,
-      max_tokens: maxTokens,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
-    }, { signal: controller.signal });
-  } finally {
-    clearTimeout(timeoutId);
+  let responseText = "";
+
+  const stream = client.messages.stream({
+    model,
+    max_tokens: maxTokens,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+
+  for await (const chunk of stream) {
+    if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+      responseText += chunk.delta.text;
+    }
   }
 
-  const responseText =
-    message.content[0].type === "text" ? message.content[0].text : "";
+  const finalMessage = await stream.finalMessage();
 
   const designSystem = extractDesignSystemJSON(responseText);
 
@@ -110,8 +110,8 @@ Customise the values for this specific product. Keep all string values short. Re
     designSystem,
     compressedSummary,
     userPrompt,
-    inputTokens: message.usage.input_tokens,
-    outputTokens: message.usage.output_tokens,
+    inputTokens: finalMessage.usage.input_tokens,
+    outputTokens: finalMessage.usage.output_tokens,
     promptTemplateId: template?.id ?? null,
   };
 }

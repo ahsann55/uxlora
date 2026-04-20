@@ -99,21 +99,22 @@ Return ONLY this JSON:
 
 Rules: Use ONLY names from ICONS list. Match game genre. Return JSON only.`;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-  let message;
-  try {
-    message = await client.messages.create({
-      model: template?.model ?? "claude-haiku-4-5-20251001",
-      max_tokens: template?.max_tokens ?? 512,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
-    }, { signal: controller.signal });
-  } finally {
-    clearTimeout(timeoutId);
+  let responseText = "";
+
+  const stream = client.messages.stream({
+    model: template?.model ?? "claude-haiku-4-5-20251001",
+    max_tokens: template?.max_tokens ?? 512,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+
+  for await (const chunk of stream) {
+    if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+      responseText += chunk.delta.text;
+    }
   }
 
-  const responseText = message.content[0].type === "text" ? message.content[0].text : "";
+  const finalMessage = await stream.finalMessage();
 
   const iconNames = new Set(icons.map(i => i.name));
   const authorMap = Object.fromEntries(icons.map(i => [i.name, i.author]));
@@ -140,8 +141,8 @@ Rules: Use ONLY names from ICONS list. Match game genre. Return JSON only.`;
   return {
     selectedIcons,
     authorMap,
-    inputTokens: message.usage.input_tokens,
-    outputTokens: message.usage.output_tokens,
+    inputTokens: finalMessage.usage.input_tokens,
+    outputTokens: finalMessage.usage.output_tokens,
     systemPrompt,
     userPrompt,
   };
