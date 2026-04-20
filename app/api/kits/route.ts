@@ -100,6 +100,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Link most recent parser log to this kit if upload flow
+    if (input_method === "upload") {
+      try {
+        const adminDb = adminSupabase as any;
+        await adminDb
+          .from("generation_logs")
+          .update({ kit_id: kit.id })
+          .eq("step", "parser")
+          .is("kit_id", null)
+          .eq("status", "success")
+          .order("created_at", { ascending: false })
+          .limit(1);
+      } catch { /* ignore */ }
+    }
+
     return NextResponse.json(kit, { status: 201 });
 
   } catch (error) {
