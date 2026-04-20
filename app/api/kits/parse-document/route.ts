@@ -111,7 +111,7 @@ Return a JSON object with these fields (set to null if not found):
 
 
     const model = template?.model ?? "claude-sonnet-4-6";
-    const maxTokens = template?.max_tokens ?? 1024;
+    const maxTokens = template?.max_tokens ?? 2048;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -149,8 +149,12 @@ Return a JSON object with these fields (set to null if not found):
     } catch (parseError) {
       console.error("Parse error:", parseError);
       console.error("Raw response:", responseText.slice(0, 500));
+      const isFormatError = String(parseError).includes("JSON") || String(parseError).includes("parse") || String(parseError).includes("Unexpected token");
       return NextResponse.json(
-        { error: "We couldn't read your document. Make sure it starts directly with your game or product name and description — remove any intro lines like 'Here is...' or 'This document contains...'. The document should begin with the actual content, not a preamble." },
+        { error: isFormatError
+            ? "We couldn't read your document. Make sure it starts directly with your game or product name and description — remove any intro lines like 'Here is...' or 'This document contains...'. The document should begin with the actual content, not a preamble."
+            : "Failed to parse document. Please try again."
+        },
         { status: 422 }
       );
     }
