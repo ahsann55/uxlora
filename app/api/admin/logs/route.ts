@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
     const logs = (logsData ?? []) as Array<{
       id: string;
-      kit_id: string;
+      kit_id: string | null;
       step: string;
       model_used: string;
       input_tokens: number;
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
 
     // Separate parser logs (no kit_id) from kit logs
     const parserLogs = logs.filter((l) => !l.kit_id);
-    const kitLogs = logs.filter((l) => !!l.kit_id);
+    const kitLogs = logs.filter((l) => !!l.kit_id) as Array<typeof logs[number] & { kit_id: string }>;
 
     const logsByKit = kitLogs.reduce((acc, log) => {
       if (!acc[log.kit_id]) acc[log.kit_id] = [];
