@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { runGenerationEngine } from "@/lib/anthropic/generation-engine";
+import { waitUntil } from "@vercel/functions";
 import type { GenerationContext } from "@/lib/anthropic";
 import type { Database } from "@/lib/supabase/types";
 
@@ -109,9 +110,9 @@ export async function POST(
 
     // Run generation in background — don't await
     // Client polls /api/kits/[id]/status every 3 seconds
-    runGenerationEngine(context).catch((error) => {
+    waitUntil(runGenerationEngine(context).catch((error) => {
       console.error("Background generation error:", error);
-    });
+    }));
 
     return NextResponse.json({
       success: true,
