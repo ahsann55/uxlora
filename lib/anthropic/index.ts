@@ -5,17 +5,12 @@ import Anthropic from "@anthropic-ai/sdk";
 // Singleton client for Claude API calls.
 // ============================================================
 
-let client: Anthropic | null = null;
-
 export function getAnthropicClient(): Anthropic {
-  if (!client) {
-    client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY!,
-      timeout: 90000, // 90 seconds per call
-      maxRetries: 0,  // no retries — fail fast
-    });
-  }
-  return client;
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY!,
+    timeout: 90000,
+    maxRetries: 0,
+  });
 }
 
 // ============================================================

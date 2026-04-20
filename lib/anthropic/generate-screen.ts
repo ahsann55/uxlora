@@ -139,7 +139,7 @@ Keep everything else the same. Only change what is explicitly requested above.`;
     max_tokens: maxTokens,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
-  });
+  }, { timeout: 180000 }); // 3 minutes for screen generation
 
   const responseText =
     message.content[0].type === "text" ? message.content[0].text : "";

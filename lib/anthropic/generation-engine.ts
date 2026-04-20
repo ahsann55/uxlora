@@ -291,6 +291,25 @@ export async function runGenerationEngine(
     }
 
     // --------------------------------------------------------
+    // STEP 4.5: Verify screens were actually generated
+    // --------------------------------------------------------
+    const { count: generatedCount } = await adminSupabase
+      .from("screens")
+      .select("*", { count: "exact", head: true })
+      .eq("kit_id", context.kitId);
+
+    if (!generatedCount || generatedCount === 0) {
+      await updateKitStatus("failed", {
+        error_message: "Screen generation failed. Please try again.",
+        current_step: "Failed",
+      });
+      try {
+        await adminSupabase.rpc("refund_generation", { p_user_id: context.userId });
+      } catch { /* ignore */ }
+      return;
+    }
+
+    // --------------------------------------------------------
     // STEP 5: Export pipeline (paid kits only)
     // --------------------------------------------------------
     if (!context.isDemo) {
