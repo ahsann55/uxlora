@@ -267,14 +267,6 @@ async function handleClientSidePNGExport() {
           zip.file(`${folderName}/${filename}`, await blob.arrayBuffer());
         }
 
-        // Universal element size — uses the larger of getBoundingClientRect and offsetWidth/offsetHeight
-        function elSize(el: HTMLElement) {
-          const rect = el.getBoundingClientRect();
-          const w = Math.max(rect.width || 0, el.offsetWidth) + 4;
-          const h = Math.max(rect.height || 0, el.offsetHeight) + 4;
-          return { w: Math.ceil(w), h: Math.ceil(h) };
-        }
-
         // Temporarily remove overflow:hidden from ancestors to prevent clipping
         function unlockOverflow(el: HTMLElement): Array<{el: HTMLElement, overflow: string, overflowX: string, overflowY: string}> {
           const saved: Array<{el: HTMLElement, overflow: string, overflowX: string, overflowY: string}> = [];
@@ -303,50 +295,28 @@ async function handleClientSidePNGExport() {
         // Universal direct capture — adds temporary padding to expand layout box for full border capture
         async function captureEl(el: HTMLElement): Promise<string | null> {
           try {
-            const buf = 3;
             const cs = iframeDoc!.defaultView!.getComputedStyle(el);
-            const savedStyle = {
-              padding: el.style.padding,
-              margin: el.style.margin,
-              paddingTop: el.style.paddingTop,
-              paddingRight: el.style.paddingRight,
-              paddingBottom: el.style.paddingBottom,
-              paddingLeft: el.style.paddingLeft,
-              marginTop: el.style.marginTop,
-              marginRight: el.style.marginRight,
-              marginBottom: el.style.marginBottom,
-              marginLeft: el.style.marginLeft,
-            };
-            // Expand padding, shrink margin to keep position
-            const pt = parseFloat(cs.paddingTop) + buf;
-            const pr = parseFloat(cs.paddingRight) + buf;
-            const pb = parseFloat(cs.paddingBottom) + buf;
-            const pl = parseFloat(cs.paddingLeft) + buf;
-            const mt = Math.max(0, parseFloat(cs.marginTop) - buf);
-            const mr = Math.max(0, parseFloat(cs.marginRight) - buf);
-            const mb = Math.max(0, parseFloat(cs.marginBottom) - buf);
-            const ml = Math.max(0, parseFloat(cs.marginLeft) - buf);
-            el.style.paddingTop = `${pt}px`;
-            el.style.paddingRight = `${pr}px`;
-            el.style.paddingBottom = `${pb}px`;
-            el.style.paddingLeft = `${pl}px`;
-            el.style.marginTop = `${mt}px`;
-            el.style.marginRight = `${mr}px`;
-            el.style.marginBottom = `${mb}px`;
-            el.style.marginLeft = `${ml}px`;
-            await new Promise(r => setTimeout(r, 30));
-            const { w, h } = elSize(el);
-            if (w < 20 || h < 20) {
-              Object.assign(el.style, savedStyle);
-              return null;
-            }
-            const dataUrl = await htmlToImage.toPng(el, {
+            const rect = el.getBoundingClientRect();
+            const w = Math.ceil(Math.max(rect.width || 0, el.offsetWidth) + 6);
+            const h = Math.ceil(Math.max(rect.height || 0, el.offsetHeight) + 6);
+            if (w < 20 || h < 20) return null;
+
+            // Clone into fixed wrapper outside all clipping contexts
+            const wrapper = iframeDoc!.createElement('div');
+            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box;padding:3px`;
+            const clone = el.cloneNode(true) as HTMLElement;
+            clone.style.cssText = `width:${rect.width}px;height:${rect.height}px;margin:0;flex-shrink:0`;
+            wrapper.appendChild(clone);
+            iframeDoc!.body.appendChild(wrapper);
+            await new Promise(r => setTimeout(r, 50));
+
+            const dataUrl = await htmlToImage.toPng(wrapper, {
               ...captureOpts,
               backgroundColor: undefined,
               width: w,
               height: h,
             });
-            Object.assign(el.style, savedStyle);
+            iframeDoc!.body.removeChild(wrapper);
             if (!dataUrl || dataUrl.length < 1000 || capturedDataUrls.has(dataUrl)) return null;
             capturedDataUrls.add(dataUrl);
             return dataUrl;
@@ -376,44 +346,35 @@ async function handleClientSidePNGExport() {
         // Universal plain container — expands padding for full border capture, hides content
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
-            const buf = 3;
             const cs = iframeDoc!.defaultView!.getComputedStyle(el);
-            const savedStyle = {
-              paddingTop: el.style.paddingTop, paddingRight: el.style.paddingRight,
-              paddingBottom: el.style.paddingBottom, paddingLeft: el.style.paddingLeft,
-              marginTop: el.style.marginTop, marginRight: el.style.marginRight,
-              marginBottom: el.style.marginBottom, marginLeft: el.style.marginLeft,
-              color: el.style.color, borderRadius: el.style.borderRadius,
-            };
-            const p = (v: string) => parseFloat(v) || 0;
-            el.style.paddingTop = `${p(cs.paddingTop) + buf}px`;
-            el.style.paddingRight = `${p(cs.paddingRight) + buf}px`;
-            el.style.paddingBottom = `${p(cs.paddingBottom) + buf}px`;
-            el.style.paddingLeft = `${p(cs.paddingLeft) + buf}px`;
-            el.style.marginTop = `${Math.max(0, p(cs.marginTop) - buf)}px`;
-            el.style.marginRight = `${Math.max(0, p(cs.marginRight) - buf)}px`;
-            el.style.marginBottom = `${Math.max(0, p(cs.marginBottom) - buf)}px`;
-            el.style.marginLeft = `${Math.max(0, p(cs.marginLeft) - buf)}px`;
-            if (cs.borderRadius) el.style.borderRadius = cs.borderRadius;
-            const descendants = Array.from(el.querySelectorAll("*")) as HTMLElement[];
-            const savedDesc = descendants.map(c => ({ color: c.style.color, visibility: c.style.visibility }));
+            const rect = el.getBoundingClientRect();
+            const w = Math.ceil(Math.max(rect.width || 0, el.offsetWidth) + 6);
+            const h = Math.ceil(Math.max(rect.height || 0, el.offsetHeight) + 6);
+            if (w < 20 || h < 20) return null;
+
+            // Clone into fixed wrapper outside all clipping contexts
+            const clone = el.cloneNode(true) as HTMLElement;
+            clone.style.cssText = `width:${rect.width}px;height:${rect.height}px;margin:0;flex-shrink:0`;
+
+            // Hide all content inside clone
+            const descendants = Array.from(clone.querySelectorAll("*")) as HTMLElement[];
             descendants.forEach(c => { c.style.color = "transparent"; c.style.visibility = "hidden"; });
-            el.style.color = "transparent";
+            clone.style.color = "transparent";
+            if (cs.borderRadius) clone.style.borderRadius = cs.borderRadius;
+
+            const wrapper = iframeDoc!.createElement('div');
+            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box;padding:3px`;
+            wrapper.appendChild(clone);
+            iframeDoc!.body.appendChild(wrapper);
             await new Promise(r => setTimeout(r, 80));
-            const { w, h } = elSize(el);
-            if (w < 20 || h < 20) {
-              Object.assign(el.style, savedStyle);
-              descendants.forEach((c, i) => { c.style.color = savedDesc[i].color; c.style.visibility = savedDesc[i].visibility; });
-              return null;
-            }
-            const dataUrl = await htmlToImage.toPng(el, {
+
+            const dataUrl = await htmlToImage.toPng(wrapper, {
               ...captureOpts,
               backgroundColor: undefined,
               width: w,
               height: h,
             });
-            Object.assign(el.style, savedStyle);
-            descendants.forEach((c, i) => { c.style.color = savedDesc[i].color; c.style.visibility = savedDesc[i].visibility; });
+            iframeDoc!.body.removeChild(wrapper);
             if (!dataUrl || dataUrl.length < 500) return null;
             return dataUrl;
           } catch { return null; }
@@ -458,7 +419,6 @@ async function handleClientSidePNGExport() {
         let btnCount = 0;
         for (const el of buttons) {
           btnCount++;
-          const savedOverflow = unlockOverflow(el);
           const completeUrl = await captureEl(el);
           if (completeUrl) await addToZip(completeUrl, `button_${btnCount}_complete.png`);
           const plainUrl = await capturePlainContainer(el);
@@ -551,12 +511,10 @@ async function handleClientSidePNGExport() {
         ) as HTMLElement[];
         let scoreCount = 0;
         for (const el of scoreBadges) {
-          const savedOverflow = unlockOverflow(el);
           const completeUrl = await captureEl(el);
           if (completeUrl) { scoreCount++; await addToZip(completeUrl, `score_badge_${scoreCount}_complete.png`); }
           const plainUrl = await capturePlainContainer(el);
           if (plainUrl) await addToZip(plainUrl, `score_badge_${scoreCount}_plain.png`);
-          restoreOverflow(savedOverflow);
         }
 
         // ── 5. DYNAMIC CONTAINERS (ui:container:dynamic) ────────────
@@ -567,7 +525,6 @@ async function handleClientSidePNGExport() {
         let dynCount = 0;
         for (const el of dynamicLayouts.slice(0, 8)) {
           dynCount++;
-          const savedOverflow = unlockOverflow(el);
           const plainUrl = await capturePlainContainer(el);
           if (plainUrl) await addToZip(plainUrl, `container_dynamic_${dynCount}_plain.png`);
           const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement | null;
@@ -777,7 +734,7 @@ async function handleClientSidePNGExport() {
     }
 
     // README
-    zip.file("README.md", `# ${kit.name} UI Kit\nGenerated by UXLora (uxlora.app)\n\nEach screen folder contains:\n- full_screen.png — complete screen\n- button_N_plain.png / button_N_complete.png / button_N_icon.png — buttons\n- icon_button_N_plain.png / icon_button_N_complete.png — icon buttons\n- chip_N_plain.png / chip_N_icon.png — currency/score chips\n- container_dynamic_N.png — dynamic content containers (plain only)\n- container_static_N_plain.png / container_static_N_complete.png — static containers\n- nav_complete.png / nav_icon_N.png — navigation\n- text_N.png — standalone text elements\n- vector_N.png — icons and illustrations\n- media_N.png — illustration/hero elements\n- media_N.png — character/hero elements\n- background_plain.png / background_with_decoratives.png — backgrounds\n\ndesign_system.json — complete design tokens\n`);
+    zip.file("README.md", `# ${kit.name} UI Kit\nGenerated by UXLora (uxlora.app)\n\nEach screen folder contains:\n- full_screen.png — complete screen\n- button_N_plain.png / button_N_complete.png / button_N_icon.png — buttons\n- icon_button_N_plain.png / icon_button_N_complete.png — icon buttons\n- chip_N_plain.png / chip_N_icon.png — currency/score chips\n- container_dynamic_N.png — dynamic content containers (plain only)\n- container_static_N_plain.png / container_static_N_complete.png — static containers\n- nav_complete.png / nav_icon_N.png — navigation\n- text_N.png — standalone text elements\n- vector_N.png — icons and illustrations\n- media_N.png — illustration/hero elements\n- background_plain.png / background_with_decoratives.png — backgrounds\n\ndesign_system.json — complete design tokens\n`);
 
     const zipBlob = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(zipBlob);
