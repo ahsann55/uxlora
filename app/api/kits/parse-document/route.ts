@@ -150,7 +150,7 @@ Return a JSON object with these fields (set to null if not found):
       console.error("Parse error:", parseError);
       console.error("Raw response:", responseText.slice(0, 500));
       return NextResponse.json(
-        { error: "Failed to parse document information. Please try again." },
+        { error: "We couldn't read your document. Make sure it starts directly with your game or product name and description — remove any intro lines like 'Here is...' or 'This document contains...'. The document should begin with the actual content, not a preamble." },
         { status: 422 }
       );
     }

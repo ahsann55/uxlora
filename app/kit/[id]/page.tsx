@@ -276,22 +276,28 @@ async function handleClientSidePNGExport() {
         }
 
         // Temporarily remove overflow:hidden from ancestors to prevent clipping
-        function unlockOverflow(el: HTMLElement): Array<{el: HTMLElement, overflow: string}> {
-          const saved: Array<{el: HTMLElement, overflow: string}> = [];
+        function unlockOverflow(el: HTMLElement): Array<{el: HTMLElement, overflow: string, overflowX: string, overflowY: string}> {
+          const saved: Array<{el: HTMLElement, overflow: string, overflowX: string, overflowY: string}> = [];
           let parent = el.parentElement;
           while (parent && parent !== iframeDoc!.body) {
             const style = iframeDoc!.defaultView?.getComputedStyle(parent);
             if (style?.overflow === 'hidden' || style?.overflowY === 'hidden' || style?.overflowX === 'hidden') {
-              saved.push({ el: parent, overflow: parent.style.overflow });
+              saved.push({ el: parent, overflow: parent.style.overflow, overflowX: parent.style.overflowX, overflowY: parent.style.overflowY });
               parent.style.overflow = 'visible';
+              parent.style.overflowX = 'visible';
+              parent.style.overflowY = 'visible';
             }
             parent = parent.parentElement;
           }
           return saved;
         }
 
-        function restoreOverflow(saved: Array<{el: HTMLElement, overflow: string}>) {
-          saved.forEach(({ el, overflow }) => { el.style.overflow = overflow; });
+        function restoreOverflow(saved: Array<{el: HTMLElement, overflow: string, overflowX: string, overflowY: string}>) {
+          saved.forEach(({ el, overflow, overflowX, overflowY }) => {
+            el.style.overflow = overflow;
+            el.style.overflowX = overflowX;
+            el.style.overflowY = overflowY;
+          });
         }
 
         // Universal direct capture — adds temporary padding to expand layout box for full border capture
@@ -452,6 +458,7 @@ async function handleClientSidePNGExport() {
         let btnCount = 0;
         for (const el of buttons) {
           btnCount++;
+          const savedOverflow = unlockOverflow(el);
           const completeUrl = await captureEl(el);
           if (completeUrl) await addToZip(completeUrl, `button_${btnCount}_complete.png`);
           const plainUrl = await capturePlainContainer(el);
@@ -544,10 +551,12 @@ async function handleClientSidePNGExport() {
         ) as HTMLElement[];
         let scoreCount = 0;
         for (const el of scoreBadges) {
+          const savedOverflow = unlockOverflow(el);
           const completeUrl = await captureEl(el);
           if (completeUrl) { scoreCount++; await addToZip(completeUrl, `score_badge_${scoreCount}_complete.png`); }
           const plainUrl = await capturePlainContainer(el);
           if (plainUrl) await addToZip(plainUrl, `score_badge_${scoreCount}_plain.png`);
+          restoreOverflow(savedOverflow);
         }
 
         // ── 5. DYNAMIC CONTAINERS (ui:container:dynamic) ────────────
@@ -558,6 +567,7 @@ async function handleClientSidePNGExport() {
         let dynCount = 0;
         for (const el of dynamicLayouts.slice(0, 8)) {
           dynCount++;
+          const savedOverflow = unlockOverflow(el);
           const plainUrl = await capturePlainContainer(el);
           if (plainUrl) await addToZip(plainUrl, `container_dynamic_${dynCount}_plain.png`);
           const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement | null;
@@ -575,10 +585,12 @@ async function handleClientSidePNGExport() {
         let statCount = 0;
         for (const el of staticLayouts.slice(0, 8)) {
           statCount++;
+          const savedOverflow = unlockOverflow(el);
           const plainUrl = await capturePlainContainer(el);
           if (plainUrl) await addToZip(plainUrl, `container_static_${statCount}_plain.png`);
           const completeUrl = await captureEl(el);
           if (completeUrl) await addToZip(completeUrl, `container_static_${statCount}_complete.png`);
+          restoreOverflow(savedOverflow);
         }
 
         // ── 7. PLAIN TEXT (not in containers) ───────────────────────
@@ -675,8 +687,10 @@ async function handleClientSidePNGExport() {
         ) as HTMLElement[];
         let mediaCount = 0;
         for (const el of mediaEls) {
+          const savedOverflow = unlockOverflow(el);
           const dataUrl = await captureEl(el);
           if (dataUrl) { mediaCount++; await addToZip(dataUrl, `media_${mediaCount}.png`); }
+          restoreOverflow(savedOverflow);
         }
 
         // ── 11. FORM ELEMENTS ────────────────────────────────────────
@@ -685,8 +699,10 @@ async function handleClientSidePNGExport() {
         ) as HTMLElement[];
         let formCount = 0;
         for (const el of formEls) {
+          const savedOverflow = unlockOverflow(el);
           const dataUrl = await captureEl(el);
           if (dataUrl) { formCount++; await addToZip(dataUrl, `form_${formCount}.png`); }
+          restoreOverflow(savedOverflow);
         }
 
         // ── 12. STATUS ELEMENTS ──────────────────────────────────────
@@ -695,8 +711,10 @@ async function handleClientSidePNGExport() {
         ) as HTMLElement[];
         let statusCount = 0;
         for (const el of statusEls) {
+          const savedOverflow = unlockOverflow(el);
           const dataUrl = await captureEl(el);
           if (dataUrl) { statusCount++; await addToZip(dataUrl, `status_${statusCount}.png`); }
+          restoreOverflow(savedOverflow);
         }
         // ── 12.5. UNIVERSAL FALLBACK — any ui: tagged element not yet captured ──
         const allTagged = Array.from(
@@ -704,18 +722,18 @@ async function handleClientSidePNGExport() {
         ) as HTMLElement[];
         let fallbackCount = 0;
         for (const el of allTagged) {
-          // Skip if already inside an exported container
           const alreadyExported = el.closest(
             '[data-uxlora^="ui:button"], [data-uxlora="ui:nav:bar"], ' +
             '[data-uxlora="ui:game:hud"], [data-uxlora^="ui:layout"], ' +
             '[data-uxlora^="ui:container"], [data-uxlora^="ui:form"]'
           );
           if (alreadyExported) continue;
-          // Skip nav bar itself and hud itself — already exported as whole
           if (el.getAttribute('data-uxlora') === 'ui:nav:bar') continue;
           if (el.getAttribute('data-uxlora') === 'ui:game:hud') continue;
+          const savedOverflow = unlockOverflow(el);
           const dataUrl = await captureEl(el);
           if (dataUrl) { fallbackCount++; await addToZip(dataUrl, `element_${fallbackCount}_${el.getAttribute('data-uxlora')?.replace(/:/g, '_')}.png`); }
+          restoreOverflow(savedOverflow);
         }
         // ── 13. BACKGROUND PLAIN ────────────────────────────────────
         try {
@@ -759,7 +777,7 @@ async function handleClientSidePNGExport() {
     }
 
     // README
-    zip.file("README.md", `# ${kit.name} UI Kit\nGenerated by UXLora (uxlora.app)\n\nEach screen folder contains:\n- full_screen.png — complete screen\n- button_N_plain.png / button_N_complete.png / button_N_icon.png — buttons\n- icon_button_N_plain.png / icon_button_N_complete.png — icon buttons\n- chip_N_plain.png / chip_N_icon.png — currency/score chips\n- container_dynamic_N.png — dynamic content containers (plain only)\n- container_static_N_plain.png / container_static_N_complete.png — static containers\n- nav_complete.png / nav_icon_N.png — navigation\n- text_N.png — standalone text elements\n- vector_N.png — icons and illustrations\n- media_N.png — character/hero elements\n- background_plain.png / background_with_decoratives.png — backgrounds\n\ndesign_system.json — complete design tokens\n`);
+    zip.file("README.md", `# ${kit.name} UI Kit\nGenerated by UXLora (uxlora.app)\n\nEach screen folder contains:\n- full_screen.png — complete screen\n- button_N_plain.png / button_N_complete.png / button_N_icon.png — buttons\n- icon_button_N_plain.png / icon_button_N_complete.png — icon buttons\n- chip_N_plain.png / chip_N_icon.png — currency/score chips\n- container_dynamic_N.png — dynamic content containers (plain only)\n- container_static_N_plain.png / container_static_N_complete.png — static containers\n- nav_complete.png / nav_icon_N.png — navigation\n- text_N.png — standalone text elements\n- vector_N.png — icons and illustrations\n- media_N.png — illustration/hero elements\n- media_N.png — character/hero elements\n- background_plain.png / background_with_decoratives.png — backgrounds\n\ndesign_system.json — complete design tokens\n`);
 
     const zipBlob = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(zipBlob);
