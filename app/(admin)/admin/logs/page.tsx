@@ -216,7 +216,7 @@ export default function LogsPage() {
             </div>
           ))}
         </div>
-      ) : kitGroups.length === 0 ? (
+      ) : kitGroups.length === 0 && parserLogs.length === 0 ? (
         <div className="card text-center py-12">
           <p className="text-white/40">No generation logs yet.</p>
         </div>
