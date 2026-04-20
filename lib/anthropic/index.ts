@@ -8,7 +8,7 @@ import Anthropic from "@anthropic-ai/sdk";
 export function getAnthropicClient(): Anthropic {
   return new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY!,
-    timeout: 90000,
+    timeout: 300000, // 5 min fallback — AbortController handles per-call timeout
     maxRetries: 0,
   });
 }

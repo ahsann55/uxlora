@@ -134,12 +134,20 @@ Keep everything else the same. Only change what is explicitly requested above.`;
   const model = template?.model ?? "claude-sonnet-4-6";
   const maxTokens = template?.max_tokens ?? 8192;
 
-  const message = await client.messages.create({
-    model,
-    max_tokens: maxTokens,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
-  }, { timeout: 180000 }); // 3 minutes for screen generation
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000);
+  
+  let message;
+  try {
+    message = await client.messages.create({
+      model,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    }, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  } // 3 minutes for screen generation
 
   const responseText =
     message.content[0].type === "text" ? message.content[0].text : "";

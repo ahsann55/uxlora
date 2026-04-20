@@ -203,8 +203,6 @@ export async function runGenerationEngine(
       .delete()
       .eq("kit_id", context.kitId);
 
-    const existingNames = new Set<string>();
-
     const allScreensToGenerate = context.isDemo
       ? allScreens.slice(0, 2)
       : allScreens;
@@ -236,6 +234,7 @@ export async function runGenerationEngine(
       await updateKitStatus("generating", {
         current_step: `Generating: ${screenName}`,
         current_screen_index: globalIndex,
+        error_message: null,
       });
 
       const screenStart = Date.now();
@@ -277,16 +276,64 @@ export async function runGenerationEngine(
           result.promptTemplateId ?? undefined
         );
       } catch (error) {
-        await logGeneration(
-          `screen_${globalIndex}_${screenName}`,
-          "claude-sonnet-4-6",
-          0,
-          0,
-          Date.now() - screenStart,
-          "failed",
-          String(error)
-        );
-        console.error(`Screen generation failed for ${screenName}:`, error);
+        console.error(`Screen generation failed for ${screenName}, retrying once:`, error);
+        await updateKitStatus("generating", {
+          current_step: `Taking longer than usual, please be patient...`,
+        });
+
+        try {
+          const retryStart = Date.now();
+          const retryResult = await generateScreen(
+            context,
+            designSystem,
+            screenName,
+            globalIndex,
+            finalTotalScreens,
+            selectedIcons,
+            iconAuthorMap
+          );
+
+          const { error: insertError } = await adminSupabase
+            .from("screens")
+            .insert({
+              kit_id: context.kitId,
+              name: screenName,
+              order_index: globalIndex,
+              html_css: retryResult.htmlCss,
+              system_prompt: retryResult.systemPrompt,
+              user_prompt: retryResult.userPrompt,
+            });
+
+          if (insertError) {
+            console.error(`Screen insert error on retry for ${screenName}:`, insertError);
+          }
+
+          await updateKitStatus("generating", {
+            current_step: `Generating: ${screenName}`,
+          });
+
+          await logGeneration(
+            `screen_${globalIndex}_${screenName}`,
+            "claude-sonnet-4-6",
+            retryResult.inputTokens,
+            retryResult.outputTokens,
+            Date.now() - retryStart,
+            "success",
+            undefined,
+            retryResult.promptTemplateId ?? undefined
+          );
+        } catch (retryError) {
+          await logGeneration(
+            `screen_${globalIndex}_${screenName}`,
+            "claude-sonnet-4-6",
+            0,
+            0,
+            Date.now() - screenStart,
+            "failed",
+            String(retryError)
+          );
+          console.error(`Screen generation failed on retry for ${screenName}:`, retryError);
+        }
       }
     }
 
