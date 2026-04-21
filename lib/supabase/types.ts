@@ -80,7 +80,7 @@ export interface Database {
           created_at: string;
           updated_at: string;
           suggestion_tokens: Json | null;
-          kit_decisions: string | null;
+          kit_decisions?: string | null;
         };
         Insert: {
           id?: string;
@@ -100,7 +100,7 @@ export interface Database {
           notification_sent?: boolean;
           created_at?: string;
           updated_at?: string;
-          kit_decisions: string | null;
+          kit_decisions?: string | null;
         };
         Update: {
           id?: string;
@@ -120,7 +120,7 @@ export interface Database {
           notification_sent?: boolean;
           created_at?: string;
           updated_at?: string;
-          kit_decisions: string | null;
+          kit_decisions?: string | null;
         };
       };
      screens: {
