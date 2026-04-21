@@ -775,6 +775,7 @@ async function handleClientSidePNGExport() {
         ];
 
         for (const el of allDataEls) {
+          
           if (exportedEls.has(el)) continue;
           const elTag = el.getAttribute('data-uxlora') ?? '';
           const isAlwaysExport = alwaysExportTags.some(t => elTag === t);
