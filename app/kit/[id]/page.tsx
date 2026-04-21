@@ -197,6 +197,9 @@ async function handleClientSidePNGExport() {
       iframe.style.pointerEvents = "none";
       document.body.appendChild(iframe);
 
+      let hudEl: HTMLElement | null = null;
+      let savedHudOverflow = '';
+
       try {
         iframe.srcdoc = screen.html_css;
         await new Promise(r => setTimeout(r, 100));
@@ -260,6 +263,11 @@ async function handleClientSidePNGExport() {
         const fullScreenDataUrl = await htmlToImage.toPng(screenEl, { ...captureOpts, width, height });
         const fullScreenImg = new Image();
         await new Promise<void>((res) => { fullScreenImg.onload = () => res(); fullScreenImg.src = fullScreenDataUrl; });
+
+        // Unlock HUD overflow so child elements have correct getBoundingClientRect
+        hudEl = iframeDoc.querySelector('[data-uxlora="ui:game:hud"]') as HTMLElement | null;
+        savedHudOverflow = hudEl ? hudEl.style.overflow : '';
+        if (hudEl) hudEl.style.overflow = 'visible';
 
         async function addToZip(dataUrl: string, filename: string) {
           const res = await fetch(dataUrl);
@@ -724,6 +732,8 @@ async function handleClientSidePNGExport() {
         } catch { /* skip */ }
 
       } finally {
+        // Restore HUD overflow
+        if (hudEl) hudEl.style.overflow = savedHudOverflow;
         document.body.removeChild(iframe);
       }
     }
