@@ -107,8 +107,23 @@ export async function runGenerationEngine(
     let designSystem!: import("./index").DesignSystem;
     let designSystemPrompt = "";
 
+    // Fetch icon list for design system (game category only)
+    let iconList = "";
+    if (context.category === "game") {
+      try {
+        const { data: icons } = await adminSupabase
+          .from("icons")
+          .select("name");
+        if (icons && icons.length > 0) {
+          iconList = icons.map((i: { name: string }) => i.name).join(", ");
+        }
+      } catch {
+        // continue without icons
+      }
+    }
+
     const runDesignSystem = async () => {
-      const dsResult = await generateDesignSystem(context);
+      const dsResult = await generateDesignSystem(context, iconList);
       designSystem = dsResult.designSystem;
       designSystemPrompt = dsResult.userPrompt;
       context.compressedSummary = dsResult.compressedSummary;
@@ -174,78 +189,10 @@ export async function runGenerationEngine(
       }
     }
 
-    // --------------------------------------------------------
-    // STEP 2.5: Select icons (game category only)
-    // --------------------------------------------------------
-    let selectedIcons = null;
-    let iconAuthorMap: Record<string, string> = {};
-
-    if (context.category === "game") {
-      await updateKitStatus("generating", {
-        current_step: "Crafting your game's visual style",
-      });
-
-      const iconStart = Date.now();
-      const runIconSelection = async () => {
-        const { selectIcons } = await import("./icon-selection");
-        const iconResult = await selectIcons(context, designSystem as unknown as Record<string, unknown>);
-        selectedIcons = iconResult.selectedIcons;
-        iconAuthorMap = iconResult.authorMap;
-
-        await adminSupabase
-          .from("kits")
-          .update({
-            selected_icons: selectedIcons as unknown as Record<string, unknown>,
-            icon_selection_prompt: iconResult.userPrompt,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", context.kitId);
-
-        return iconResult;
-      };
-
-      try {
-        const iconResult = await runIconSelection();
-        await logGeneration(
-          "icon_selection",
-          "claude-haiku-4-5-20251001",
-          iconResult.inputTokens,
-          iconResult.outputTokens,
-          Date.now() - iconStart,
-          "success"
-        );
-      } catch (error) {
-        console.error("Icon selection failed, retrying once:", error);
-        await updateKitStatus("generating", {
-          current_step: "Taking longer than usual, please be patient...",
-        });
-        try {
-          const iconResult = await runIconSelection();
-          await updateKitStatus("generating", {
-            current_step: "Crafting your game's visual style",
-          });
-          await logGeneration(
-            "icon_selection",
-            "claude-haiku-4-5-20251001",
-            iconResult.inputTokens,
-            iconResult.outputTokens,
-            Date.now() - iconStart,
-            "success"
-          );
-        } catch (retryError) {
-          console.error("Icon selection failed on retry, continuing without icons:", retryError);
-          await logGeneration(
-            "icon_selection",
-            "claude-haiku-4-5-20251001",
-            0,
-            0,
-            Date.now() - iconStart,
-            "failed",
-            String(retryError)
-          );
-        }
-      }
-    }
+    // Icon selection now handled by design system — icons assigned in KIT_DECISIONS
+    // selectedIcons and iconAuthorMap kept for backward compatibility with generateScreen signature
+    const selectedIcons = null;
+    const iconAuthorMap: Record<string, string> = {};
 
     // --------------------------------------------------------
     // STEP 3: Generate each screen

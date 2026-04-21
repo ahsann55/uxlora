@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
       status: "collecting_input",
       is_demo,
       suggestion_tokens: (suggestion_tokens ?? null) as import("@/lib/supabase/types").Json,
+      
     };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

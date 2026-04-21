@@ -12,7 +12,8 @@ export interface DesignSystemResult {
 }
 
 export async function generateDesignSystem(
-  context: GenerationContext
+  context: GenerationContext,
+  iconList: string = ""
 ): Promise<DesignSystemResult> {
   const client = getAnthropicClient();
   const checklistSummary = buildChecklistSummary(context.checklistData);
@@ -26,6 +27,7 @@ export async function generateDesignSystem(
   const variables = {
     category: context.category,
     summary,
+    icon_list: iconList,
   };
 
   const systemPrompt = template
