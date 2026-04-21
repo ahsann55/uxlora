@@ -265,7 +265,9 @@ async function handleClientSidePNGExport() {
         const capturedDataUrls = new Set<string>();
 
         // Capture full screen once — capture .screen div directly for correct dimensions
-        const fullScreenDataUrl = await htmlToImage.toPng(screenEl, { ...captureOpts, width, height });
+        // Get background color from html or body to use as fallback
+        const screenBg = iframeDoc.defaultView?.getComputedStyle(iframeDoc.body)?.backgroundColor ?? '#000000';
+        const fullScreenDataUrl = await htmlToImage.toPng(screenEl, { ...captureOpts, width, height, backgroundColor: screenBg });
         const fullScreenImg = new Image();
         await new Promise<void>((res) => { fullScreenImg.onload = () => res(); fullScreenImg.src = fullScreenDataUrl; });
 
@@ -766,11 +768,20 @@ async function handleClientSidePNGExport() {
         }
 
         let remainingCount = 0;
+        // Tags that should always be exported even if inside an exported parent
+        const alwaysExportTags = [
+          'ui:text:badge', 'ui:game:score', 'ui:game:currency',
+          'ui:game:timer', 'ui:game:lives', 'ui:status:progress'
+        ];
+
         for (const el of allDataEls) {
-          // Skip if already exported or is a child of an exported element
           if (exportedEls.has(el)) continue;
-          const insideExported = Array.from(exportedEls).some(exp => exp.contains(el));
-          if (insideExported) continue;
+          const elTag = el.getAttribute('data-uxlora') ?? '';
+          const isAlwaysExport = alwaysExportTags.some(t => elTag === t);
+          if (!isAlwaysExport) {
+            const insideExported = Array.from(exportedEls).some(exp => exp.contains(el));
+            if (insideExported) continue;
+          }
           
           const rect = el.getBoundingClientRect();
           if (rect.width < 20 || rect.height < 20) continue;
