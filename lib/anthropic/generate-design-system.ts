@@ -4,6 +4,7 @@ import type { DesignSystem, GenerationContext } from "./index";
 export interface DesignSystemResult {
   designSystem: DesignSystem;
   compressedSummary: string;
+  kitDecisions: string;
   userPrompt: string;
   inputTokens: number;
   outputTokens: number;
@@ -94,11 +95,10 @@ Customise the values for this specific product. Keep all string values short. Re
 
   // Extract compressed summary from after the JSON
   let compressedSummary = "";
-  const summaryMatch = responseText.match(/COMPRESSED_SUMMARY:(.+)/);
+  const summaryMatch = responseText.match(/COMPRESSED_SUMMARY:([\s\S]+?)(?=KIT_DECISIONS:|$)/);
   if (summaryMatch) {
     compressedSummary = summaryMatch[1].trim();
   }
-  // Fallback to buildChecklistSummary if no summary found
   if (!compressedSummary) {
     const { buildChecklistSummary } = await import("./index");
     compressedSummary = buildChecklistSummary(
@@ -106,9 +106,16 @@ Customise the values for this specific product. Keep all string values short. Re
     ).slice(0, 300);
   }
 
+  let kitDecisions = "";
+  const kitDecisionsMatch = responseText.match(/KIT_DECISIONS:([\s\S]+?)(?=COMPRESSED_SUMMARY:|$)/);
+  if (kitDecisionsMatch) {
+    kitDecisions = kitDecisionsMatch[1].trim();
+  }
+
   return {
     designSystem,
     compressedSummary,
+    kitDecisions,
     userPrompt,
     inputTokens: finalMessage.usage.input_tokens,
     outputTokens: finalMessage.usage.output_tokens,

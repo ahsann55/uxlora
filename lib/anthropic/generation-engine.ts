@@ -66,13 +66,16 @@ export async function runGenerationEngine(
     // --------------------------------------------------------
     const { data: kitMeta } = await adminSupabase
       .from("kits")
-      .select("suggestion_tokens, gdd_summary")
+      .select("suggestion_tokens, gdd_summary, kit_decisions")
       .eq("id", context.kitId)
       .single();
 
     // Pass gdd_summary to context for document upload flow
     if (kitMeta?.gdd_summary) {
       context.gddSummary = kitMeta.gdd_summary as string;
+    }
+    if (kitMeta?.kit_decisions) {
+      context.kitDecisions = kitMeta.kit_decisions as string;
     }
 
     const suggTokens = kitMeta?.suggestion_tokens as { input: number; output: number } | null;
@@ -109,6 +112,7 @@ export async function runGenerationEngine(
       designSystem = dsResult.designSystem;
       designSystemPrompt = dsResult.userPrompt;
       context.compressedSummary = dsResult.compressedSummary;
+      context.kitDecisions = dsResult.kitDecisions;
 
       await adminSupabase
         .from("kits")
@@ -116,6 +120,7 @@ export async function runGenerationEngine(
           design_system: designSystem as unknown as Record<string, unknown>,
           design_system_prompt: designSystemPrompt,
           compressed_summary: dsResult.compressedSummary,
+          kit_decisions: dsResult.kitDecisions,
           updated_at: new Date().toISOString(),
         })
         .eq("id", context.kitId);

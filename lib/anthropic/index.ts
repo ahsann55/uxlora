@@ -24,6 +24,7 @@ export interface GenerationContext {
   checklistData: Record<string, unknown>;
   isDemo: boolean;
   compressedSummary?: string;
+  kitDecisions?: string;
   gddSummary?: string;
 }
 

@@ -68,6 +68,7 @@ export async function generateScreen(
     total_screens: String(totalScreens),
     summary,
     design_system: designSystemStr,
+    kit_decisions: context.kitDecisions ?? "",
     dimensions,
     width_px: widthPx,
   };

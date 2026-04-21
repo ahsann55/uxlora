@@ -113,23 +113,22 @@ Return a JSON object with these fields (set to null if not found):
     const model = template?.model ?? "claude-sonnet-4-6";
     const maxTokens = template?.max_tokens ?? 2048;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-    let message;
-    try {
-      message = await anthropic.messages.create({
-        model,
-        max_tokens: maxTokens,
-        messages: [{ role: "user", content: userPrompt }],
-        system: systemPrompt,
-      }, { signal: controller.signal });
-    } finally {
-      clearTimeout(timeoutId);
+    let responseText = "";
+
+    const stream = anthropic.messages.stream({
+      model,
+      max_tokens: maxTokens,
+      messages: [{ role: "user", content: userPrompt }],
+      system: systemPrompt,
+    });
+
+    for await (const chunk of stream) {
+      if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+        responseText += chunk.delta.text;
+      }
     }
 
-    const responseText = message.content[0].type === "text"
-      ? message.content[0].text
-      : "";
+    const finalMessage = await stream.finalMessage();
 
     // Parse JSON response and extract GDD summary
     let checklistData: Record<string, unknown> = {};
@@ -168,8 +167,8 @@ Return a JSON object with these fields (set to null if not found):
         kit_id: null,
         step: "parser",
         model_used: model,
-        input_tokens: message.usage.input_tokens,
-        output_tokens: message.usage.output_tokens,
+        input_tokens: finalMessage.usage.input_tokens,
+        output_tokens: finalMessage.usage.output_tokens,
         duration_ms: 0,
         status: "success",
         error_message: null,
