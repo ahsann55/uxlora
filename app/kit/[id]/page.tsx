@@ -198,7 +198,9 @@ async function handleClientSidePNGExport() {
       document.body.appendChild(iframe);
 
       let hudEl: HTMLElement | null = null;
-      let savedHudOverflow = '';
+      let savedHudOverflow: string = '';
+      let contentEl: HTMLElement | null = null;
+      let savedContentOverflow: string = '';
 
       try {
         iframe.srcdoc = screen.html_css;
@@ -264,10 +266,13 @@ async function handleClientSidePNGExport() {
         const fullScreenImg = new Image();
         await new Promise<void>((res) => { fullScreenImg.onload = () => res(); fullScreenImg.src = fullScreenDataUrl; });
 
-        // Unlock HUD overflow so child elements have correct getBoundingClientRect
+        // Unlock HUD and content div overflow so child elements have correct getBoundingClientRect
         hudEl = iframeDoc.querySelector('[data-uxlora="ui:game:hud"]') as HTMLElement | null;
         savedHudOverflow = hudEl ? hudEl.style.overflow : '';
         if (hudEl) hudEl.style.overflow = 'visible';
+        const contentEl = iframeDoc.querySelector('.content') as HTMLElement | null;
+        const savedContentOverflow = contentEl ? contentEl.style.overflow : '';
+        if (contentEl) contentEl.style.overflow = 'visible';
 
         async function addToZip(dataUrl: string, filename: string) {
           const res = await fetch(dataUrl);
@@ -313,7 +318,10 @@ async function handleClientSidePNGExport() {
             const wrapper = iframeDoc!.createElement('div');
             wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box;padding:3px`;
             const clone = el.cloneNode(true) as HTMLElement;
-            clone.style.cssText = `width:${rect.width}px;height:${rect.height}px;margin:0;flex-shrink:0`;
+            clone.style.width = `${rect.width}px`;
+            clone.style.height = `${rect.height}px`;
+            clone.style.margin = '0';
+            clone.style.flexShrink = '0';
             wrapper.appendChild(clone);
             iframeDoc!.body.appendChild(wrapper);
             await new Promise(r => setTimeout(r, 50));
@@ -362,7 +370,10 @@ async function handleClientSidePNGExport() {
 
             // Clone into fixed wrapper outside all clipping contexts
             const clone = el.cloneNode(true) as HTMLElement;
-            clone.style.cssText = `width:${rect.width}px;height:${rect.height}px;margin:0;flex-shrink:0`;
+            clone.style.width = `${rect.width}px`;
+            clone.style.height = `${rect.height}px`;
+            clone.style.margin = '0';
+            clone.style.flexShrink = '0';
 
             // Hide all content inside clone
             const descendants = Array.from(clone.querySelectorAll("*")) as HTMLElement[];
@@ -732,8 +743,8 @@ async function handleClientSidePNGExport() {
         } catch { /* skip */ }
 
       } finally {
-        // Restore HUD overflow
-        if (hudEl) hudEl.style.overflow = savedHudOverflow;
+        if (hudEl) (hudEl as HTMLElement).style.overflow = savedHudOverflow;
+        if (contentEl) (contentEl as HTMLElement).style.overflow = savedContentOverflow;
         document.body.removeChild(iframe);
       }
     }
