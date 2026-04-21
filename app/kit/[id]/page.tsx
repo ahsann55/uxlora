@@ -186,6 +186,7 @@ async function handleClientSidePNGExport() {
       const sanitizedName = screen.name.replace(/[^a-zA-Z0-9]/g, "_");
       const folderName = `${paddedIndex}_${sanitizedName}`;
 
+
       const iframe = document.createElement("iframe");
       iframe.style.position = "fixed";
       iframe.style.left = "0px";
@@ -201,6 +202,8 @@ async function handleClientSidePNGExport() {
       let savedHudOverflow: string = '';
       let contentEl: HTMLElement | null = null;
       let savedContentOverflow: string = '';
+      let headerEls: HTMLElement[] = [];
+      let savedHeaderOverflows: string[] = [];
 
       try {
         iframe.srcdoc = screen.html_css;
@@ -269,10 +272,19 @@ async function handleClientSidePNGExport() {
         // Unlock HUD and content div overflow so child elements have correct getBoundingClientRect
         hudEl = iframeDoc.querySelector('[data-uxlora="ui:game:hud"]') as HTMLElement | null;
         savedHudOverflow = hudEl ? hudEl.style.overflow : '';
-        if (hudEl) hudEl.style.overflow = 'visible';
+        if (hudEl) (hudEl as HTMLElement).style.overflow = 'visible';
         const contentEl = iframeDoc.querySelector('.content') as HTMLElement | null;
         const savedContentOverflow = contentEl ? contentEl.style.overflow : '';
-        if (contentEl) contentEl.style.overflow = 'visible';
+        if (contentEl) (contentEl as HTMLElement).style.overflow = 'visible';
+        // Also unlock any layout:header elements that contain currency chips
+        const headerEls = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora="ui:layout:header"]')
+        ) as HTMLElement[];
+        const savedHeaderOverflows: string[] = [];
+        headerEls.forEach(el => {
+          savedHeaderOverflows.push(el.style.overflow);
+          el.style.overflow = 'visible';
+        });
 
         async function addToZip(dataUrl: string, filename: string) {
           const res = await fetch(dataUrl);
@@ -584,16 +596,14 @@ async function handleClientSidePNGExport() {
         }
 
         // ── 8. NAVIGATION ───────────────────────────────────────────
-        // Complete nav bar + each tab icon separately
         const navEls = Array.from(
           iframeDoc.querySelectorAll('[data-uxlora="ui:nav:bar"]')
         ) as HTMLElement[];
-        // Fallback: if model missed the tag, find nav by element type
         const navToProcess = navEls.length > 0
           ? navEls
           : Array.from(iframeDoc.querySelectorAll('nav')) as HTMLElement[];
+
         for (const nav of navToProcess) {
-          // Hide active tab decoration before capturing nav
           const activeTabDecorations = Array.from(
             nav.querySelectorAll('[data-uxlora="vec:decoration"], .nav-active-crest')
           ) as HTMLElement[];
@@ -605,7 +615,6 @@ async function handleClientSidePNGExport() {
           } catch { /* skip */ }
           activeTabDecorations.forEach(el => { el.style.visibility = ""; });
 
-          // Export active tab decoration separately — add top buffer for absolute positioned elements
           let decorCount = 0;
           for (const decor of activeTabDecorations) {
             try {
@@ -630,7 +639,6 @@ async function handleClientSidePNGExport() {
             } catch { /* skip */ }
           }
 
-          // Each tab icon separately
           const tabs = Array.from(
             nav.querySelectorAll('[data-uxlora="ui:button:tab"]')
           ) as HTMLElement[];
@@ -711,6 +719,83 @@ async function handleClientSidePNGExport() {
           if (dataUrl) { fallbackCount++; await addToZip(dataUrl, `element_${fallbackCount}_${el.getAttribute('data-uxlora')?.replace(/:/g, '_')}.png`); }
           restoreOverflow(savedOverflow);
         }
+
+        // ── 12.7. INTERACTIVE FALLBACK — buttons and links not tagged ──
+        const untaggedButtons = Array.from(
+          iframeDoc.querySelectorAll('button:not([data-uxlora]), a:not([data-uxlora]), [role="button"]:not([data-uxlora])')
+        ) as HTMLElement[];
+        let untaggedCount = 0;
+        for (const el of untaggedButtons) {
+          const rect = el.getBoundingClientRect();
+          if (rect.width < 20 || rect.height < 20) continue;
+          const dataUrl = await captureEl(el);
+          if (dataUrl) { untaggedCount++; await addToZip(dataUrl, `untagged_interactive_${untaggedCount}.png`); }
+        }
+
+        // ── 12.9. UNIVERSAL REMAINING — any tagged element not yet exported ──
+        // Catches nav tabs, custom elements, any data-uxlora element missed above
+        const allDataEls = Array.from(
+          iframeDoc.querySelectorAll('[data-uxlora]')
+        ) as HTMLElement[];
+        
+        const exportedEls = new Set<HTMLElement>();
+        
+        // Mark all elements already captured by previous sections
+        const alreadyCapturedSelectors = [
+          '[data-uxlora^="ui:button"]:not([data-uxlora="ui:button:tab"])',
+          '[data-uxlora="ui:button:icon"]',
+          '[data-uxlora="ui:game:hud"]',
+          '[data-uxlora="ui:game:currency"]',
+          '[data-uxlora="ui:game:score"]',
+          '[data-uxlora="ui:container:dynamic"]',
+          '[data-uxlora="ui:layout:card:static"]',
+          '[data-uxlora="ui:layout:panel:static"]',
+          '[data-uxlora^="ui:text"]',
+          '[data-uxlora="ui:nav:bar"]',
+          '[data-uxlora^="vec"]',
+          '[data-uxlora^="media"]',
+          '[data-uxlora^="ui:form"]',
+          '[data-uxlora^="ui:status"]',
+          '[data-uxlora^="bg:"]',
+        ];
+        
+        for (const sel of alreadyCapturedSelectors) {
+          Array.from(iframeDoc.querySelectorAll(sel)).forEach(el => {
+            exportedEls.add(el as HTMLElement);
+          });
+        }
+
+        let remainingCount = 0;
+        for (const el of allDataEls) {
+          // Skip if already exported or is a child of an exported element
+          if (exportedEls.has(el)) continue;
+          const insideExported = Array.from(exportedEls).some(exp => exp.contains(el));
+          if (insideExported) continue;
+          
+          const rect = el.getBoundingClientRect();
+          if (rect.width < 20 || rect.height < 20) continue;
+
+          remainingCount++;
+          const tag = el.getAttribute('data-uxlora')?.replace(/:/g, '_') ?? 'unknown';
+          
+          // Complete capture
+          const completeUrl = await captureEl(el);
+          if (completeUrl) await addToZip(completeUrl, `remaining_${remainingCount}_${tag}_complete.png`);
+          
+          // Plain container
+          const plainUrl = await capturePlainContainer(el);
+          if (plainUrl) await addToZip(plainUrl, `remaining_${remainingCount}_${tag}_plain.png`);
+          
+          // Icon if present
+          const icon = (el.querySelector('svg[data-uxlora^="vec:icon"]') ?? el.querySelector('svg')) as unknown as HTMLElement | null;
+          if (icon) {
+            const iconUrl = await captureSvg(icon);
+            if (iconUrl) await addToZip(iconUrl, `remaining_${remainingCount}_${tag}_icon.png`);
+          }
+          
+          exportedEls.add(el);
+        }
+
         // ── 13. BACKGROUND PLAIN ────────────────────────────────────
         try {
           const hideForPlain = Array.from(
@@ -745,6 +830,7 @@ async function handleClientSidePNGExport() {
       } finally {
         if (hudEl) (hudEl as HTMLElement).style.overflow = savedHudOverflow;
         if (contentEl) (contentEl as HTMLElement).style.overflow = savedContentOverflow;
+        headerEls.forEach((el, i) => { el.style.overflow = savedHeaderOverflows[i] ?? ''; });
         document.body.removeChild(iframe);
       }
     }

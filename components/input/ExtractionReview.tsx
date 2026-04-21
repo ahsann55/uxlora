@@ -28,7 +28,17 @@ export function ExtractionReview({
       if (Array.isArray(value) && value.length === 0) continue;
       filledFields.push({
         label: field.label,
-        value: Array.isArray(value) ? value.join(", ") : String(value),
+        value: Array.isArray(value)
+        ? value.map((item: unknown) =>
+            typeof item === 'object' && item !== null
+              ? (item as Record<string, unknown>).name
+                ? String((item as Record<string, unknown>).name)
+                : Object.values(item as Record<string, unknown>)
+                    .filter(v => typeof v === 'string')
+                    .join(" · ")
+              : String(item)
+          ).join(", ")
+        : String(value),
       });
     }
   }

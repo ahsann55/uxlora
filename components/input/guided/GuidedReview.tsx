@@ -24,7 +24,17 @@ export function GuidedReview({
       return "—";
     }
     if (Array.isArray(value)) {
-      return value.length > 0 ? value.join(", ") : "—";
+      return value.length > 0
+        ? value.map((item: unknown) =>
+            typeof item === 'object' && item !== null
+              ? (item as Record<string, unknown>).name
+                ? String((item as Record<string, unknown>).name)
+                : Object.values(item as Record<string, unknown>)
+                    .filter(v => typeof v === 'string')
+                    .join(" · ")
+              : String(item)
+          ).join(", ")
+        : "—";
     }
     return String(value);
   }
