@@ -164,7 +164,7 @@ export async function runGenerationEngine(
         const dsResult = await runDesignSystem();
         await logGeneration(
           "design_system",
-          "claude-sonnet-4-6",
+          dsResult.modelUsed,
           dsResult.inputTokens,
           dsResult.outputTokens,
           Date.now() - step2Start,
@@ -184,7 +184,7 @@ export async function runGenerationEngine(
           });
           await logGeneration(
             "design_system",
-            "claude-sonnet-4-6",
+            dsResult.modelUsed,
             dsResult.inputTokens,
             dsResult.outputTokens,
             Date.now() - step2Start,

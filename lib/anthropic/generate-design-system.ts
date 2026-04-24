@@ -9,6 +9,7 @@ export interface DesignSystemResult {
   inputTokens: number;
   outputTokens: number;
   promptTemplateId: string | null;
+  modelUsed: string;
 }
 
 export async function generateDesignSystem(
@@ -130,6 +131,7 @@ Customise the values for this specific product. Keep all string values short. Re
     inputTokens: finalMessage.usage.input_tokens,
     outputTokens: finalMessage.usage.output_tokens,
     promptTemplateId: template?.id ?? null,
+    modelUsed: model,
   };
 }
 
