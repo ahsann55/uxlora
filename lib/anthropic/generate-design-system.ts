@@ -136,27 +136,67 @@ Customise the values for this specific product. Keep all string values short. Re
 }
 
 function extractDesignSystemJSON(text: string): DesignSystem {
-  let cleaned = text
+  const cleaned = text
     .replace(/```json\s*/gi, "")
     .replace(/```\s*/gi, "")
     .trim();
 
+  // Find the first { — this is where the JSON object begins
   const firstBrace = cleaned.indexOf("{");
-  const lastBrace = cleaned.lastIndexOf("}");
-
-  if (firstBrace === -1 || lastBrace === -1) {
+  if (firstBrace === -1) {
     throw new Error("No JSON object found in response");
   }
 
-  cleaned = cleaned.slice(firstBrace, lastBrace + 1);
-  cleaned = cleaned
-    .replace(/,(\s*[}\]])/g, "$1")
-    .replace(/,(\s*})/g, "$1");
+  // Walk the string from firstBrace with a brace counter, respecting
+  // string literals, to find the matching closing brace. This avoids
+  // the previous bug where lastIndexOf("}") matched braces inside
+  // KIT_DECISIONS text that appears after the JSON.
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let end = -1;
+
+  for (let i = firstBrace; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (ch === "\\" && inString) {
+      escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+
+  if (end === -1) {
+    throw new Error("Unmatched braces in design system JSON");
+  }
+
+  let jsonStr = cleaned.slice(firstBrace, end + 1);
+
+  // Clean trailing commas (common model output artefact)
+  jsonStr = jsonStr.replace(/,(\s*[}\]])/g, "$1");
 
   try {
-    return JSON.parse(cleaned) as DesignSystem;
+    return JSON.parse(jsonStr) as DesignSystem;
   } catch (error) {
-    console.error("JSON parse error. Raw response:", text.slice(0, 500));
+    console.error("JSON parse error. Extracted:", jsonStr.slice(0, 500));
+    console.error("Raw response:", text.slice(0, 500));
     throw new Error(`Failed to parse design system JSON: ${error}`);
   }
 }

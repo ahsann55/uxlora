@@ -105,25 +105,10 @@ Requirements:
 
 Return the complete HTML document starting with <!DOCTYPE html>`;
 
-  // Inject icon names only — SVGs injected post-generation
-  if (context.category === "game" && selectedIcons && iconAuthorMap) {
-    const allIcons = [
-      ...selectedIcons.nav,
-      ...selectedIcons.hud,
-      ...selectedIcons.buttons,
-      ...selectedIcons.decoratives,
-    ].filter((v, i, a) => a.indexOf(v) === i);
-
-    userPrompt += `
-
-ICONS — use placeholder spans for icons. Do NOT draw SVG icons yourself:
-Available: ${allIcons.join(", ")}
-
-Usage: <span data-icon="[name]" data-icon-color="[hex]" style="display:inline-flex;width:24px;height:24px;"></span>
-- Resize by changing width/height in style
-- Set data-icon-color to match meaning: coins=#FFD700, gems=#9B59B6, health=#E74C3C, magic=#00BCD4, navigation=primary color
-- Use for nav tab icons, HUD chip icons, button icons`;
-  }
+  // Icon handling now lives entirely in the prompt template + KIT_DECISIONS.
+  // The template's ICONS section tells the model to read icon names from
+  // KIT_DECISIONS (nav_icons / hud_icons / btn_icons / dec_icons) and resolve
+  // colors from KIT_DECISIONS icon_colors map. No runtime appending needed.
 
   if (revisionFeedback) {
     userPrompt += `\n\nREVISION REQUEST — Apply these specific changes to the screen:
