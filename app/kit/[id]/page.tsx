@@ -199,10 +199,10 @@ async function handleClientSidePNGExport() {
       document.body.appendChild(iframe);
 
       let hudEl: HTMLElement | null = null;
-      let savedHudOverflow: string = '';
-      let contentEl: HTMLElement | null = null;
-      let savedContentOverflow: string = '';
-      let headerEls: HTMLElement[] = [];
+      let savedHudOverflow = '';
+      let contentElOuter: HTMLElement | null = null;
+      let savedContentOverflow = '';
+      let headerElsOuter: HTMLElement[] = [];
       let savedHeaderOverflows: string[] = [];
 
       try {
@@ -274,16 +274,16 @@ async function handleClientSidePNGExport() {
         // Unlock HUD and content div overflow so child elements have correct getBoundingClientRect
         hudEl = iframeDoc.querySelector('[data-uxlora="ui:game:hud"]') as HTMLElement | null;
         savedHudOverflow = hudEl ? hudEl.style.overflow : '';
-        if (hudEl) (hudEl as HTMLElement).style.overflow = 'visible';
-        const contentEl = iframeDoc.querySelector('.content') as HTMLElement | null;
-        const savedContentOverflow = contentEl ? contentEl.style.overflow : '';
-        if (contentEl) (contentEl as HTMLElement).style.overflow = 'visible';
-        // Also unlock any layout:header elements that contain currency chips
-        const headerEls = Array.from(
+        if (hudEl) hudEl.style.overflow = 'visible';
+
+        contentElOuter = iframeDoc.querySelector('.content') as HTMLElement | null;
+        savedContentOverflow = contentElOuter ? contentElOuter.style.overflow : '';
+        if (contentElOuter) contentElOuter.style.overflow = 'visible';
+
+        headerElsOuter = Array.from(
           iframeDoc.querySelectorAll('[data-uxlora="ui:layout:header"]')
         ) as HTMLElement[];
-        const savedHeaderOverflows: string[] = [];
-        headerEls.forEach(el => {
+        headerElsOuter.forEach(el => {
           savedHeaderOverflows.push(el.style.overflow);
           el.style.overflow = 'visible';
         });
@@ -319,19 +319,24 @@ async function handleClientSidePNGExport() {
           });
         }
 
-        // Universal direct capture — adds temporary padding to expand layout box for full border capture
+        // Universal direct capture — clone into fixed wrapper outside all clipping
+        // contexts. Strip positioning from the clone so it lays out naturally inside
+        // the wrapper instead of being clipped by wrapper bounds.
         async function captureEl(el: HTMLElement): Promise<string | null> {
           try {
-            const cs = iframeDoc!.defaultView!.getComputedStyle(el);
             const rect = el.getBoundingClientRect();
             const w = Math.ceil(Math.max(rect.width || 0, el.offsetWidth) + 6);
             const h = Math.ceil(Math.max(rect.height || 0, el.offsetHeight) + 6);
             if (w < 20 || h < 20) return null;
 
-            // Clone into fixed wrapper outside all clipping contexts
             const wrapper = iframeDoc!.createElement('div');
-            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box;padding:3px`;
+            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box;padding:3px;display:flex;align-items:center;justify-content:center`;
             const clone = el.cloneNode(true) as HTMLElement;
+            clone.style.position = 'static';
+            clone.style.left = 'auto';
+            clone.style.top = 'auto';
+            clone.style.right = 'auto';
+            clone.style.bottom = 'auto';
             clone.style.width = `${rect.width}px`;
             clone.style.height = `${rect.height}px`;
             clone.style.margin = '0';
@@ -353,7 +358,8 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Universal SVG capture — clones into fixed wrapper to ensure correct rendering
+        // Universal SVG capture — clone into fixed wrapper. Reset positioning
+        // on the SVG clone so it lays out at 0,0 inside the wrapper.
         async function captureSvg(svgEl: HTMLElement): Promise<string | null> {
           try {
             const svgElement = svgEl as unknown as SVGSVGElement;
@@ -362,8 +368,12 @@ async function handleClientSidePNGExport() {
             const h = svgEl.offsetHeight || parseFloat(svgElement.getAttribute?.('height') ?? '0') || (viewBox?.height ?? 0) || 24;
             if (w < 4 || h < 4) return null;
             const wrapper = iframeDoc!.createElement('div');
-            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:hidden;background:transparent`;
-            wrapper.appendChild(svgEl.cloneNode(true) as HTMLElement);
+            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:hidden;background:transparent;display:flex;align-items:center;justify-content:center`;
+            const clone = svgEl.cloneNode(true) as HTMLElement;
+            clone.style.position = 'static';
+            clone.style.left = 'auto';
+            clone.style.top = 'auto';
+            wrapper.appendChild(clone);
             iframeDoc!.body.appendChild(wrapper);
             await new Promise(r => setTimeout(r, 50));
             const dataUrl = await htmlToImage.toPng(wrapper, { ...captureOpts, backgroundColor: undefined });
@@ -373,7 +383,10 @@ async function handleClientSidePNGExport() {
           } catch { return null; }
         }
 
-        // Universal plain container — expands padding for full border capture, hides content
+        // Universal plain container — strip all children so only the container's
+        // own border / background / radius is captured. Previous approach used
+        // visibility:hidden on descendants, which caused flex containers to
+        // render as blank transparent PNGs in html-to-image.
         async function capturePlainContainer(el: HTMLElement): Promise<string | null> {
           try {
             const cs = iframeDoc!.defaultView!.getComputedStyle(el);
@@ -382,21 +395,30 @@ async function handleClientSidePNGExport() {
             const h = Math.ceil(Math.max(rect.height || 0, el.offsetHeight) + 6);
             if (w < 20 || h < 20) return null;
 
-            // Clone into fixed wrapper outside all clipping contexts
             const clone = el.cloneNode(true) as HTMLElement;
+            clone.innerHTML = '';
+            clone.style.position = 'static';
+            clone.style.left = 'auto';
+            clone.style.top = 'auto';
+            clone.style.right = 'auto';
+            clone.style.bottom = 'auto';
             clone.style.width = `${rect.width}px`;
             clone.style.height = `${rect.height}px`;
             clone.style.margin = '0';
             clone.style.flexShrink = '0';
+            clone.style.color = 'transparent';
 
-            // Hide all content inside clone
-            const descendants = Array.from(clone.querySelectorAll("*")) as HTMLElement[];
-            descendants.forEach(c => { c.style.color = "transparent"; c.style.visibility = "hidden"; });
-            clone.style.color = "transparent";
+            // Preserve the visual properties we want in the capture
             if (cs.borderRadius) clone.style.borderRadius = cs.borderRadius;
+            if (cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)') {
+              clone.style.backgroundColor = cs.backgroundColor;
+            }
+            if (cs.borderWidth && cs.borderWidth !== '0px') {
+              clone.style.border = `${cs.borderWidth} ${cs.borderStyle} ${cs.borderColor}`;
+            }
 
             const wrapper = iframeDoc!.createElement('div');
-            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box;padding:3px`;
+            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box;padding:3px;display:flex;align-items:center;justify-content:center`;
             wrapper.appendChild(clone);
             iframeDoc!.body.appendChild(wrapper);
             await new Promise(r => setTimeout(r, 80));
@@ -408,7 +430,10 @@ async function handleClientSidePNGExport() {
               height: h,
             });
             iframeDoc!.body.removeChild(wrapper);
-            if (!dataUrl || dataUrl.length < 500) return null;
+            // Higher threshold than captureEl/captureSvg — a plain container
+            // with no children should still produce substantial output from
+            // its border and background. Anything under 2KB is likely blank.
+            if (!dataUrl || dataUrl.length < 2000) return null;
             return dataUrl;
           } catch { return null; }
         }
@@ -840,9 +865,9 @@ async function handleClientSidePNGExport() {
         } catch { /* skip */ }
 
       } finally {
-        if (hudEl) (hudEl as HTMLElement).style.overflow = savedHudOverflow;
-        if (contentEl) (contentEl as HTMLElement).style.overflow = savedContentOverflow;
-        headerEls.forEach((el, i) => { el.style.overflow = savedHeaderOverflows[i] ?? ''; });
+        if (hudEl) hudEl.style.overflow = savedHudOverflow;
+        if (contentElOuter) contentElOuter.style.overflow = savedContentOverflow;
+        headerElsOuter.forEach((el, i) => { el.style.overflow = savedHeaderOverflows[i] ?? ''; });
         document.body.removeChild(iframe);
       }
     }

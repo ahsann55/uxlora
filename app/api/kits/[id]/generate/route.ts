@@ -88,6 +88,16 @@ export async function POST(
 
     const isDemo = isPaidUser ? false : kit.is_demo;
 
+    // Parse optional body for forceRegenerate flag.
+    // Missing or invalid body defaults to false (safe — reuses existing design system).
+    let forceRegenerate = false;
+    try {
+      const body = await request.json();
+      forceRegenerate = body?.forceRegenerate === true;
+    } catch {
+      // No body provided — treat as normal generation (no force)
+    }
+
     // Build generation context
     const context: GenerationContext = {
       kitId: id,
@@ -95,6 +105,7 @@ export async function POST(
       category: kit.category,
       checklistData: kit.checklist_data as Record<string, unknown>,
       isDemo,
+      forceRegenerate,
     };
     // Mark kit as generating immediately before starting background engine
     await (supabase as any)
@@ -102,11 +113,15 @@ export async function POST(
       .update({ status: "generating", current_step: "Starting...", updated_at: new Date().toISOString() })
       .eq("id", id);
 
-    // Reset revision counts on all existing screens so user gets fresh revisions
-    await (supabase as any)
-      .from("screens")
-      .update({ revision_count: 0, revision_notes: null })
-      .eq("kit_id", id);
+    // Reset revision counts only when regenerating from scratch.
+    // In add-screens mode (no forceRegenerate, existing design system),
+    // preserved screens keep their revision history.
+    if (forceRegenerate || !kit.kit_decisions) {
+      await (supabase as any)
+        .from("screens")
+        .update({ revision_count: 0, revision_notes: null })
+        .eq("kit_id", id);
+    }
 
     // Run generation in background — don't await
     // Client polls /api/kits/[id]/status every 3 seconds

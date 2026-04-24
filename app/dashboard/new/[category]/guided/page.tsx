@@ -188,8 +188,12 @@ export default function GuidedPage() {
           return;
         }
 
+        // Regenerate mode = user explicitly asked for a fresh design system.
+        // Add-screens mode = keep existing design system for consistency.
         const genResponse = await fetch(`/api/kits/${kitId}/generate`, {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ forceRegenerate: regenerateMode }),
         });
 
         if (!genResponse.ok) {

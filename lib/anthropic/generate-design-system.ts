@@ -95,23 +95,31 @@ Customise the values for this specific product. Keep all string values short. Re
 
   const designSystem = extractDesignSystemJSON(responseText);
 
-  // Extract compressed summary from after the JSON
+  // Extract KIT_DECISIONS and COMPRESSED_SUMMARY from model response.
+  // Expected layout: JSON \n KIT_DECISIONS:<...> \n COMPRESSED_SUMMARY:<...>
+  // Use indexOf for deterministic bounds rather than regex lookahead,
+  // which produced inconsistent matches on whitespace-variant output.
   let compressedSummary = "";
-  const summaryMatch = responseText.match(/COMPRESSED_SUMMARY:([\s\S]+?)(?=KIT_DECISIONS:|$)/);
-  if (summaryMatch) {
-    compressedSummary = summaryMatch[1].trim();
-  }
-  if (!compressedSummary) {
-    const { buildChecklistSummary } = await import("./index");
-    compressedSummary = buildChecklistSummary(
-      {} as Record<string, unknown>
-    ).slice(0, 300);
+  let kitDecisions = "";
+
+  const summaryIdx = responseText.indexOf("COMPRESSED_SUMMARY:");
+  const kitDecisionsIdx = responseText.indexOf("KIT_DECISIONS:");
+
+  if (summaryIdx !== -1) {
+    compressedSummary = responseText.slice(summaryIdx + "COMPRESSED_SUMMARY:".length).trim();
   }
 
-  let kitDecisions = "";
-  const kitDecisionsMatch = responseText.match(/KIT_DECISIONS:([\s\S]+?)(?=COMPRESSED_SUMMARY:|$)/);
-  if (kitDecisionsMatch) {
-    kitDecisions = kitDecisionsMatch[1].trim();
+  if (kitDecisionsIdx !== -1) {
+    const end = summaryIdx !== -1 ? summaryIdx : responseText.length;
+    kitDecisions = responseText.slice(kitDecisionsIdx + "KIT_DECISIONS:".length, end).trim();
+  }
+
+  // Fallback: if the model omitted COMPRESSED_SUMMARY, synthesise one
+  // from actual checklist data so screen generator doesn't receive ""
+  // and fall through to the raw checklist dump.
+  if (!compressedSummary) {
+    console.warn(`Kit ${context.kitId}: model omitted COMPRESSED_SUMMARY, falling back to checklist`);
+    compressedSummary = buildChecklistSummary(context.checklistData).slice(0, 300);
   }
 
   return {
