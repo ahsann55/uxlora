@@ -241,12 +241,17 @@ async function handleUXMLExport() {
 
             // Clone into an offscreen wrapper to get a clean PNG of just the SVG
             const wrapper = iframeDoc.createElement("div");
-            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;background:transparent;display:flex;align-items:center;justify-content:center;overflow:hidden`;
+            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;background:transparent;overflow:hidden`;
             const clone = svg.cloneNode(true) as SVGSVGElement;
-            // Strip absolute positioning from clone so it sits flush in the wrapper
-            (clone as unknown as HTMLElement).style.position = "static";
-            (clone as unknown as HTMLElement).style.left = "auto";
-            (clone as unknown as HTMLElement).style.top = "auto";
+            const cloneEl = clone as unknown as HTMLElement;
+            cloneEl.style.position = "absolute";
+            cloneEl.style.left = "0px";
+            cloneEl.style.top = "0px";
+            cloneEl.style.right = "auto";
+            cloneEl.style.bottom = "auto";
+            cloneEl.style.width = `${w}px`;
+            cloneEl.style.height = `${h}px`;
+            cloneEl.style.margin = "0";
             clone.setAttribute("width", String(w));
             clone.setAttribute("height", String(h));
             wrapper.appendChild(clone);
