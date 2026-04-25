@@ -224,12 +224,19 @@ async function handleUXMLExport() {
             const svg = svgs[svgIdx];
             const index = svgIdx + 1; // 1-based to match uxlora-svg-N
 
-            // Determine target dimensions: prefer width/height attrs, fall back to bounding rect
+            // Determine target dimensions in this priority order:
+            // 1. width/height attributes on the SVG
+            // 2. computed CSS width/height (catches CSS-styled SVGs like .nav-ornament)
+            // 3. bounding rect
+            const svgEl = svg as unknown as HTMLElement;
             const attrW = parseInt(svg.getAttribute("width") ?? "") || 0;
             const attrH = parseInt(svg.getAttribute("height") ?? "") || 0;
-            const rect = (svg as unknown as HTMLElement).getBoundingClientRect();
-            const w = attrW || Math.ceil(rect.width) || 0;
-            const h = attrH || Math.ceil(rect.height) || 0;
+            const cs = iframeDoc.defaultView?.getComputedStyle(svgEl);
+            const cssW = cs ? parseFloat(cs.width) : 0;
+            const cssH = cs ? parseFloat(cs.height) : 0;
+            const rect = svgEl.getBoundingClientRect();
+            const w = attrW || (cssW && !isNaN(cssW) ? Math.ceil(cssW) : 0) || Math.ceil(rect.width) || 0;
+            const h = attrH || (cssH && !isNaN(cssH) ? Math.ceil(cssH) : 0) || Math.ceil(rect.height) || 0;
             if (w < 4 || h < 4) continue;
 
             // Clone into an offscreen wrapper to get a clean PNG of just the SVG
