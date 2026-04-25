@@ -151,18 +151,42 @@ function generateUSS(
 
     // Skip selectors targeting raw SVG primitives — they're rendered as PNGs
     if (/\b(svg|path|circle|rect|polygon|polyline|line|defs|pattern)\b/i.test(selector)) continue;
-    if (/[:>+~\[]/.test(selector)) continue;
+    if (/[>+~\[]/.test(selector)) continue;
     // Skip universal/wildcard selectors
     if (selector === "*" || selector.includes("*")) continue;
-    // Skip element selectors without a class (USS needs class selectors)
+    // Skip pseudo-classes USS doesn't support
+    if (selector.includes(":not(") || selector.includes(":hover") || selector.includes(":focus") || selector.includes(":active") || selector.includes("::")) continue;
+    // Element selectors without classes — skip (USS needs class selectors)
     if (!selector.includes(".") && !selector.includes("#")) continue;
 
-    selector = selector.replace(/\.([\w-]+)\s+([\w-]+)/g, ".$1.$2");
-    selector = selector.replace(/\s+([a-zA-Z][\w-]*)/g, " .$1");
-    selector = selector.replace(/\.{2,}/g, ".");
-    // Skip if the result is empty or invalid
-    const cleaned = selector.replace(/\./g, "").trim();
-    if (!cleaned) continue;
+    // Split on commas first — handle each selector in a comma list independently
+    const selectors = selector.split(",").map(s => s.trim()).filter(Boolean);
+    const validSelectors: string[] = [];
+
+    for (const sel of selectors) {
+      // Reject anything with descendant combinators we can't safely transform
+      // (e.g. ".nav-tab.active .nav-indicator" — Unity USS supports descendant
+      // selectors but our naive transformer was mangling them)
+      const parts = sel.split(/\s+/).filter(Boolean);
+      const transformedParts: string[] = [];
+      let valid = true;
+      for (const part of parts) {
+        // Each space-separated segment must already start with . or # to be a class/id selector
+        if (!part.startsWith(".") && !part.startsWith("#")) {
+          // Bare element selector inside a descendant chain — USS needs a class
+          valid = false;
+          break;
+        }
+        // Multi-class selectors like ".nav-tab.active" are valid USS — keep as-is
+        transformedParts.push(part);
+      }
+      if (valid && transformedParts.length > 0) {
+        validSelectors.push(transformedParts.join(" "));
+      }
+    }
+
+    if (validSelectors.length === 0) continue;
+    const finalSelector = validSelectors.join(", ");
 
     const ussDeclarations: string[] = [];
     const declarationRegex = /([\w-]+)\s*:\s*([^;]+);/g;
@@ -206,7 +230,7 @@ function generateUSS(
     }
 
     if (ussDeclarations.length > 0) {
-      uss += `.${selector.replace(/\./g, "").trim()} {\n${ussDeclarations.join("\n")}\n}\n\n`;
+      uss += `${finalSelector} {\n${ussDeclarations.join("\n")}\n}\n\n`;
     }
   }
 
@@ -214,9 +238,10 @@ function generateUSS(
   if (svgDimensions.length > 0) {
     uss += `\n/* SVG captures — paths relative to this .uss file */\n`;
     for (const dim of svgDimensions) {
-      const w = dim.width > 0 ? `    width: ${dim.width}px;\n` : "";
-      const h = dim.height > 0 ? `    height: ${dim.height}px;\n` : "";
-      uss += `.uxlora-svg-${dim.index} {\n${w}${h}    background-image: url("./assets/svg_${dim.index}.png");\n    -unity-background-scale-mode: scale-to-fit;\n}\n\n`;
+      // Fall back to non-zero defaults so Unity's asset path resolver doesn't warn
+      const w = dim.width > 0 ? dim.width : 24;
+      const h = dim.height > 0 ? dim.height : 24;
+      uss += `.uxlora-svg-${dim.index} {\n    width: ${w}px;\n    height: ${h}px;\n    background-image: url("./assets/svg_${dim.index}.png");\n    -unity-background-scale-mode: scale-to-fit;\n}\n\n`;
     }
   }
 

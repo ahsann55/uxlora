@@ -520,9 +520,15 @@ async function handleClientSidePNGExport() {
           try {
             const cs = iframeDoc!.defaultView!.getComputedStyle(el);
             const rect = el.getBoundingClientRect();
-            const w = Math.ceil(Math.max(rect.width || 0, el.offsetWidth) + 6);
-            const h = Math.ceil(Math.max(rect.height || 0, el.offsetHeight) + 6);
+            const w = Math.ceil(Math.max(rect.width || 0, el.offsetWidth, el.scrollWidth) + 6);
+            const h = Math.ceil(Math.max(rect.height || 0, el.offsetHeight, el.scrollHeight) + 6);
             if (w < 20 || h < 20) return null;
+
+            // Skip elements with no visible container styling — nothing to capture
+            const hasBackground = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent';
+            const hasBorder = cs.borderWidth && cs.borderWidth !== '0px' && parseFloat(cs.borderWidth) > 0;
+            const hasRadius = cs.borderRadius && cs.borderRadius !== '0px';
+            if (!hasBackground && !hasBorder && !hasRadius) return null;
 
             const clone = el.cloneNode(true) as HTMLElement;
             // Strip text content and interactive children, but PRESERVE structural
