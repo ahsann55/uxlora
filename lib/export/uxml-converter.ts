@@ -152,10 +152,17 @@ function generateUSS(
     // Skip selectors targeting raw SVG primitives — they're rendered as PNGs
     if (/\b(svg|path|circle|rect|polygon|polyline|line|defs|pattern)\b/i.test(selector)) continue;
     if (/[:>+~\[]/.test(selector)) continue;
+    // Skip universal/wildcard selectors
+    if (selector === "*" || selector.includes("*")) continue;
+    // Skip element selectors without a class (USS needs class selectors)
+    if (!selector.includes(".") && !selector.includes("#")) continue;
 
     selector = selector.replace(/\.([\w-]+)\s+([\w-]+)/g, ".$1.$2");
     selector = selector.replace(/\s+([a-zA-Z][\w-]*)/g, " .$1");
     selector = selector.replace(/\.{2,}/g, ".");
+    // Skip if the result is empty or invalid
+    const cleaned = selector.replace(/\./g, "").trim();
+    if (!cleaned) continue;
 
     const ussDeclarations: string[] = [];
     const declarationRegex = /([\w-]+)\s*:\s*([^;]+);/g;

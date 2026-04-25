@@ -454,8 +454,8 @@ async function handleClientSidePNGExport() {
         async function captureEl(el: HTMLElement): Promise<string | null> {
           try {
             const rect = el.getBoundingClientRect();
-            const w = Math.ceil(Math.max(rect.width || 0, el.offsetWidth) + 6);
-            const h = Math.ceil(Math.max(rect.height || 0, el.offsetHeight) + 6);
+            const w = Math.ceil(Math.max(rect.width || 0, el.offsetWidth, el.scrollWidth) + 6);
+            const h = Math.ceil(Math.max(rect.height || 0, el.offsetHeight, el.scrollHeight) + 6);
             if (w < 20 || h < 20) return null;
 
             const wrapper = iframeDoc!.createElement('div');
@@ -525,7 +525,25 @@ async function handleClientSidePNGExport() {
             if (w < 20 || h < 20) return null;
 
             const clone = el.cloneNode(true) as HTMLElement;
-            clone.innerHTML = '';
+            // Strip text content and interactive children, but PRESERVE structural
+            // decoration divs (accents, borders-as-divs, side strips).
+            // A decoration div has no text, has explicit width/height or absolute
+            // positioning, and is purely visual. Walk the tree, remove text nodes
+            // and elements that contain text or icons, keep empty styled divs.
+            const removeContent = (node: HTMLElement) => {
+              const children = Array.from(node.children) as HTMLElement[];
+              for (const child of children) {
+                const hasText = (child.textContent ?? '').trim().length > 0;
+                const isSvg = child.tagName.toLowerCase() === 'svg';
+                const isImg = child.tagName.toLowerCase() === 'img';
+                if (hasText || isSvg || isImg) {
+                  child.remove();
+                } else {
+                  removeContent(child);
+                }
+              }
+            };
+            removeContent(clone);
             clone.style.position = 'static';
             clone.style.left = 'auto';
             clone.style.top = 'auto';
@@ -547,7 +565,7 @@ async function handleClientSidePNGExport() {
             }
 
             const wrapper = iframeDoc!.createElement('div');
-            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box;padding:3px;display:flex;align-items:center;justify-content:center`;
+            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;overflow:visible;background:transparent;box-sizing:border-box;display:flex;align-items:center;justify-content:center`;
             wrapper.appendChild(clone);
             iframeDoc!.body.appendChild(wrapper);
             await new Promise(r => setTimeout(r, 80));
