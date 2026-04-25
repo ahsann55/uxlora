@@ -91,8 +91,10 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {} as Record<string, { design: string | null; icons: string | null }>);
 
-    // Separate parser logs (no kit_id) from kit logs
-    const parserLogs = logs.filter((l) => !l.kit_id);
+    // Parser logs with a kit_id belong to their kit (linked at kit creation).
+    // Orphan parser logs (no kit_id) are failed parse attempts that never
+    // produced a kit — keep them in their own bucket so admin can still see them.
+    const parserLogs = logs.filter((l) => !l.kit_id && l.step === "parser");
     const kitLogs = logs.filter((l) => !!l.kit_id) as Array<typeof logs[number] & { kit_id: string }>;
 
     const logsByKit = kitLogs.reduce((acc, log) => {
@@ -116,6 +118,11 @@ export async function GET(request: NextRequest) {
             userPrompt = null;
           } else if (log.step === "icon_selection") {
             systemPrompt = kitsPromptMap[kit.id]?.icons ?? null;
+            userPrompt = null;
+          } else if (log.step === "parser") {
+            // Parser prompts aren't stored on the kit row — they're resolved
+            // per-request from the prompt_templates table. No prompt to attach.
+            systemPrompt = null;
             userPrompt = null;
           } else {
             const match = log.step.match(/^screen_(\d+)_/);

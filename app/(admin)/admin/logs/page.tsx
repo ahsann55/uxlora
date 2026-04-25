@@ -93,7 +93,7 @@ function LogRow({ log }: { log: EnrichedLog }) {
         {log.systemPrompt ? (
           <PromptBlock label="System Prompt" content={log.systemPrompt} />
         ) : (
-          !["icon_selection", "suggestion", "design_system"].includes(log.step) && (
+          !["icon_selection", "suggestion", "design_system", "parser"].includes(log.step) && (
             <p className="mt-1 text-xs text-white/20 italic">No system prompt saved — regenerate this kit to capture prompts</p>
           )
         )}
@@ -224,7 +224,8 @@ export default function LogsPage() {
         <>
           {parserLogs.length > 0 && (
             <div className="mb-8">
-              <h2 className="section-title mb-4">Document Parser Calls ({parserLogs.length})</h2>
+              <h2 className="section-title mb-4">Orphan Parser Calls ({parserLogs.length})</h2>
+              <p className="text-xs text-white/40 mb-3">Parse attempts that never resulted in a kit (failed parses, or user abandoned the upload flow).</p>
               <div className="card p-0 overflow-hidden">
                 {parserLogs.map((log) => {
                   const cost = ((log.input_tokens * 0.000003) + (log.output_tokens * 0.000015)).toFixed(4);

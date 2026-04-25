@@ -23,8 +23,14 @@ export async function POST(
     }
 
     // Parse export type
-    const body = await request.json() as { type: "png" | "uxml" | "figma" | "all" };
-    const { type } = body;
+    const body = await request.json() as {
+      type: "png" | "uxml" | "figma" | "all";
+      svgCaptures?: Array<{
+        screenName: string;
+        captures: Array<{ index: number; base64: string }>;
+      }>;
+    };
+    const { type, svgCaptures } = body;
 
     if (!type || !["png", "uxml", "figma", "all"].includes(type)) {
       return NextResponse.json(
@@ -147,40 +153,36 @@ export async function POST(
         screenName: string;
         uxml: string;
         uss: string;
-        svgCaptures?: Array<{ className: string; buffer: Buffer }>;
+        svgCaptures?: Array<{ index: number; buffer: Buffer }>;
       }> = [];
+
+      // Build a quick lookup of client-captured SVGs keyed by screen name
+      const captureMap: Record<string, Array<{ index: number; base64: string }>> = {};
+      for (const entry of svgCaptures ?? []) {
+        captureMap[entry.screenName] = entry.captures;
+      }
 
       for (const screen of screens) {
         if (!screen.html_css) continue;
 
-      try {
+        try {
           const paddedIndex = String(screen.order_index + 1).padStart(2, "0");
           const sanitizedName = screen.name.replace(/[^a-zA-Z0-9]/g, "_");
           const filePrefix = `${paddedIndex}_${sanitizedName}`;
           const result = await convertToUXML(screen.html_css, screen.name, filePrefix);
 
-          // Capture SVG elements as PNGs (works on Vercel, skipped locally)
-          let svgCaptures: Array<{ className: string; buffer: Buffer }> = [];
-          try {
-            const { captureSVGElements } = await import("@/lib/export/png-generator");
-            svgCaptures = await captureSVGElements(screen.html_css, kit.category);
-          } catch {
-            // Skip SVG capture if Puppeteer not available (local dev)
-            console.log("SVG capture skipped — Puppeteer not available locally");
-          }
-
-          // Patch USS with SVG image references if captures available
-          let finalUss = result.uss;
-          if (svgCaptures.length > 0) {
-            const { patchUSSWithSVGImages } = await import("@/lib/export/uxml-converter");
-            finalUss = patchUSSWithSVGImages(result.uss, svgCaptures, filePrefix);
-          }
+          // Convert the client-captured base64 PNGs into the buffer format the zipper expects
+          const screenCaptures = captureMap[screen.name] ?? [];
+          const captures: Array<{ index: number; buffer: Buffer }> = screenCaptures.map((c) => ({
+            index: c.index,
+            buffer: Buffer.from(c.base64.replace(/^data:image\/png;base64,/, ""), "base64"),
+          }));
 
           uxmlFiles.push({
             screenName: screen.name,
             uxml: result.uxml,
-            uss: finalUss,
-            svgCaptures,
+            uss: result.uss,
+            svgCaptures: captures,
           });
         } catch (error) {
           console.error(`UXML conversion failed for ${screen.name}:`, error);

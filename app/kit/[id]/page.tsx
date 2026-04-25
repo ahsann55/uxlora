@@ -142,6 +142,11 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
       return;
     }
 
+    if (type === "uxml") {
+      await handleUXMLExport();
+      return;
+    }
+
     setExporting(true);
     setExportError(null);
     try {
@@ -163,6 +168,130 @@ async function handleExport(type: "png" | "uxml" | "figma" | "all") {
       setExportError("Export failed. Please try again.");
     } finally {
       setExporting(false);
+    }
+  }
+
+async function handleUXMLExport() {
+    if (!kit || sortedScreens.length === 0) return;
+    setExporting(true);
+    setExportError(null);
+
+    try {
+      const { width, height } = parseKitResolution(
+        kit.checklist_data as Record<string, unknown>,
+        kit.category
+      );
+
+      // For each screen, render in an iframe and capture every <svg> as a PNG
+      // by index (1-based to match uxlora-svg-N class naming in UXML/USS).
+      const allCaptures: Array<{
+        screenName: string;
+        captures: Array<{ index: number; base64: string }>;
+      }> = [];
+
+      for (let i = 0; i < sortedScreens.length; i++) {
+        const screen = sortedScreens[i];
+        if (!screen.html_css) continue;
+        setExportProgress(`Capturing SVGs for screen ${i + 1} of ${sortedScreens.length}: ${screen.name}`);
+
+        const iframe = document.createElement("iframe");
+        iframe.style.cssText = `position:fixed;left:0;top:-${height + 100}px;width:${width}px;height:${height}px;border:none;opacity:0;pointer-events:none`;
+        document.body.appendChild(iframe);
+
+        try {
+          iframe.srcdoc = screen.html_css;
+          await new Promise(r => setTimeout(r, 100));
+          const iframeDoc = iframe.contentDocument ?? iframe.contentWindow?.document;
+          if (!iframeDoc) continue;
+
+          if (iframeDoc.body) {
+            iframeDoc.body.style.width = `${width}px`;
+            iframeDoc.body.style.height = `${height}px`;
+            iframeDoc.body.style.overflow = "hidden";
+          }
+          await new Promise(r => setTimeout(r, 1500));
+
+          // Make iframe visible briefly so html-to-image can rasterize accurately
+          iframe.style.top = "0px";
+          iframe.style.zIndex = "-1";
+          iframe.style.opacity = "1";
+          await new Promise(r => setTimeout(r, 200));
+
+          const svgs = Array.from(iframeDoc.querySelectorAll("svg")) as unknown as SVGSVGElement[];
+          const screenCaptures: Array<{ index: number; base64: string }> = [];
+
+          for (let svgIdx = 0; svgIdx < svgs.length; svgIdx++) {
+            const svg = svgs[svgIdx];
+            const index = svgIdx + 1; // 1-based to match uxlora-svg-N
+
+            // Determine target dimensions: prefer width/height attrs, fall back to bounding rect
+            const attrW = parseInt(svg.getAttribute("width") ?? "") || 0;
+            const attrH = parseInt(svg.getAttribute("height") ?? "") || 0;
+            const rect = (svg as unknown as HTMLElement).getBoundingClientRect();
+            const w = attrW || Math.ceil(rect.width) || 0;
+            const h = attrH || Math.ceil(rect.height) || 0;
+            if (w < 4 || h < 4) continue;
+
+            // Clone into an offscreen wrapper to get a clean PNG of just the SVG
+            const wrapper = iframeDoc.createElement("div");
+            wrapper.style.cssText = `position:fixed;left:0;top:0;width:${w}px;height:${h}px;background:transparent;display:flex;align-items:center;justify-content:center;overflow:hidden`;
+            const clone = svg.cloneNode(true) as SVGSVGElement;
+            // Strip absolute positioning from clone so it sits flush in the wrapper
+            (clone as unknown as HTMLElement).style.position = "static";
+            (clone as unknown as HTMLElement).style.left = "auto";
+            (clone as unknown as HTMLElement).style.top = "auto";
+            clone.setAttribute("width", String(w));
+            clone.setAttribute("height", String(h));
+            wrapper.appendChild(clone);
+            iframeDoc.body.appendChild(wrapper);
+            await new Promise(r => setTimeout(r, 50));
+
+            try {
+              const dataUrl = await htmlToImage.toPng(wrapper, {
+                pixelRatio: 2,
+                skipFonts: true,
+                backgroundColor: undefined,
+                width: w,
+                height: h,
+              });
+              if (dataUrl && dataUrl.length > 500) {
+                screenCaptures.push({ index, base64: dataUrl });
+              }
+            } catch { /* skip */ }
+
+            iframeDoc.body.removeChild(wrapper);
+          }
+
+          if (screenCaptures.length > 0) {
+            allCaptures.push({ screenName: screen.name, captures: screenCaptures });
+          }
+        } finally {
+          document.body.removeChild(iframe);
+        }
+      }
+
+      setExportProgress("Building UXML zip...");
+
+      const response = await fetch(`/api/kits/${id}/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "uxml", svgCaptures: allCaptures }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setExportError(data.error ?? "UXML export failed.");
+        return;
+      }
+      setExportUrls(data.urls);
+      if (data.urls.uxml_zip) {
+        window.open(data.urls.uxml_zip, "_blank");
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "UXML export failed.";
+      setExportError(msg);
+    } finally {
+      setExporting(false);
+      setExportProgress("");
     }
   }
 

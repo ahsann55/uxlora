@@ -155,45 +155,11 @@ ${responseText}
 </body>
 </html>`;
 
-  // Post-process: replace icon placeholders with inline SVGs.
-  // Write diagnostic info to DB so we can trace icon pipeline in the next query.
-  const iconDiagnostic = {
-    selectedIconsPresent: !!selectedIcons,
-    iconAuthorMapSize: iconAuthorMap ? Object.keys(iconAuthorMap).length : 0,
-    willRunPostProcess: Boolean(selectedIcons && iconAuthorMap && Object.keys(iconAuthorMap).length > 0),
-    placeholderSpanCount: (htmlCss.match(/<span\s+data-icon=/g) ?? []).length,
-  };
-
+  // Post-process: replace icon placeholders with inline SVGs
   if (selectedIcons && iconAuthorMap && Object.keys(iconAuthorMap).length > 0) {
     const { postProcessIcons } = await import("./post-process-icons");
-    const beforeLen = htmlCss.length;
     htmlCss = await postProcessIcons(htmlCss, iconAuthorMap);
-    const afterLen = htmlCss.length;
-    (iconDiagnostic as Record<string, unknown>).postProcessSizeDelta = afterLen - beforeLen;
-    (iconDiagnostic as Record<string, unknown>).placeholderSpanCountAfter = (htmlCss.match(/<span\s+data-icon=/g) ?? []).length;
   }
-
-  // Persist diagnostic in the generation_logs error_message field so we can query it
-  // This is temporary debug scaffolding — remove once the icon pipeline is verified.
-  try {
-    const { createClient } = await import("@supabase/supabase-js");
-    const admin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
-    await admin.from("generation_logs").insert({
-      kit_id: context.kitId,
-      step: `icon_diagnostic_${screenName}`,
-      model_used: "diagnostic",
-      input_tokens: 0,
-      output_tokens: 0,
-      duration_ms: 0,
-      status: "success",
-      error_message: JSON.stringify(iconDiagnostic),
-      prompt_template_id: null,
-    });
-  } catch { /* diagnostic failure is non-fatal */ }
 
   return {
     htmlCss,

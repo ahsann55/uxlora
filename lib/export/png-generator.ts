@@ -2,7 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 
 /**
  * PNG Export — handled client-side via html-to-image.
- * These stubs maintain API compatibility with the export route.
+ * SVG capture also handled client-side, then uploaded to Supabase storage
+ * for UXML export to reference.
  */
 
 function getAdminClient() {
@@ -25,6 +26,13 @@ export interface PNGGenerationResult {
   pngUrl: string;
 }
 
+export interface SVGCapture {
+  className: string;
+  width: number;
+  height: number;
+  buffer: Buffer;
+}
+
 export async function generateScreenPNGs(
   screenId: string,
   _kitId: string,
@@ -32,12 +40,7 @@ export async function generateScreenPNGs(
   _htmlCss: string,
   _category: string
 ): Promise<ScreenPNGResult> {
-  return {
-    screenId,
-    screenName,
-    fullScreenUrl: "",
-    elementUrls: [],
-  };
+  return { screenId, screenName, fullScreenUrl: "", elementUrls: [] };
 }
 
 export async function generateKitPNGs(
@@ -51,7 +54,7 @@ export async function generateKitPNGs(
 export async function captureSVGElements(
   _htmlCss: string,
   _category: string
-): Promise<Array<{ className: string; buffer: Buffer }>> {
+): Promise<SVGCapture[]> {
   return [];
 }
 
@@ -63,4 +66,28 @@ export async function generatePNG(
   _category: string
 ): Promise<string> {
   return "";
+}
+
+/**
+ * Upload an array of SVG capture PNGs (client-captured) to Supabase storage
+ * under the kit's UXML asset folder. Returns the storage paths keyed by index.
+ */
+export async function uploadSVGCapturesToStorage(
+  kitId: string,
+  screenPrefix: string,
+  captures: Array<{ index: number; base64: string }>
+): Promise<Array<{ index: number; path: string }>> {
+  const admin = getAdminClient();
+  const results: Array<{ index: number; path: string }> = [];
+
+  for (const cap of captures) {
+    const buffer = Buffer.from(cap.base64.replace(/^data:image\/png;base64,/, ""), "base64");
+    const path = `kits/${kitId}/uxml/${screenPrefix}/svg_${cap.index}.png`;
+    const { error } = await admin.storage
+      .from("exports")
+      .upload(path, buffer, { contentType: "image/png", upsert: true });
+    if (!error) results.push({ index: cap.index, path });
+  }
+
+  return results;
 }

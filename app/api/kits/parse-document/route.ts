@@ -141,10 +141,36 @@ Return a JSON object with these fields (set to null if not found):
         gddSummary = gddMatch[1].trim();
       }
 
-      // Clean and parse JSON — remove GDD_SUMMARY line before parsing
-      const jsonText = responseText.replace(/GDD_SUMMARY:[\s\S]+$/m, "").trim();
-      const cleaned = jsonText.replace(/```json|```/g, "").trim();
-      checklistData = JSON.parse(cleaned);
+      // Strip markdown fences and preamble, then extract the JSON object
+      // with a brace-depth walker that respects string literals. This is
+      // robust against GDD_SUMMARY-adjacent content, trailing commentary,
+      // or stray braces that broke naive regex-based extraction.
+      const cleaned = responseText.replace(/```json|```/g, "").trim();
+      const firstBrace = cleaned.indexOf("{");
+      if (firstBrace === -1) throw new Error("No JSON object found in parser response");
+
+      let depth = 0;
+      let inString = false;
+      let escape = false;
+      let end = -1;
+      for (let i = firstBrace; i < cleaned.length; i++) {
+        const ch = cleaned[i];
+        if (escape) { escape = false; continue; }
+        if (ch === "\\" && inString) { escape = true; continue; }
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+          depth--;
+          if (depth === 0) { end = i; break; }
+        }
+      }
+      if (end === -1) throw new Error("Unmatched braces in parser JSON");
+
+      let jsonStr = cleaned.slice(firstBrace, end + 1);
+      jsonStr = jsonStr.replace(/,(\s*[}\]])/g, "$1"); // strip trailing commas
+
+      checklistData = JSON.parse(jsonStr);
     } catch (parseError) {
       console.error("Parse error:", parseError);
       console.error("Raw response:", responseText.slice(0, 500));
