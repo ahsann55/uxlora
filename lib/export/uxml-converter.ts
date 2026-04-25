@@ -194,7 +194,41 @@ function generateUSS(
     while ((dm = declarationRegex.exec(declarations)) !== null) {
       const prop = dm[1].trim().toLowerCase();
       let val = dm[2].trim();
+
+      // Handle border shorthand (e.g. "2px solid #C8B88A") by expanding into
+      // border-width and border-color rules. Unity USS supports both.
+      if (prop === "border" || prop === "border-top" || prop === "border-right" || prop === "border-bottom" || prop === "border-left") {
+        if (val.includes("gradient") || val.includes("calc(")) continue;
+        const borderMatch = val.match(/(\d+(?:\.\d+)?)px\s+\w+\s+(#[0-9a-fA-F]{3,8}|rgba?\([^)]+\))/);
+        if (borderMatch) {
+          const bw = borderMatch[1];
+          const bc = borderMatch[2];
+          const side = prop === "border" ? "" : prop.replace("border-", "-");
+          // Expand into border-width and border-color (USS supports both shorthand
+          // and per-side variants — emit shorthand for "border", per-side otherwise)
+          if (prop === "border") {
+            ussDeclarations.push(`    border-width: ${bw}px;`);
+            ussDeclarations.push(`    border-color: ${bc};`);
+          } else {
+            ussDeclarations.push(`    border${side}-width: ${bw}px;`);
+            ussDeclarations.push(`    border-color: ${bc};`);
+          }
+        }
+        continue;
+      }
+
+      // Handle background shorthand → background-color (when no gradient/url)
       let ussProp = propertyRemap[prop] ?? prop;
+      if (prop === "background") {
+        if (val.includes("gradient")) continue;
+        if (val.includes("url(") && !val.includes(".png") && !val.includes(".jpg")) continue;
+        ussProp = "background-color";
+        // Strip extras from background shorthand to leave only the color
+        const colorMatch = val.match(/#[0-9a-fA-F]{3,8}|rgba?\([^)]+\)/);
+        if (colorMatch) val = colorMatch[0];
+        else continue;
+      }
+
       if (!allowedProperties.has(ussProp)) continue;
 
       val = val.replace(/(\d*\.?\d+)vh/g, (_, n) => `${n}%`);
@@ -202,9 +236,6 @@ function generateUSS(
       val = val.replace(/(\d*\.?\d+)em/g, (_, n) => `${Math.round(parseFloat(n) * 16)}px`);
       val = val.replace(/(\d*\.?\d+)rem/g, (_, n) => `${Math.round(parseFloat(n) * 16)}px`);
 
-      if (prop === "background" && !val.includes("gradient") && !val.includes("url(")) {
-        ussProp = "background-color";
-      }
       if (val.includes("gradient")) continue;
       if (val.includes("url(") && !val.includes(".png") && !val.includes(".jpg")) continue;
       if (val.includes("calc(")) continue;
