@@ -14,9 +14,10 @@ export async function postProcessIcons(
   html: string,
   iconAuthorMap: Record<string, string>
 ): Promise<string> {
-  // Match <span> with data-icon, attributes in any order, including data-uxlora,
-  // data-icon-color, style, etc. Empty self-closing or paired form.
-  const iconRegex = /<span\b([^>]*?\bdata-icon="([^"]+)"[^>]*)>\s*<\/span>/g;
+  // Match <span data-icon="..."> with ANY content inside (including nested SVG
+  // that the model drew despite instructions). We overwrite the entire span
+  // content with the correct icon SVG.
+  const iconRegex = /<span\b([^>]*?\bdata-icon="([^"]+)"[^>]*)>[\s\S]*?<\/span>/g;
   const matches = [...html.matchAll(iconRegex)];
 
   if (!matches.length) return html;
