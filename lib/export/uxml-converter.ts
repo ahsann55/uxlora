@@ -269,10 +269,17 @@ function generateUSS(
   if (svgDimensions.length > 0) {
     uss += `\n/* SVG captures — paths relative to this .uss file */\n`;
     for (const dim of svgDimensions) {
-      // Fall back to non-zero defaults so Unity's asset path resolver doesn't warn
-      const w = dim.width > 0 ? dim.width : 24;
-      const h = dim.height > 0 ? dim.height : 24;
-      uss += `.uxlora-svg-${dim.index} {\n    width: ${w}px;\n    height: ${h}px;\n    background-image: url("./assets/svg_${dim.index}.png");\n    -unity-background-scale-mode: scale-to-fit;\n}\n\n`;
+      // Only declare width/height when the SVG has known intrinsic dimensions.
+      // For SVGs sized by parent CSS (full-screen backgrounds, ornaments), we
+      // SKIP width/height declarations so the parent class's CSS controls size.
+      // The other class on the element (e.g. .bg-layer with width:844px) takes over.
+      const hasDims = dim.width > 0 && dim.height > 0;
+      let rule = `.uxlora-svg-${dim.index} {\n`;
+      if (hasDims) {
+        rule += `    width: ${dim.width}px;\n    height: ${dim.height}px;\n`;
+      }
+      rule += `    background-image: url("./assets/svg_${dim.index}.png");\n    -unity-background-scale-mode: scale-to-fit;\n}\n\n`;
+      uss += rule;
     }
   }
 
