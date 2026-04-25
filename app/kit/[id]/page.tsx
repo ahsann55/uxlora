@@ -237,7 +237,6 @@ async function handleUXMLExport() {
             const rect = svgEl.getBoundingClientRect();
             const w = attrW || (cssW && !isNaN(cssW) ? Math.ceil(cssW) : 0) || Math.ceil(rect.width) || 0;
             const h = attrH || (cssH && !isNaN(cssH) ? Math.ceil(cssH) : 0) || Math.ceil(rect.height) || 0;
-            console.log(`[uxml-export] svg ${index}:`, { attrW, attrH, cssW, cssH, rectW: rect.width, rectH: rect.height, finalW: w, finalH: h });
             if (w < 4 || h < 4) continue;
 
             // Clone into an offscreen wrapper to get a clean PNG of just the SVG
@@ -262,10 +261,17 @@ async function handleUXMLExport() {
                 width: w,
                 height: h,
               });
-              if (dataUrl && dataUrl.length > 500) {
+              // Lower threshold for thin/short SVGs (e.g. ornament strips at 844x3).
+              // A 100-byte minimum still excludes empty/null captures while admitting
+              // legitimate decorative thin elements.
+              if (dataUrl && dataUrl.length > 100) {
                 screenCaptures.push({ index, base64: dataUrl });
+              } else {
+                console.warn(`[uxml-export] svg ${index} produced empty/tiny PNG (${dataUrl?.length ?? 0} bytes)`);
               }
-            } catch { /* skip */ }
+            } catch (err) {
+              console.warn(`[uxml-export] svg ${index} capture failed:`, err);
+            }
 
             iframeDoc.body.removeChild(wrapper);
           }
