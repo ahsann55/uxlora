@@ -237,6 +237,7 @@ async function handleUXMLExport() {
             const rect = svgEl.getBoundingClientRect();
             const w = attrW || (cssW && !isNaN(cssW) ? Math.ceil(cssW) : 0) || Math.ceil(rect.width) || 0;
             const h = attrH || (cssH && !isNaN(cssH) ? Math.ceil(cssH) : 0) || Math.ceil(rect.height) || 0;
+            console.log(`[uxml-export] svg ${index}:`, { attrW, attrH, cssW, cssH, rectW: rect.width, rectH: rect.height, finalW: w, finalH: h });
             if (w < 4 || h < 4) continue;
 
             // Clone into an offscreen wrapper to get a clean PNG of just the SVG
