@@ -14,12 +14,15 @@ export async function postProcessIcons(
   html: string,
   iconAuthorMap: Record<string, string>
 ): Promise<string> {
-  const iconRegex = /<span\s+data-icon="([^"]+)"([^>]*)><\/span>/g;
+  // Match <span> with data-icon, attributes in any order, including data-uxlora,
+  // data-icon-color, style, etc. Empty self-closing or paired form.
+  const iconRegex = /<span\b([^>]*?\bdata-icon="([^"]+)"[^>]*)>\s*<\/span>/g;
   const matches = [...html.matchAll(iconRegex)];
 
   if (!matches.length) return html;
 
-  const uniqueNames = [...new Set(matches.map(m => m[1]))];
+  // match[1] = full attributes string, match[2] = icon name
+  const uniqueNames = [...new Set(matches.map(m => m[2]))];
   const svgMap: Record<string, string> = {};
 
   // ── Step 1: try DB first (svg_paths column) ──────────────
@@ -85,7 +88,7 @@ export async function postProcessIcons(
   let missedCount = 0;
 
   for (const match of matches) {
-    const [full, name, attrs] = match;
+    const [full, attrs, name] = match;
     const paths = svgMap[name];
     if (!paths) {
       missedCount++;
