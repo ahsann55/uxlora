@@ -20,11 +20,6 @@ export function initLemonSqueezy() {
     onError: (error) => console.error("Lemon Squeezy error:", error),
   });
 }
-console.log("LMS ENV CHECK:", {
-  vercelEnv: process.env.VERCEL_ENV,
-  studioYearly: process.env.LMS_VARIANT_STUDIO_YEARLY,
-  studioYearlyTest: process.env.LMS_VARIANT_STUDIO_YEARLY_TEST,
-});
 // Variant ID map — pulls from test or prod env vars based on environment
 export const VARIANT_IDS = {
   starter: {

@@ -30,18 +30,7 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("x-signature") ?? "";
 
     if (!verifyWebhookSignature(rawBody, signature)) {
-      const isTestMode = process.env.VERCEL_ENV !== "production";
-      console.error("Webhook signature verification failed", {
-        isTestMode,
-        vercelEnv: process.env.VERCEL_ENV,
-        secretExists: isTestMode 
-          ? !!process.env.LEMONSQUEEZY_WEBHOOK_SECRET_TEST 
-          : !!process.env.LEMONSQUEEZY_WEBHOOK_SECRET,
-        secretLength: isTestMode
-          ? process.env.LEMONSQUEEZY_WEBHOOK_SECRET_TEST?.length
-          : process.env.LEMONSQUEEZY_WEBHOOK_SECRET?.length,
-        signatureReceived: signature,
-      });
+      console.error("Webhook signature verification failed");
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
@@ -85,7 +74,6 @@ export async function POST(request: NextRequest) {
     // Map variant to tier
     const tier = variantIdToTier(variantId);
     const founding = isFoundingVariant(variantId);
-    console.log(`Variant ID: ${variantId}, Tier resolved: ${tier}, Founding: ${founding}`);
     const tierLimits = tier ? TIER_LIMITS[tier] : null;
 
     switch (eventName) {
