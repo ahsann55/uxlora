@@ -41,8 +41,7 @@ export function SignInForm() {
         return;
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      window.location.href = "/dashboard";
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
