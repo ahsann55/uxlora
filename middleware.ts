@@ -17,6 +17,11 @@ const AUTH_ROUTES = [
   "/forgot-password",
 ];
 
+const PUBLIC_ROUTES = [
+  "/auth/confirm",
+  "/auth/confirmed",
+];
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -52,7 +57,12 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute = AUTH_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
+  const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
 
+  if (isPublicRoute) return supabaseResponse;
+  
   if (!user && isProtectedRoute) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/sign-in";
@@ -61,9 +71,20 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
-    return NextResponse.redirect(redirectUrl);
+    // Verify the user actually exists in DB before redirecting
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/dashboard";
+      return NextResponse.redirect(redirectUrl);
+    }
+    // No profile — clear the stale session
+    await supabase.auth.signOut();
   }
 
   if (pathname.startsWith("/admin") && user) {
