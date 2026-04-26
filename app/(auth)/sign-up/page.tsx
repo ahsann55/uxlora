@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -33,7 +34,9 @@ export default function SignUpPage() {
             </p>
           </div>
 
-          <SignUpForm />
+          <Suspense fallback={<div className="text-white/40 text-sm">Loading...</div>}>
+            <SignUpForm />
+          </Suspense>
 
           <div className="mt-6 text-center text-sm text-white/50">
             Already have an account?{" "}
