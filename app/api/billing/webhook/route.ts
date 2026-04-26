@@ -4,10 +4,12 @@ import type { NextRequest } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { variantIdToTier, isFoundingVariant, TIER_LIMITS } from "@/lib/billing/lemon-squeezy";
 import { markAsFoundingMember } from "@/lib/billing/founding-member";
+import { recordReferralOnSubscription, markReferralCancelled } from "@/lib/billing/referrals";
 
 // Verify webhook signature (SEC-01)
 function verifyWebhookSignature(rawBody: string, signature: string): boolean {
-  const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET!;
+  const isTestMode = process.env.VERCEL_ENV !== "production";
+  const secret = (isTestMode ? process.env.LEMONSQUEEZY_WEBHOOK_SECRET_TEST : process.env.LEMONSQUEEZY_WEBHOOK_SECRET)!;
   const hmac = createHmac("sha256", secret);
   const digest = hmac.update(rawBody).digest("hex");
 
@@ -120,6 +122,11 @@ export async function POST(request: NextRequest) {
             .update({ is_demo: false })
             .eq("user_id", userId)
             .eq("is_demo", true);
+
+          // Record referral if user was referred
+          if (tier !== null) {
+            await recordReferralOnSubscription(userId, tier);
+          }
         }
 
         break;
@@ -135,6 +142,8 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq("id", userId);
+
+        await markReferralCancelled(userId);
 
         break;
       }
@@ -153,6 +162,9 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq("id", userId);
+
+        // Mark referral as cancelled if subscription expires before qualification
+        await markReferralCancelled(userId);
 
         break;
       }

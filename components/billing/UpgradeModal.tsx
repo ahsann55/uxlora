@@ -15,9 +15,11 @@ const PLANS = [
     monthlyPrice: 60,
     yearlyPrice: 600,
     yearlyMonthly: 50,
-    kits: 3,
+    kits: 5,
+    bonusKits: 0,
     revisions: 1,
     exports: ["PNG"],
+    comingSoon: [],
     color: "border-white/20",
     badge: null,
   },
@@ -27,9 +29,11 @@ const PLANS = [
     monthlyPrice: 150,
     yearlyPrice: 1500,
     yearlyMonthly: 125,
-    kits: 5,
+    kits: 8,
+    bonusKits: 3,
     revisions: 2,
-    exports: ["PNG", "Figma"],
+    exports: ["PNG"],
+    comingSoon: ["Figma export"],
     color: "border-brand-500",
     badge: "Most Popular",
   },
@@ -39,9 +43,11 @@ const PLANS = [
     monthlyPrice: 350,
     yearlyPrice: 3500,
     yearlyMonthly: 291,
-    kits: 10,
+    kits: 15,
+    bonusKits: 5,
     revisions: 3,
-    exports: ["PNG", "Figma", "Unity UXML"],
+    exports: ["PNG"],
+    comingSoon: ["Figma export", "Unity UXML export"],
     color: "border-white/20",
     badge: null,
   },
@@ -184,6 +190,11 @@ export function UpgradeModal({ onClose, trigger = "download" }: UpgradeModalProp
                 <li className="flex items-center gap-2 text-sm text-white/70">
                   <span className="text-green-400">✓</span>
                   {plan.kits} UI kits/month
+                  {plan.bonusKits > 0 && (
+                    <span className="text-xs text-yellow-300 font-semibold ml-1">
+                      +{plan.bonusKits}
+                    </span>
+                  )}
                 </li>
                 <li className="flex items-center gap-2 text-sm text-white/70">
                   <span className="text-green-400">✓</span>
@@ -193,6 +204,15 @@ export function UpgradeModal({ onClose, trigger = "download" }: UpgradeModalProp
                   <li key={exp} className="flex items-center gap-2 text-sm text-white/70">
                     <span className="text-green-400">✓</span>
                     {exp} export
+                  </li>
+                ))}
+                {plan.comingSoon.map((exp) => (
+                  <li key={exp} className="flex items-center gap-2 text-xs text-white/40">
+                    <span className="text-yellow-400/60">◷</span>
+                    <span>{exp}</span>
+                    <span className="bg-yellow-500/10 text-yellow-300/80 px-1.5 py-0.5 rounded ml-auto text-[10px]">
+                      Soon
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -214,10 +234,15 @@ export function UpgradeModal({ onClose, trigger = "download" }: UpgradeModalProp
         </div>
 
         {/* Footer note */}
-        <p className="text-center text-white/30 text-xs mt-6">
-          Founding member? Your discount is applied automatically at checkout.
-          Cancel anytime. Powered by Lemon Squeezy.
-        </p>
+        <div className="text-center mt-6 space-y-2">
+          <p className="text-yellow-300/80 text-xs">
+            🎁 Subscribe now → get bonus kits + Figma/UXML exports free when they launch
+          </p>
+          <p className="text-white/30 text-xs">
+            Founding member? Your discount is applied automatically at checkout.
+            Cancel anytime. Powered by Lemon Squeezy.
+          </p>
+        </div>
       </div>
     </div>
   );

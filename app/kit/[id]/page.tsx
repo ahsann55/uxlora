@@ -1347,26 +1347,30 @@ const { width: kitScreenW, height: kitScreenH } = parseKitResolution(checklistDa
                     {exporting ? "Exporting..." : "Export PNG"}
                   </button>
 
-                  {/* Figma — Pro and Studio only */}
+                  {/* Figma — Pro and Studio: coming soon */}
                   {(subscriptionTier === "pro" || subscriptionTier === "studio") && (
-                    <button
-                      onClick={() => handleExport("figma")}
-                      disabled={exporting}
-                      className="btn-secondary text-sm py-1.5 px-4"
+                    <div
+                      title="Figma export is coming soon. You'll get it automatically — no extra cost."
+                      className="text-sm py-1.5 px-4 rounded-lg border border-white/10 bg-white/[0.02] text-white/40 flex items-center gap-1.5 cursor-not-allowed"
                     >
-                      Export Figma
-                    </button>
+                      <span>Figma</span>
+                      <span className="text-[10px] bg-yellow-500/10 text-yellow-300/80 px-1.5 py-0.5 rounded">
+                        Soon
+                      </span>
+                    </div>
                   )}
 
-                  {/* Unity UXML — Studio only, game kits only */}
+                  {/* Unity UXML — Studio only, game kits: coming soon */}
                   {kit.category === "game" && subscriptionTier === "studio" && (
-                    <button
-                      onClick={() => handleExport("uxml")}
-                      disabled={exporting}
-                      className="btn-secondary text-sm py-1.5 px-4"
+                    <div
+                      title="Unity UXML export is coming soon. You'll get it automatically — no extra cost."
+                      className="text-sm py-1.5 px-4 rounded-lg border border-white/10 bg-white/[0.02] text-white/40 flex items-center gap-1.5 cursor-not-allowed"
                     >
-                      Export UXML
-                    </button>
+                      <span>UXML</span>
+                      <span className="text-[10px] bg-yellow-500/10 text-yellow-300/80 px-1.5 py-0.5 rounded">
+                        Soon
+                      </span>
+                    </div>
                   )}
                 </div>
               <button

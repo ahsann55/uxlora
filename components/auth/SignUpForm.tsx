@@ -1,36 +1,76 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isValidEmail } from "@/lib/utils";
 
 export function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [referralCode, setReferralCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref && /^[A-Z0-9]{4,16}$/.test(ref)) {
+      setReferralCode(ref);
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (!displayName.trim()) {
-      setError("Please enter your name.");
+    const trimmedName = displayName.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (trimmedName.length < 2) {
+      setError("Name must be at least 2 characters.");
+      return;
+    }
+    if (trimmedName.length > 50) {
+      setError("Name must be less than 50 characters.");
+      return;
+    }
+    if (!/^[\p{L}\p{M}\s'.\-]+$/u.test(trimmedName)) {
+      setError("Name can only contain letters, spaces, hyphens, apostrophes, and periods.");
       return;
     }
 
-    if (!isValidEmail(email)) {
+    if (!isValidEmail(trimmedEmail)) {
       setError("Please enter a valid email address.");
+      return;
+    }
+    if (trimmedEmail.length > 254) {
+      setError("Email address is too long.");
       return;
     }
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password.length > 128) {
+      setError("Password must be less than 128 characters.");
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError("Password must contain at least one uppercase letter.");
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      setError("Password must contain at least one lowercase letter.");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError("Password must contain at least one number.");
       return;
     }
 
@@ -43,13 +83,18 @@ export function SignUpForm() {
 
     try {
       const supabase = createClient();
+      const signUpData: any = {
+        full_name: trimmedName,
+      };
+      if (referralCode) {
+        signUpData.referred_by_code = referralCode;
+      }
+
       const { error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: trimmedEmail,
         password,
         options: {
-          data: {
-            full_name: displayName.trim(),
-          },
+          data: signUpData,
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
@@ -107,6 +152,13 @@ export function SignUpForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
 
+      {/* Referral banner */}
+      {referralCode && (
+        <div className="bg-brand-500/10 border border-brand-500/30 text-brand-200 text-sm px-4 py-3 rounded-lg">
+          🎁 You were invited! Sign up and subscribe to help your friend earn a free month.
+        </div>
+      )}
+
       {/* Error message */}
       {error && (
         <div className="bg-error/10 border border-error/30 text-red-300 text-sm px-4 py-3 rounded-lg">
@@ -124,10 +176,12 @@ export function SignUpForm() {
           type="text"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="Ahsan Raza"
+          placeholder="Your full name"
           className="input"
           autoComplete="name"
           required
+          minLength={2}
+          maxLength={50}
           disabled={loading}
         />
       </div>
@@ -146,6 +200,7 @@ export function SignUpForm() {
           className="input"
           autoComplete="email"
           required
+          maxLength={254}
           disabled={loading}
         />
       </div>
@@ -160,12 +215,17 @@ export function SignUpForm() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Min. 8 characters"
+          placeholder="Min. 8 characters, A-Z, a-z, 0-9"
           className="input"
           autoComplete="new-password"
           required
+          minLength={8}
+          maxLength={128}
           disabled={loading}
         />
+        <p className="text-xs text-white/40 mt-1">
+          Must include uppercase, lowercase, and a number.
+        </p>
       </div>
 
       {/* Confirm password */}
@@ -182,6 +242,8 @@ export function SignUpForm() {
           className="input"
           autoComplete="new-password"
           required
+          minLength={8}
+          maxLength={128}
           disabled={loading}
         />
       </div>

@@ -18,10 +18,12 @@ const PLANS = [
     foundingMonthly: 30,
     foundingYearly: 300,
     foundingYearlyMonthly: 25,
-    kits: 3,
+    kits: 5,
+    bonusKits: 0,
     revisions: 1,
     exports: ["PNG"],
-    extraKit: 10,
+    comingSoon: [],
+    extraKit: 6,
     badge: null,
     color: "border-white/20",
     description: "Perfect for indie developers and freelancers.",
@@ -35,10 +37,12 @@ const PLANS = [
     foundingMonthly: 75,
     foundingYearly: 750,
     foundingYearlyMonthly: 62,
-    kits: 5,
+    kits: 8,
+    bonusKits: 3,
     revisions: 2,
-    exports: ["PNG", "Figma"],
-    extraKit: 18,
+    exports: ["PNG"],
+    comingSoon: ["Figma export"],
+    extraKit: 11,
     badge: "Most Popular",
     color: "border-brand-500",
     description: "For studios shipping multiple games or apps.",
@@ -52,15 +56,17 @@ const PLANS = [
     foundingMonthly: 175,
     foundingYearly: 1750,
     foundingYearlyMonthly: 145,
-    kits: 10,
+    kits: 15,
+    bonusKits: 5,
     revisions: 3,
-    exports: ["PNG", "Figma", "Unity UXML"],
-    extraKit: 25,
+    exports: ["PNG"],
+    comingSoon: ["Figma export", "Unity UXML export"],
+    extraKit: 17,
     badge: null,
     color: "border-white/20",
     description: "For teams with high-volume UI kit needs.",
   },
-];
+];  
 
 export function PricingTable({ currentTier, isFoundingMember }: PricingTableProps) {
   const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
@@ -91,6 +97,16 @@ export function PricingTable({ currentTier, isFoundingMember }: PricingTableProp
             </p>
           </div>
         )}
+
+        {/* Bonus kits banner */}
+        <div className="mb-6 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-center">
+          <p className="text-blue-200 text-sm font-semibold mb-1">
+            🎁 Launch bonus — extra kits on Pro and Studio
+          </p>
+          <p className="text-white/60 text-xs">
+            Figma and Unity UXML exports are coming soon. Subscribe now and we'll add bonus kits to your monthly limit until those exports launch — and you'll get the export features automatically the moment they're released, no extra cost.
+          </p>
+        </div>
 
         {/* Billing toggle */}
         <div className="flex items-center justify-center gap-3 mb-8">
@@ -170,6 +186,11 @@ export function PricingTable({ currentTier, isFoundingMember }: PricingTableProp
                   <li className="flex items-center gap-2 text-sm text-white/70">
                     <span className="text-green-400 font-bold">✓</span>
                     <strong className="text-white">{plan.kits} UI kits</strong>/month
+                    {plan.bonusKits > 0 && (
+                      <span className="text-xs text-yellow-300 font-semibold ml-1">
+                        +{plan.bonusKits} bonus
+                      </span>
+                    )}
                   </li>
                   <li className="flex items-center gap-2 text-sm text-white/70">
                     <span className="text-green-400 font-bold">✓</span>
@@ -179,6 +200,15 @@ export function PricingTable({ currentTier, isFoundingMember }: PricingTableProp
                     <li key={exp} className="flex items-center gap-2 text-sm text-white/70">
                       <span className="text-green-400 font-bold">✓</span>
                       {exp} export
+                    </li>
+                  ))}
+                  {plan.comingSoon.map((exp) => (
+                    <li key={exp} className="flex items-center gap-2 text-sm text-white/40">
+                      <span className="text-yellow-400/60 font-bold">◷</span>
+                      <span>{exp}</span>
+                      <span className="text-xs bg-yellow-500/10 text-yellow-300/80 px-1.5 py-0.5 rounded ml-auto">
+                        Coming soon
+                      </span>
                     </li>
                   ))}
                   <li className="flex items-center gap-2 text-sm text-white/70">

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+/*import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -21,4 +21,4 @@ export async function GET(request: NextRequest) {
   return NextResponse.redirect(
     `${origin}/sign-in?error=Could not authenticate. Please try again.`
   );
-}
+}*/

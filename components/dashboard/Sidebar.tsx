@@ -30,6 +30,16 @@ const navItems = [
     ),
   },
   {
+    label: "Refer & Earn",
+    href: "/dashboard/referrals",
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z M16 8h-4M8 16h.01" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7h-3a2 2 0 01-2-2V2M4 7h3a2 2 0 002-2V2" />
+      </svg>
+    ),
+  },
+  {
     label: "Settings",
     href: "/dashboard/settings",
     icon: (
