@@ -58,8 +58,7 @@ export function Sidebar({ profile }: { profile: Profile }) {
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/sign-in");
-    router.refresh();
+    window.location.href = "/sign-in";
   }
 
   return (
