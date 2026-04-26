@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
     // Map variant to tier
     const tier = variantIdToTier(variantId);
     const founding = isFoundingVariant(variantId);
+    console.log(`Variant ID: ${variantId}, Tier resolved: ${tier}, Founding: ${founding}`);
     const tierLimits = tier ? TIER_LIMITS[tier] : null;
 
     switch (eventName) {

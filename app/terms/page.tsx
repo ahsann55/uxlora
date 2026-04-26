@@ -7,7 +7,7 @@ export const metadata = {
 
 const LAST_UPDATED = "April 26, 2026";
 const CONTACT_EMAIL = "support@uxlora.app";
-const COMPANY = "Ard Studio";
+const COMPANY = "Ard";
 const PRODUCT = "UXLora";
 const SITE = "uxlora.app";
 
