@@ -30,7 +30,18 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("x-signature") ?? "";
 
     if (!verifyWebhookSignature(rawBody, signature)) {
-      console.error("Webhook signature verification failed");
+      const isTestMode = process.env.VERCEL_ENV !== "production";
+      console.error("Webhook signature verification failed", {
+        isTestMode,
+        vercelEnv: process.env.VERCEL_ENV,
+        secretExists: isTestMode 
+          ? !!process.env.LEMONSQUEEZY_WEBHOOK_SECRET_TEST 
+          : !!process.env.LEMONSQUEEZY_WEBHOOK_SECRET,
+        secretLength: isTestMode
+          ? process.env.LEMONSQUEEZY_WEBHOOK_SECRET_TEST?.length
+          : process.env.LEMONSQUEEZY_WEBHOOK_SECRET?.length,
+        signatureReceived: signature,
+      });
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
