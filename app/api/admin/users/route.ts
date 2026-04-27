@@ -33,11 +33,28 @@ export async function GET(request: NextRequest) {
 
     const adminSupabase = await createAdminClient();
 
-    const { data, error, count } = await adminSupabase
-      .from("profiles")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    // Fetch profiles
+const { data: profilesData, error, count } = await adminSupabase
+  .from("profiles")
+  .select("*", { count: "exact" })
+  .order("created_at", { ascending: false })
+  .range(offset, offset + limit - 1);
+
+// Fetch auth users to get emails
+const { data: authData } = await adminSupabase.auth.admin.listUsers({
+  page: page,
+  perPage: limit,
+});
+const emailMap: Record<string, string> = {};
+(authData?.users ?? []).forEach((u) => {
+  emailMap[u.id] = u.email ?? "";
+});
+
+// Merge email into profiles
+const data = (profilesData ?? []).map((p: Record<string, unknown>) => ({
+  ...p,
+  email: emailMap[p.id as string] ?? null,
+}));
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

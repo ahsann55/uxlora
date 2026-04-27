@@ -125,9 +125,10 @@ export async function GET(request: NextRequest) {
             systemPrompt = null;
             userPrompt = null;
           } else {
-            const match = log.step.match(/^screen_(\d+)_/);
-            if (match) {
-              const idx = parseInt(match[1]);
+            // Match both original screen generations and revisions
+            const screenMatch = log.step.match(/^(?:revision_)?screen_(\d+)_/);
+            if (screenMatch) {
+              const idx = parseInt(screenMatch[1]);
               const screen = kitScreens.find((s) => s.order_index === idx);
               systemPrompt = screen?.system_prompt ?? null;
               userPrompt = screen?.user_prompt ?? null;

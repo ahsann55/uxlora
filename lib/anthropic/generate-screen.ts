@@ -7,6 +7,8 @@ export interface GeneratedScreen {
   userPrompt: string;
   inputTokens: number;
   outputTokens: number;
+  durationMs: number;
+  modelUsed: string;
   promptTemplateId: string | null;
 }
 
@@ -110,36 +112,96 @@ Return the complete HTML document starting with <!DOCTYPE html>`;
   // KIT_DECISIONS (nav_icons / hud_icons / btn_icons / dec_icons) and resolve
   // colors from KIT_DECISIONS icon_colors map. No runtime appending needed.
 
-  if (revisionFeedback) {
-    userPrompt += `\n\nREVISION REQUEST — Apply these specific changes to the screen:
-${revisionFeedback}
-
-Keep everything else the same. Only change what is explicitly requested above.`;
-  }
-
   const model = template?.model ?? "claude-sonnet-4-6";
-  const maxTokens = template?.max_tokens ?? 8192;
+  // Revisions use lower max_tokens — they are surgical edits, not full generations
+  const maxTokens = revisionFeedback
+    ? Math.min(template?.max_tokens ?? 8192, 6000)
+    : (template?.max_tokens ?? 8192);
 
   let responseText = "";
   let inputTokens = 0;
   let outputTokens = 0;
+  const startTime = Date.now();
 
-  const stream = client.messages.stream({
-    model,
-    max_tokens: maxTokens,
-    system: systemPrompt,
-    messages: [{ role: "user", content: userPrompt }],
-  });
+  // ── Revision mode: editor architecture ──────────────────────────────────────
+  // Instead of regenerating from scratch with feedback appended, we send the
+  // existing HTML as the document to edit. The model acts as a surgeon, not a
+  // generator. This fixes layout breakage (model respects existing structure)
+  // and cuts cost (no full regeneration).
+  //
+  // existingHtml must be passed via context.existingHtml when calling from
+  // the revise route.
+  const existingHtml = (context as any).existingHtml as string | undefined;
+
+  let messages: Array<{ role: "user" | "assistant"; content: string }>;
+
+  if (revisionFeedback && existingHtml) {
+    // Editor mode — targeted revision of existing HTML
+    const revisionSystemPrompt = `You are a precise UI code editor. You will be given an existing HTML/CSS screen and a revision request.
+
+Your job:
+- Apply ONLY the requested changes
+- Preserve all existing layout, structure, spacing, fonts, colors, and design system values
+- Never restructure the screen or change anything not mentioned in the revision request
+- Never move elements outside their containers
+- Never change dimensions, screen size, or overall layout
+- Return the COMPLETE modified HTML document starting with <!DOCTYPE html>
+- Return ONLY the HTML — no explanation, no markdown, no comments outside the code
+
+Design system in use (do not deviate from these values):
+${designSystemStr}`;
+
+    const revisionUserPrompt = `Here is the current screen HTML:
+
+\`\`\`html
+${existingHtml}
+\`\`\`
+
+Apply this revision request:
+${revisionFeedback}
+
+Return the complete modified HTML document. Change only what is explicitly requested. Preserve everything else exactly.`;
+
+    messages = [{ role: "user", content: revisionUserPrompt }];
+
+    const stream = client.messages.stream({
+      model,
+      max_tokens: maxTokens,
+      system: revisionSystemPrompt,
+      messages,
+    });
+
+    for await (const chunk of stream) {
+      if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+        responseText += chunk.delta.text;
+      }
+    }
+
+    const finalMessage = await stream.finalMessage();
+    inputTokens = finalMessage.usage.input_tokens;
+    outputTokens = finalMessage.usage.output_tokens;
+
+  } else {
+    // Normal generation mode
+    messages = [{ role: "user", content: userPrompt }];
+
+    const stream = client.messages.stream({
+      model,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages,
+    });
 
   for await (const chunk of stream) {
-    if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
-      responseText += chunk.delta.text;
+      if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+        responseText += chunk.delta.text;
+      }
     }
-  }
 
-  const finalMessage = await stream.finalMessage();
-  inputTokens = finalMessage.usage.input_tokens;
-  outputTokens = finalMessage.usage.output_tokens;
+    const finalMessage = await stream.finalMessage();
+    inputTokens = finalMessage.usage.input_tokens;
+    outputTokens = finalMessage.usage.output_tokens;
+  }
 
   const htmlMatch = responseText.match(/<!DOCTYPE html>[\s\S]*/i);
   let htmlCss = htmlMatch
@@ -201,6 +263,8 @@ ${responseText}
     userPrompt,
     inputTokens,
     outputTokens,
+    durationMs: Date.now() - startTime,
+    modelUsed: model,
     promptTemplateId: template?.id ?? null,
   };
 }

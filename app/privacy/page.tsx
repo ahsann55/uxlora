@@ -94,7 +94,6 @@ export default function PrivacyPage() {
             <ul className="space-y-3 text-white/70 leading-relaxed">
               {[
                 "To create and manage your account and verify your identity.",
-                "To process your generation requests using the Anthropic Claude API.",
                 "To enforce subscription tier limits (generations per month).",
                 "To send transactional emails — account confirmation, password reset, kit completion notifications — via Resend.",
                 "To process payments and manage your subscription via Lemon Squeezy.",
@@ -127,11 +126,6 @@ export default function PrivacyPage() {
                   name: "Supabase",
                   purpose: "Database, authentication, and file storage. Your account data and generated kits are stored on Supabase infrastructure.",
                   link: "https://supabase.com/privacy",
-                },
-                {
-                  name: "Anthropic",
-                  purpose: "AI generation engine. Your kit descriptions and document uploads are sent to the Anthropic Claude API to generate UI kits. Anthropic's data handling policies apply to this processing.",
-                  link: "https://www.anthropic.com/privacy",
                 },
                 {
                   name: "Lemon Squeezy",

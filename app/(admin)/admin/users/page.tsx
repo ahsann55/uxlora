@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 
 interface UserProfile {
   id: string;
+  email: string | null;
   display_name: string | null;
   subscription_tier: string;
   subscription_status: string;
@@ -150,7 +151,7 @@ export default function UsersPage() {
                   <p className="text-sm font-medium text-white">
                     {user.display_name ?? "—"}
                   </p>
-                  <p className="text-xs text-white/40 font-mono">{user.id.slice(0, 8)}...</p>
+                  <p className="text-xs text-white/40">{user.email ?? user.id.slice(0, 8) + "..."}</p>
                 </td>
                 <td className="p-4">
                   {editingUser === user.id ? (

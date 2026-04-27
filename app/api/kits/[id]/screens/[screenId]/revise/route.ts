@@ -92,13 +92,16 @@ export async function POST(
       );
     }
 
-    // Build generation context
+    // Build generation context — existingHtml enables editor mode in generateScreen
     const context = {
       kitId,
       userId: user.id,
       category: kit.category as "game" | "mobile" | "web",
       checklistData: kit.checklist_data as Record<string, unknown>,
       isDemo: kit.is_demo,
+      compressedSummary: (kit as any).compressed_summary ?? undefined,
+      kitDecisions: (kit as any).kit_decisions ?? undefined,
+      existingHtml: screen.html_css ?? undefined,
     };
 
     // Get screen index from order_index
@@ -112,6 +115,10 @@ export async function POST(
 
     const totalScreens = allScreens?.length ?? 1;
 
+    // Load selected icons for this kit so revision renders icons correctly
+    const selectedIcons = (kit as any).selected_icons ?? null;
+    const iconAuthorMap = (kit as any).icon_author_map ?? undefined;
+
     // Generate revised screen
     const result = await generateScreen(
       context,
@@ -119,8 +126,8 @@ export async function POST(
       screen.name,
       screenIndex,
       totalScreens,
-      null,
-      undefined,
+      selectedIcons,
+      iconAuthorMap,
       feedback.trim()
     );
 
@@ -147,6 +154,22 @@ export async function POST(
         { status: 500 }
       );
     }
+
+    // Log revision to generation_logs
+    const adminForLog = getAdminClient();
+    await adminForLog
+      .from("generation_logs")
+      .insert({
+        kit_id: kitId,
+        step: `revision_screen_${screen.order_index}_${screen.name.replace(/\s+/g, "_").toLowerCase()}`,
+        model_used: result.modelUsed,
+        input_tokens: result.inputTokens,
+        output_tokens: result.outputTokens,
+        duration_ms: result.durationMs,
+        status: "success",
+        error_message: null,
+        created_at: new Date().toISOString(),
+      });
 
     return NextResponse.json(updatedScreen);
 
