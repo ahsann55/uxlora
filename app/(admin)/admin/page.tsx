@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -21,9 +22,12 @@ export default async function AdminOverviewPage() {
   const profile = profileData as { is_admin: boolean } | null;
   if (!profile?.is_admin) redirect("/dashboard");
 
-  // Fetch stats using admin client
-  const { createAdminClient } = await import("@/lib/supabase/server");
-  const adminSupabase = await createAdminClient();
+  // Fetch stats using direct service role client — bypasses RLS correctly
+  const adminSupabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
 
   const [
     { count: totalUsers },

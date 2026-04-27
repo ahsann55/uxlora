@@ -3,6 +3,8 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+const OWNER_ID = "e766f22f-4c25-4721-9162-9f55050eaf0e";
+
 async function verifyAdmin(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -10,22 +12,23 @@ async function verifyAdmin(request: NextRequest) {
 
   const { data } = await supabase
     .from("profiles")
-    .select("is_admin")
+    .select("is_admin, is_owner")
     .eq("id", user.id)
     .single();
 
-  const profile = data as { is_admin: boolean } | null;
+  const profile = data as { is_admin: boolean; is_owner: boolean } | null;
   if (!profile?.is_admin) return null;
 
-  return user;
+  return { user, isOwner: profile.is_owner ?? false };
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await verifyAdmin(request);
-    if (!user) {
+    const adminResult = await verifyAdmin(request);
+    if (!adminResult) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const { user } = adminResult;
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") ?? "1");
@@ -86,10 +89,12 @@ const data = (profilesData ?? []).map((p: any) => ({
 
 export async function PATCH(request: NextRequest) {
   try {
-    const user = await verifyAdmin(request);
-    if (!user) {
+    const adminResult = await verifyAdmin(request);
+    if (!adminResult) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { user, isOwner } = adminResult;
 
     const body = await request.json() as {
       userId: string;
@@ -102,6 +107,22 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json(
         { error: "userId is required." },
         { status: 400 }
+      );
+    }
+
+    // Non-owners cannot edit the owner row at all
+    if (!isOwner && userId === OWNER_ID) {
+      return NextResponse.json(
+        { error: "You do not have permission to edit the owner account." },
+        { status: 403 }
+      );
+    }
+
+    // Nobody can assign is_owner to anyone
+    if ("is_owner" in updates) {
+      return NextResponse.json(
+        { error: "The owner role cannot be assigned." },
+        { status: 403 }
       );
     }
 

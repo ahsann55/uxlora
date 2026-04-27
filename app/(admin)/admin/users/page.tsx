@@ -12,8 +12,11 @@ interface UserProfile {
   generations_limit: number;
   is_founding_member: boolean;
   is_admin: boolean;
+  is_owner: boolean;
   created_at: string;
 }
+
+const OWNER_ID = "e766f22f-4c25-4721-9162-9f55050eaf0e";
 
 const tierColors: Record<string, string> = {
   free: "badge-warning",
@@ -31,9 +34,15 @@ export default function UsersPage() {
   const [saving, setSaving] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
+    // Get current user id to determine if viewer is owner
+    fetch("/api/profile/me")
+      .then((r) => r.json())
+      .then((d) => setCurrentUserId(d?.id ?? null))
+      .catch(() => {});
   }, [page]);
 
   async function fetchUsers() {
@@ -209,11 +218,16 @@ export default function UsersPage() {
                 </td>
                 <td className="p-4">
                   <div className="flex gap-1 flex-wrap">
+                    {user.is_owner && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">
+                        👑 Owner
+                      </span>
+                    )}
+                    {user.is_admin && !user.is_owner && (
+                      <span className="badge-error text-xs">Admin</span>
+                    )}
                     {user.is_founding_member && (
                       <span className="badge-founding text-xs">⭐ Founding</span>
-                    )}
-                    {user.is_admin && (
-                      <span className="badge-error text-xs">Admin</span>
                     )}
                   </div>
                 </td>
@@ -223,7 +237,10 @@ export default function UsersPage() {
                   </span>
                 </td>
                 <td className="p-4">
-                  {editingUser === user.id ? (
+                  {/* Non-owners cannot edit the owner row */}
+                  {user.is_owner && currentUserId !== OWNER_ID ? (
+                    <span className="text-white/20 text-xs">Protected</span>
+                  ) : editingUser === user.id ? (
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleSaveUser(user.id)}
