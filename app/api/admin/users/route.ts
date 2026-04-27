@@ -1,4 +1,5 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -31,28 +32,32 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") ?? "20");
     const offset = (page - 1) * limit;
 
-    const adminSupabase = await createAdminClient();
+    const adminSupabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
 
     // Fetch profiles
-const { data: profilesData, error, count } = await adminSupabase
+    const { data: profilesData, error, count } = await adminSupabase
   .from("profiles")
   .select("*", { count: "exact" })
   .order("created_at", { ascending: false })
   .range(offset, offset + limit - 1);
 
-// Fetch all auth users (no pagination — we need emails for all profiles on this page)
 const profileIds = (profilesData ?? []).map((p: any) => p.id as string);
 const emailMap: Record<string, string> = {};
 
-// Fetch each user's email by ID using the admin API
-await Promise.all(
-  profileIds.map(async (uid) => {
-    const { data: authUser } = await adminSupabase.auth.admin.getUserById(uid);
-    if (authUser?.user?.email) {
-      emailMap[uid] = authUser.user.email;
-    }
-  })
-);
+const { data: authUsersData, error: emailError } = await adminSupabase
+  .rpc("get_user_emails", { user_ids: profileIds } as any);
+
+if (emailError) {
+  console.error("get_user_emails RPC error:", emailError);
+} else {
+  ((authUsersData ?? []) as Array<{ id: string; email: string }>).forEach((u) => {
+    emailMap[u.id] = u.email;
+  });
+}
 
 // Merge email into profiles
 const data = (profilesData ?? []).map((p: any) => ({
@@ -123,7 +128,11 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const adminSupabase = await createAdminClient();
+    const adminSupabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
     const { data, error } = await (adminSupabase as any)
     .from("profiles")
     .update({
