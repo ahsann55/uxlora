@@ -83,7 +83,7 @@ export function Sidebar({ profile }: { profile: Profile }) {
             <Link
               key={item.href}
               href={item.href}
-              className={isActive ? "nav-item-active" : "nav-item"}
+              className={`${isActive ? "nav-item-active" : "nav-item"} nav-item-transition`}
             >
               {item.icon}
               {item.label}

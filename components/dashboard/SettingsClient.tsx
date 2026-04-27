@@ -7,9 +7,10 @@ import { useRouter } from "next/navigation";
 interface SettingsClientProps {
   initialDisplayName: string;
   email: string;
+  emailVerified: boolean;
 }
 
-export function SettingsClient({ initialDisplayName, email }: SettingsClientProps) {
+export function SettingsClient({ initialDisplayName, email, emailVerified }: SettingsClientProps) {
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -22,6 +23,8 @@ export function SettingsClient({ initialDisplayName, email }: SettingsClientProp
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSaved, setPasswordSaved] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   const router = useRouter();
 
@@ -75,8 +78,47 @@ export function SettingsClient({ initialDisplayName, email }: SettingsClientProp
     }
   }
 
+  async function handleResendVerification() {
+    setResendLoading(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+      });
+      if (error) throw error;
+      setResendSent(true);
+    } catch {
+      // fail silently — show sent anyway to avoid email enumeration
+      setResendSent(true);
+    } finally {
+      setResendLoading(false);
+    }
+  }
+
   return (
     <div className="card space-y-5">
+      {/* Email verification banner */}
+      {!emailVerified && (
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-yellow-300 text-sm font-medium">Email not verified</p>
+            <p className="text-white/40 text-xs mt-0.5">Check your inbox or resend the confirmation email.</p>
+          </div>
+          {resendSent ? (
+            <span className="text-green-400 text-xs font-medium flex-shrink-0">Sent ✓</span>
+          ) : (
+            <button
+              onClick={handleResendVerification}
+              disabled={resendLoading}
+              className="text-yellow-300 hover:text-yellow-200 text-xs font-medium flex-shrink-0 transition-colors disabled:opacity-50"
+            >
+              {resendLoading ? "Sending..." : "Resend →"}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Display name */}
       <div>
         <label className="label">Display name</label>

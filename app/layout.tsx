@@ -60,11 +60,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={plusJakartaSans.variable} suppressHydrationWarning>
       <head>
+        <meta name="theme-color" content="#7c3aed" />
+        <meta name="color-scheme" content="dark" />
         <link rel="icon" href="/favicon-512.png" type="image/png" sizes="512x512" />
         <link rel="apple-touch-icon" href="/favicon-512.png" />
       </head>
       <body
        className={`${plusJakartaSans.className} bg-surface text-white antialiased min-h-screen`}
+       style={{ fontFamily: "var(--font-plus-jakarta-sans), system-ui, sans-serif" }}
        suppressHydrationWarning
       >
         {children}

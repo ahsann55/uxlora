@@ -105,6 +105,37 @@ body {
    ============================================================ */
 @layer components {
 
+  /* Sidebar nav transition */
+  .nav-item-transition {
+    @apply transition-all duration-150;
+  }
+
+  /* Generating kit card — animated border pulse */
+  .generating-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .generating-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1.5px solid transparent;
+    background: linear-gradient(90deg, #7c3aed, #8b6eff, #7c3aed) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    background-size: 200% 100%;
+    animation: borderSlide 2s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes borderSlide {
+    0%   { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
+  }
+
   /* Cards */
   .card {
     @apply bg-surface-50 border border-surface-300 rounded-xl p-6;
@@ -250,6 +281,15 @@ body {
     @apply h-full bg-gradient-to-r from-brand-500 to-brand-400 rounded-full
            transition-all duration-500;
   }
+  /* Kit card hover lift */
+  .kit-card-lift {
+    @apply transition-transform duration-200 ease-out;
+  }
+
+  .kit-card-lift:hover {
+    transform: translateY(-3px);
+    @apply shadow-glow;
+  }
 }
 /* ============================================================
    PAGE TRANSITIONS
@@ -308,4 +348,14 @@ a {
 
 .modal-enter {
   animation: slideUp 0.2s ease-out forwards;
+}
+/* ============================================================
+   CUSTOM SHADOWS
+   ============================================================ */
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.15), 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.shadow-glow-sm {
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.12), 0 2px 12px rgba(0, 0, 0, 0.3);
 }

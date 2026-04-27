@@ -75,6 +75,18 @@ export default function KitPage({
     (a, b) => a.order_index - b.order_index
   );
 
+  // Close modals on Escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      if (showRegenerateConfirm) setShowRegenerateConfirm(false);
+      if (showUpgradeModal) setShowUpgradeModal(false);
+      if (showAuditTrail) setShowAuditTrail(false);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showRegenerateConfirm, showUpgradeModal, showAuditTrail]);
+
   useEffect(() => {
     fetchKit();
     fetchProfile();
@@ -1098,6 +1110,11 @@ async function handleClientSidePNGExport() {
     return <KitPageSkeleton />;
   }
 
+  // Update document title dynamically
+  if (typeof document !== "undefined" && kit?.name) {
+    document.title = `${kit.name} — UXLora`;
+  }
+
   if (!kit) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
@@ -1143,12 +1160,12 @@ const { width: kitScreenW, height: kitScreenH } = parseKitResolution(checklistDa
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <Link
-              href="/dashboard"
+            <button
+              onClick={() => router.back()}
               className="inline-flex items-center gap-2 text-white/50 hover:text-white text-sm mb-2 transition-colors"
             >
-              ← Dashboard
-            </Link>
+              ← Back
+            </button>
             <h1 className="text-2xl font-bold text-white">{kit.name}</h1>
             <p className="text-white/50 text-sm mt-1 capitalize">
               {kit.category} UI · {kit.input_method} input · Created {formatDate(kit.created_at)}
@@ -1210,30 +1227,80 @@ const { width: kitScreenW, height: kitScreenH } = parseKitResolution(checklistDa
         {/* Generating state */}
         {isGenerating && (
           <div className="card text-center py-12">
-            <svg className="w-12 h-12 text-brand-400 animate-spin mx-auto mb-6" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-            </svg>
-            <h2 className="text-xl font-semibold text-white mb-2">Generating your UI kit</h2>
-            <p className="text-white/50 text-sm mb-4">
-              {kit.current_step ?? "Starting generation..."}
-            </p>
+            {/* Animated ring */}
+            <div className="relative w-20 h-20 mx-auto mb-6">
+              <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                <circle
+                  cx="40" cy="40" r="34"
+                  fill="none"
+                  stroke="rgba(124,58,237,0.1)"
+                  strokeWidth="6"
+                />
+                <circle
+                  cx="40" cy="40" r="34"
+                  fill="none"
+                  stroke="url(#progressGrad)"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 34}`}
+                  strokeDashoffset={`${2 * Math.PI * 34 * (1 - progressPercent / 100)}`}
+                  className="transition-all duration-700"
+                />
+                <defs>
+                  <linearGradient id="progressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#7c3aed" />
+                    <stop offset="100%" stopColor="#8b6eff" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-white font-bold text-lg">
+                  {kit.total_screens > 0 ? `${progressPercent}%` : (
+                    <svg className="w-7 h-7 text-brand-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <h2 className="text-xl font-semibold text-white mb-2">
+              Generating your UI kit
+            </h2>
+
+            {/* Current step with animated dots */}
+            <div className="flex items-center justify-center gap-1.5 mb-6">
+              <p className="text-white/50 text-sm">
+                {kit.current_step ?? "Starting generation..."}
+              </p>
+              <span className="flex gap-0.5">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="w-1 h-1 bg-brand-400 rounded-full animate-bounce"
+                    style={{ animationDelay: `${i * 150}ms` }}
+                  />
+                ))}
+              </span>
+            </div>
+
             {kit.total_screens > 0 && (
-              <div className="max-w-xs mx-auto">
+              <div className="max-w-xs mx-auto mb-6">
                 <div className="flex justify-between text-xs text-white/40 mb-2">
                   <span>Screen {kit.current_screen_index} of {kit.total_screens}</span>
-                  <span>{progressPercent}%</span>
+                  <span className="text-brand-400 font-medium">~{Math.max(1, (kit.total_screens - kit.current_screen_index) * 25)}s remaining</span>
                 </div>
                 <div className="usage-bar-track">
                   <div
-                    className="h-full bg-gradient-to-r from-brand-500 to-brand-400 rounded-full transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-brand-500 to-brand-400 rounded-full transition-all duration-700"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
               </div>
             )}
-            <p className="text-white/30 text-xs mt-6">Updates every 3 seconds</p>
-            <div className="flex items-center justify-center gap-3 mt-4">
+
+            <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => router.push(`/dashboard/new/${kit.category}/guided?kitId=${kit.id}&regenerate=true`)}
                 className="btn-secondary px-6 py-2 text-sm"
@@ -1244,7 +1311,7 @@ const { width: kitScreenW, height: kitScreenH } = parseKitResolution(checklistDa
                 onClick={handleCancel}
                 className="btn-danger px-6 py-2 text-sm"
               >
-                Cancel generation
+                Cancel
               </button>
             </div>
           </div>

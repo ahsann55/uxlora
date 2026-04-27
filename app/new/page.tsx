@@ -55,8 +55,8 @@ export default async function NewKitPage() {
   // Check email verification — UX-03
   if (!user.email_confirmed_at) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center p-4">
-        <div className="card max-w-md w-full text-center">
+      <div className="min-h-screen bg-surface flex items-center justify-center p-4 page-enter">
+        <div className="card max-w-md w-full text-center modal-enter">
           <div className="w-16 h-16 bg-warning/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
               className="w-8 h-8 text-warning"
@@ -88,7 +88,7 @@ export default async function NewKitPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface p-6">
+    <div className="min-h-screen bg-surface p-6 page-enter">
       <div className="max-w-4xl mx-auto">
 
         {/* Header */}

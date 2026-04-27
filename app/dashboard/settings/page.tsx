@@ -41,7 +41,8 @@ export default async function SettingsPage() {
         <SettingsClient
           initialDisplayName={profile.display_name ?? ""}
           email={user.email ?? ""}
-        />
+          emailVerified={!!user.email_confirmed_at}
+      />
       </div>
 
       {/* Subscription */}

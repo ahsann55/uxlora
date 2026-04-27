@@ -48,7 +48,7 @@ export default async function CategoryInputPage({
   const info = categoryInfo[category];
 
   return (
-    <div className="min-h-screen bg-surface p-6">
+    <div className="min-h-screen bg-surface p-6 page-enter">
       <div className="max-w-2xl mx-auto">
 
         {/* Back */}

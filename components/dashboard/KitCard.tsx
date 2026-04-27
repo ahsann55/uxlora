@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { timeAgo, categoryLabel } from "@/lib/utils";
 import type { Database } from "@/lib/supabase/types";
 
@@ -25,13 +29,28 @@ const categoryIcons: Record<string, string> = {
 };
 
 export function KitCard({ kit }: { kit: Kit }) {
+  const router = useRouter();
   const status = statusConfig[kit.status] ?? {
     label: kit.status,
     className: "badge",
   };
 
+  // Prefetch kit page on mount for recently active kits,
+  // and on hover for all kits — eliminates the 1-2s navigation delay
+  useEffect(() => {
+    if (kit.status === "complete" || kit.status === "generating") {
+      router.prefetch(`/kit/${kit.id}`);
+    }
+  }, [kit.id, kit.status, router]);
+
+  const isGenerating = kit.status === "generating" || kit.status === "queued";
+
   return (
-    <Link href={`/kit/${kit.id}`} className="card-hover block">
+    <Link
+      href={`/kit/${kit.id}`}
+      className={`card-hover block kit-card-lift ${isGenerating ? "generating-card" : ""}`}
+      onMouseEnter={() => router.prefetch(`/kit/${kit.id}`)}
+    >
       {/* Thumbnail placeholder */}
       <div className="w-full h-36 bg-surface-200 rounded-lg mb-4 flex items-center justify-center">
         <span className="text-4xl">
@@ -56,14 +75,12 @@ export function KitCard({ kit }: { kit: Kit }) {
           <span>{timeAgo(kit.created_at)}</span>
         </div>
 
-        {/* Screen count */}
         {kit.total_screens > 0 && (
           <p className="text-xs text-white/40">
             {kit.total_screens} screen{kit.total_screens === 1 ? "" : "s"}
           </p>
         )}
 
-        {/* Generating progress */}
         {kit.status === "generating" && kit.total_screens > 0 && (
           <div className="usage-bar-track mt-2">
             <div
