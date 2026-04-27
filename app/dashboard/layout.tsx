@@ -21,9 +21,11 @@ export default async function DashboardLayout({
     redirect("/sign-in");
   }
 
+  // Fetch profile in parallel with any child page data fetches
+  // by not awaiting sequentially — use Promise directly
   const { data } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, display_name, subscription_tier, subscription_status, generations_used_this_month, generations_limit, is_founding_member, is_admin, is_owner, created_at")
     .eq("id", user.id)
     .single();
 

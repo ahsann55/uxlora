@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { UpgradeModal } from "./UpgradeModal";
+import { useToast } from "@/components/ui/Toast";
 
 interface SubscriptionStatusProps {
   tier: string;
@@ -36,6 +37,7 @@ export function SubscriptionStatus({
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const router = useRouter();
+  const { showToast, ToastComponent } = useToast();
 
   async function handleManage() {
     setPortalLoading(true);
@@ -56,7 +58,7 @@ export function SubscriptionStatus({
       window.location.href = data.url;
     } catch (error) {
       console.error("Portal error:", error);
-      alert("Failed to open billing portal. Please try again.");
+      showToast("Failed to open billing portal. Please try again.", "error");
     } finally {
       setPortalLoading(false);
     }
@@ -180,6 +182,7 @@ export function SubscriptionStatus({
           trigger="generate"
         />
       )}
+      {ToastComponent}
     </>
   );
 }
