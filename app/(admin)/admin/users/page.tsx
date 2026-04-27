@@ -195,6 +195,24 @@ export default function UsersPage() {
     <option value="cancelled">Cancelled</option>
     <option value="past_due">Past Due</option>
   </select>
+  <label className="flex items-center gap-2 mt-1 cursor-pointer">
+    <input
+      type="checkbox"
+      checked={editValues.is_admin as boolean}
+      onChange={(e) => setEditValues({ ...editValues, is_admin: e.target.checked })}
+      className="w-3 h-3 accent-brand-500"
+    />
+    <span className="text-xs text-white/60">Admin</span>
+  </label>
+  <label className="flex items-center gap-2 cursor-pointer">
+    <input
+      type="checkbox"
+      checked={editValues.is_founding_member as boolean}
+      onChange={(e) => setEditValues({ ...editValues, is_founding_member: e.target.checked })}
+      className="w-3 h-3 accent-brand-500"
+    />
+    <span className="text-xs text-white/60">Founding</span>
+  </label>
 </div>
                   ) : (
                     <span className={`badge text-xs ${tierColors[user.subscription_tier] ?? "badge"}`}>
