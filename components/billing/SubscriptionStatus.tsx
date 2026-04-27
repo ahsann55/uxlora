@@ -41,9 +41,15 @@ export function SubscriptionStatus({
     setPortalLoading(true);
     try {
       const response = await fetch("/api/billing/portal");
-      const data = await response.json() as { url?: string; error?: string };
+      const data = await response.json() as { url?: string; error?: string; tier?: string };
 
       if (!response.ok || !data.url) {
+        // Account was manually upgraded or has no LMS subscription
+        // Show the upgrade modal so they can subscribe properly via LMS
+        if (data.error === "no_lms_subscription") {
+          setShowUpgrade(true);
+          return;
+        }
         throw new Error(data.error ?? "Failed to get portal URL");
       }
 

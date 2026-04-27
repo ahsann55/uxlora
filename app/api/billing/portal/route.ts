@@ -12,36 +12,41 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's subscription ID from profile
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("lemon_squeezy_subscription_id, subscription_status")
+      .select("lemon_squeezy_subscription_id, subscription_status, subscription_tier")
       .eq("id", user.id)
       .single();
 
     const profile = profileData as {
       lemon_squeezy_subscription_id: string | null;
       subscription_status: string;
+      subscription_tier: string;
     } | null;
 
+    // No LMS subscription — account was manually upgraded or is free
+    // Return a flag so the frontend can show the appropriate action
     if (!profile?.lemon_squeezy_subscription_id) {
       return NextResponse.json(
-        { error: "No active subscription found." },
+        { error: "no_lms_subscription", tier: profile?.subscription_tier ?? "free" },
         { status: 404 }
       );
     }
 
-    // Get subscription details from Lemon Squeezy
     initLemonSqueezy();
     const subscription = await getSubscriptionDetails(
       profile.lemon_squeezy_subscription_id
     );
 
-    const portalUrl = subscription?.attributes?.urls?.customer_portal;
+    // Try customer portal first, fall back to update payment URL
+    const portalUrl =
+      subscription?.attributes?.urls?.customer_portal ??
+      subscription?.attributes?.urls?.update_payment_method ??
+      null;
 
     if (!portalUrl) {
       return NextResponse.json(
-        { error: "Could not retrieve portal URL." },
+        { error: "no_portal_url" },
         { status: 500 }
       );
     }

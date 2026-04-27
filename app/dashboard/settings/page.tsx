@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import type { Database } from "@/lib/supabase/types";
 import { SubscriptionStatus } from "@/components/billing/SubscriptionStatus";
 import { PricingTable } from "@/components/billing/PricingTable";
+import { SettingsClient } from "@/components/dashboard/SettingsClient";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -15,13 +16,8 @@ export const metadata: Metadata = {
 export default async function SettingsPage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/sign-in");
-  }
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/sign-in");
 
   const { data } = await supabase
     .from("profiles")
@@ -30,38 +26,25 @@ export default async function SettingsPage() {
     .single();
 
   const profile = data as Profile | null;
-
-  if (!profile) {
-    redirect("/sign-in");
-  }
+  if (!profile) redirect("/sign-in");
 
   return (
     <div className="max-w-2xl mx-auto">
-
-      {/* Page header */}
       <div className="mb-8">
         <h1 className="page-title">Settings</h1>
         <p className="page-subtitle">Manage your account and subscription</p>
       </div>
 
-      {/* Profile section */}
-      <div className="card mb-6">
+      {/* Profile — editable via client component */}
+      <div className="mb-6">
         <h2 className="section-title mb-4">Profile</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="label">Display name</label>
-            <p className="text-white font-medium">
-              {profile.display_name ?? "—"}
-            </p>
-          </div>
-          <div>
-            <label className="label">Email address</label>
-            <p className="text-white font-medium">{user.email}</p>
-          </div>
-        </div>
+        <SettingsClient
+          initialDisplayName={profile.display_name ?? ""}
+          email={user.email ?? ""}
+        />
       </div>
 
-      {/* Subscription section */}
+      {/* Subscription */}
       <div className="mb-6">
         <h2 className="section-title mb-4">Subscription</h2>
         <SubscriptionStatus
@@ -72,31 +55,44 @@ export default async function SettingsPage() {
           generationsLimit={profile.generations_limit}
         />
       </div>
-      {/* Pricing table — show for free users */}
-        {profile.subscription_tier === "free" && (
-          <div className="mb-6">
-            <h2 className="section-title mb-4">Upgrade your plan</h2>
-            <PricingTable
-              currentTier={profile.subscription_tier}
-              isFoundingMember={profile.is_founding_member}
-            />
+
+      {/* Upgrade prompt for free users */}
+      {profile.subscription_tier === "free" && (
+        <div className="mb-6">
+          <h2 className="section-title mb-4">Upgrade your plan</h2>
+          <PricingTable
+            currentTier={profile.subscription_tier}
+            isFoundingMember={profile.is_founding_member}
+          />
         </div>
       )}
-      {/* Account section */}
-      <div className="card">
+
+      {/* Account */}
+      <div className="card mb-6">
         <h2 className="section-title mb-4">Account</h2>
-        <div className="space-y-3">
-          <p className="text-white/50 text-sm">
-            Member since{" "}
-            {new Date(profile.created_at).toLocaleDateString("en-US", {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-        </div>
+        <p className="text-white/50 text-sm">
+          Member since{" "}
+          {new Date(profile.created_at).toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </p>
       </div>
 
+      {/* Danger zone */}
+      <div className="card border-red-500/20">
+        <h2 className="text-base font-semibold text-red-400 mb-1">Danger Zone</h2>
+        <p className="text-white/40 text-sm mb-4">
+          Permanently delete your account and all generated kits. This cannot be undone.
+        </p>
+        <a
+          href={`mailto:support@uxlora.app?subject=Delete my account&body=Please delete my account. My email is ${user.email}.`}
+          className="btn-secondary text-sm text-red-400 border-red-500/30 hover:border-red-500/60"
+        >
+          Request account deletion →
+        </a>
+      </div>
     </div>
   );
 }

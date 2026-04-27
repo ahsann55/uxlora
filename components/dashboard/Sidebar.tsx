@@ -115,21 +115,21 @@ export function Sidebar({ profile }: { profile: Profile }) {
 
       {/* User section */}
       <div className="p-4 border-t border-surface-300">
-        <div className="flex items-center gap-3 mb-3">
-          {/* Avatar */}
+        <div className="flex items-center gap-3 mb-3 -mx-1 px-1 rounded-lg">
+          {/* Avatar + name — clicking opens settings */}
+        <Link href="/dashboard/settings" className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
           <div className="w-8 h-8 rounded-full bg-brand-500/30 flex items-center justify-center flex-shrink-0">
             <span className="text-brand-300 text-sm font-semibold">
               {(profile.display_name ?? "U").charAt(0).toUpperCase()}
             </span>
           </div>
-
-          {/* Name + badge */}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">
               {profile.display_name ?? "User"}
             </p>
             {profile.is_founding_member && <FoundingBadge />}
           </div>
+        </Link>
         </div>
 
         {/* Sign out */}

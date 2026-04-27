@@ -39,8 +39,8 @@ export function Header({ profile }: { profile: Profile }) {
           + New Kit
         </Link>
 
-        {/* User info */}
-        <div className="flex items-center gap-2">
+        {/* User info — clicking opens settings */}
+        <Link href="/dashboard/settings" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <div className="w-8 h-8 rounded-full bg-brand-500/30 flex items-center justify-center">
             <span className="text-brand-300 text-sm font-semibold">
               {(profile.display_name ?? "U").charAt(0).toUpperCase()}
@@ -49,7 +49,7 @@ export function Header({ profile }: { profile: Profile }) {
           <span className="text-sm text-white/70 hidden md:block">
             {profile.display_name ?? "User"}
           </span>
-        </div>
+        </Link>
 
       </div>
     </header>

@@ -1,50 +1,47 @@
 import { lemonSqueezySetup, createCheckout, getSubscription, cancelSubscription } from "@lemonsqueezy/lemonsqueezy.js";
 
-// Detect test mode based on Vercel environment
-const isTestMode = process.env.VERCEL_ENV !== "production";
-
-function getEnv(prodKey: string, testKey: string): string {
-  const val = isTestMode ? process.env[testKey] : process.env[prodKey];
-  if (!val) throw new Error(`Missing env var: ${isTestMode ? testKey : prodKey}`);
+function getEnv(key: string): string {
+  const val = process.env[key];
+  if (!val) throw new Error(`Missing env var: ${key}`);
   return val;
 }
 
-function getEnvInt(prodKey: string, testKey: string): number {
-  return parseInt(getEnv(prodKey, testKey));
+function getEnvInt(key: string): number {
+  return parseInt(getEnv(key));
 }
 
 // Initialize Lemon Squeezy SDK
 export function initLemonSqueezy() {
   lemonSqueezySetup({
-    apiKey: getEnv("LEMONSQUEEZY_API_KEY", "LEMONSQUEEZY_API_KEY_TEST"),
+    apiKey: getEnv("LEMONSQUEEZY_API_KEY"),
     onError: (error) => console.error("Lemon Squeezy error:", error),
   });
 }
-// Variant ID map — pulls from test or prod env vars based on environment
+
 export const VARIANT_IDS = {
   starter: {
-    monthly: getEnvInt("LMS_VARIANT_STARTER_MONTHLY", "LMS_VARIANT_STARTER_MONTHLY_TEST"),
-    yearly: getEnvInt("LMS_VARIANT_STARTER_YEARLY", "LMS_VARIANT_STARTER_YEARLY_TEST"),
+    monthly: getEnvInt("LMS_VARIANT_STARTER_MONTHLY"),
+    yearly: getEnvInt("LMS_VARIANT_STARTER_YEARLY"),
   },
   pro: {
-    monthly: getEnvInt("LMS_VARIANT_PRO_MONTHLY", "LMS_VARIANT_PRO_MONTHLY_TEST"),
-    yearly: getEnvInt("LMS_VARIANT_PRO_YEARLY", "LMS_VARIANT_PRO_YEARLY_TEST"),
+    monthly: getEnvInt("LMS_VARIANT_PRO_MONTHLY"),
+    yearly: getEnvInt("LMS_VARIANT_PRO_YEARLY"),
   },
   studio: {
-    monthly: getEnvInt("LMS_VARIANT_STUDIO_MONTHLY", "LMS_VARIANT_STUDIO_MONTHLY_TEST"),
-    yearly: getEnvInt("LMS_VARIANT_STUDIO_YEARLY", "LMS_VARIANT_STUDIO_YEARLY_TEST"),
+    monthly: getEnvInt("LMS_VARIANT_STUDIO_MONTHLY"),
+    yearly: getEnvInt("LMS_VARIANT_STUDIO_YEARLY"),
   },
   starter_founding: {
-    monthly: getEnvInt("LMS_VARIANT_STARTER_FOUNDING_MONTHLY", "LMS_VARIANT_STARTER_FOUNDING_MONTHLY_TEST"),
-    yearly: getEnvInt("LMS_VARIANT_STARTER_FOUNDING_YEARLY", "LMS_VARIANT_STARTER_FOUNDING_YEARLY_TEST"),
+    monthly: getEnvInt("LMS_VARIANT_STARTER_FOUNDING_MONTHLY"),
+    yearly: getEnvInt("LMS_VARIANT_STARTER_FOUNDING_YEARLY"),
   },
   pro_founding: {
-    monthly: getEnvInt("LMS_VARIANT_PRO_FOUNDING_MONTHLY", "LMS_VARIANT_PRO_FOUNDING_MONTHLY_TEST"),
-    yearly: getEnvInt("LMS_VARIANT_PRO_FOUNDING_YEARLY", "LMS_VARIANT_PRO_FOUNDING_YEARLY_TEST"),
+    monthly: getEnvInt("LMS_VARIANT_PRO_FOUNDING_MONTHLY"),
+    yearly: getEnvInt("LMS_VARIANT_PRO_FOUNDING_YEARLY"),
   },
   studio_founding: {
-    monthly: getEnvInt("LMS_VARIANT_STUDIO_FOUNDING_MONTHLY", "LMS_VARIANT_STUDIO_FOUNDING_MONTHLY_TEST"),
-    yearly: getEnvInt("LMS_VARIANT_STUDIO_FOUNDING_YEARLY", "LMS_VARIANT_STUDIO_FOUNDING_YEARLY_TEST"),
+    monthly: getEnvInt("LMS_VARIANT_STUDIO_FOUNDING_MONTHLY"),
+    yearly: getEnvInt("LMS_VARIANT_STUDIO_FOUNDING_YEARLY"),
   },
 } as const;
 
@@ -68,7 +65,7 @@ export async function createCheckoutUrl(
 ): Promise<string> {
   initLemonSqueezy();
 
-  const storeId = getEnvInt("LEMONSQUEEZY_STORE_ID", "LEMONSQUEEZY_STORE_ID_TEST");
+  const storeId = getEnvInt("LEMONSQUEEZY_STORE_ID");
 
   const { data, error } = await createCheckout(storeId, variantId, {
     checkoutOptions: {

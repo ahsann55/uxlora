@@ -40,20 +40,24 @@ const { data: profilesData, error, count } = await adminSupabase
   .order("created_at", { ascending: false })
   .range(offset, offset + limit - 1);
 
-// Fetch auth users to get emails
-const { data: authData } = await adminSupabase.auth.admin.listUsers({
-  page: page,
-  perPage: limit,
-});
+// Fetch all auth users (no pagination — we need emails for all profiles on this page)
+const profileIds = (profilesData ?? []).map((p: any) => p.id as string);
 const emailMap: Record<string, string> = {};
-(authData?.users ?? []).forEach((u) => {
-  emailMap[u.id] = u.email ?? "";
-});
+
+// Fetch each user's email by ID using the admin API
+await Promise.all(
+  profileIds.map(async (uid) => {
+    const { data: authUser } = await adminSupabase.auth.admin.getUserById(uid);
+    if (authUser?.user?.email) {
+      emailMap[uid] = authUser.user.email;
+    }
+  })
+);
 
 // Merge email into profiles
-const data = (profilesData ?? []).map((p: Record<string, unknown>) => ({
+const data = (profilesData ?? []).map((p: any) => ({
   ...p,
-  email: emailMap[p.id as string] ?? null,
+  email: emailMap[p.id] ?? null,
 }));
 
     if (error) {
