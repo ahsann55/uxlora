@@ -10,7 +10,7 @@
   <meta name="theme-color" content="#08061A">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UXLora — Your Complete UI Kit in 60 Seconds</title>
+<title>UXLora — Your Complete UI Kit in Minutes</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -114,7 +114,7 @@ h1 .accent {
   padding: 13px 30px; border-radius: 100px;
   font-family: inherit; font-size: 14.5px; font-weight: 700; white-space: nowrap;
   box-shadow: 0 8px 28px rgba(139,92,246,.35);
-  transition: all .2s;
+  transition: all .2s; text-decoration: none; display: inline-block;
 }
 .btn-primary:hover { background: var(--purple-2); box-shadow: 0 12px 36px rgba(139,92,246,.5); transform: translateY(-2px); }
 .btn-primary.off { opacity:.6; cursor:not-allowed; pointer-events:none; }
@@ -497,7 +497,7 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); display: flex;
 .drawer-link:last-of-type { border-bottom: none; }
 
 /* Hero CTA row */
-.hero-cta-row { display:flex; gap:16px; flex-wrap:wrap; margin-top:32px; }
+.hero-cta-row { display:flex; gap:16px; flex-wrap:wrap; margin-top:32px; justify-content:center; align-items:center; }
 .hero-note { font-size:13px; color:var(--muted); margin-top:12px; }
 
 /* Formats row */
@@ -541,8 +541,8 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
 .footer-social a:hover { color:var(--text); }
 
 /* Ghost button */
-.btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text); padding:12px 24px; border-radius:8px; font-weight:500; cursor:pointer; text-decoration:none; display:inline-block; transition:border-color .2s; }
-.btn-ghost:hover { border-color:var(--purple-3); }
+.btn-ghost { background:transparent; border:1px solid var(--border); color:var(--white); padding:13px 30px; border-radius:100px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; transition:all .2s; font-size:14.5px; }
+.btn-ghost:hover { border-color:var(--purple); color:var(--white); }
 
 /* Dim list item */
 .dim { color:var(--muted); }
@@ -582,7 +582,7 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
 <!-- HERO -->
 <section class="hero" id="hero">
   <div class="hero-inner">
-    <h1>Your UI Kit. <span class="accent">Built in 60 seconds.</span></h1>
+    <h1>Your UI Kit. <span class="accent">Built in minutes.</span></h1>
     <p class="hero-sub">
       Describe your app, your game, or your product — UXLora generates every screen, fully consistent, developer-ready. No designer. No costly invoices.
     </p>
@@ -617,10 +617,10 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
         <div class="stat-desc">Start free, upgrade when you need more. A complete UI kit for a fraction of what a designer costs.</div>
       </div>
       <div class="stat">
-        <div class="stat-num">60s</div>
+        <div class="stat-num">~15m</div>
         <div class="stat-unit">to generate a complete UI kit</div>
         <div class="stat-title">What UXLora takes</div>
-        <div class="stat-desc">Every screen, every state, fully consistent design language. Done before your designer replies to your email.</div>
+        <div class="stat-desc">Every screen, every state, fully consistent design language. A designer takes weeks. UXLora takes minutes.</div>
       </div>
     </div>
     <div style="margin-top:72px">
