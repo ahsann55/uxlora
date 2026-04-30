@@ -69,24 +69,27 @@ nav {
   position: relative; overflow: hidden;
 }
 
+/* Canvas background — replaces static dot grid */
+#hero-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Keep mouse events on canvas but let clicks pass through to hero-inner */
+.hero:hover #hero-canvas { pointer-events: all; }
+.hero-inner { pointer-events: all; }
+
 .hero::before {
   content: ''; position: absolute; top: -10%; left: 50%;
   transform: translateX(-50%);
   width: 900px; height: 700px;
   background: radial-gradient(ellipse at 50% 30%, rgba(139,92,246,.18) 0%, rgba(109,40,217,.06) 45%, transparent 70%);
-  pointer-events: none;
+  pointer-events: none; z-index: 1;
 }
 
-.hero::after {
-  content: ''; position: absolute; inset: 0;
-  background-image: radial-gradient(rgba(139,92,246,.12) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black, transparent);
-  pointer-events: none;
-}
-
-.hero-inner { position: relative; z-index: 1; max-width: 760px; }
-
+.hero-inner { position: relative; z-index: 2; max-width: 760px; }
 
 h1 {
   font-size: clamp(24px, 3.8vw, 64px); font-weight: 800;
@@ -123,9 +126,8 @@ h1 .accent {
   font-size: 13.5px; color: var(--white-30); margin-bottom: 36px;
   font-weight: 500; letter-spacing: .01em;
 }
-.hero-audience span {
-  color: var(--purple-3); font-weight: 600;
-}
+.hero-audience span { color: var(--purple-3); font-weight: 600; }
+
 /* SECTIONS */
 .divider { height: 1px; background: var(--border); }
 .section { padding: 110px 24px; }
@@ -145,37 +147,24 @@ h2 {
 .sub { font-size: 17px; color: var(--white-60); font-weight: 400; line-height: 1.65; max-width: 520px; }
 
 /* STATS */
-.stats-row {
-  display: grid; grid-template-columns: repeat(3,1fr);
-  gap: 16px; margin-top: 72px;
-}
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 72px; }
 
 .stat {
-  padding: 52px 44px; 
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
+  padding: 52px 44px;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg);
   transition: background .3s, border-color .3s, transform .2s;
   position: relative; overflow: hidden;
 }
 .stat::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(139,92,246,.5), transparent);
   opacity: 0; transition: opacity .3s;
 }
 .stat:hover { background: #101024; border-color: var(--border-2); transform: translateY(-4px); }
 .stat:hover::before { opacity: 1; }
 
-.stat-num {
-  font-size: clamp(48px, 5vw, 64px); font-weight: 800;
-  letter-spacing: -2.5px; color: var(--white); line-height: 1; margin-bottom: 8px;
-}
-.stat-unit {
-  font-size: 12px; font-weight: 600; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--purple-2);
-  margin-bottom: 16px;
-}
+.stat-num { font-size: clamp(48px, 5vw, 64px); font-weight: 800; letter-spacing: -2.5px; color: var(--white); line-height: 1; margin-bottom: 8px; }
+.stat-unit { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--purple-2); margin-bottom: 16px; }
 .stat-title { font-size: 16px; font-weight: 600; color: var(--white); margin-bottom: 6px; }
 .stat-desc { font-size: 14px; color: var(--white-60); line-height: 1.55; }
 
@@ -199,9 +188,8 @@ h2 {
   box-shadow: 0 2px 0 rgba(255,255,255,.08) inset, 0 40px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04);
 }
 .phone iframe {
-  width: 390px; height: 844px;
-  border: none; transform-origin: top left;
-  transform: scale(0.6923);
+  width: 390px; height: 844px; border: none;
+  transform-origin: top left; transform: scale(0.6923);
   pointer-events: all; display: block;
 }
 
@@ -224,8 +212,7 @@ h2 {
 .plan {
   background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg);
   padding: 40px 36px 36px; position: relative;
-  transition: border-color .25s, transform .2s;
-  display: flex; flex-direction: column;
+  transition: border-color .25s, transform .2s; display: flex; flex-direction: column;
 }
 .plan:hover { transform: translateY(-4px); border-color: var(--border-2); }
 .plan.hi { border-color: var(--purple); background: linear-gradient(160deg, rgba(139,92,246,.1) 0%, var(--card) 60%); }
@@ -237,14 +224,11 @@ h2 {
 }
 
 .plan-tier { font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--white-60); margin-bottom: 28px; }
-
 .price-now { font-size: 52px; font-weight: 800; letter-spacing: -2.5px; line-height: 1; color: var(--white); margin-bottom: 6px; }
 .price-now sup { font-size: 22px; font-weight: 700; vertical-align: top; margin-top: 10px; display: inline-block; color: var(--white-60); }
 .price-now sub { font-size: 15px; font-weight: 400; vertical-align: baseline; color: var(--white-60); letter-spacing: 0; }
 
-
 .plan-line { height: 1px; background: var(--border); margin: 24px 0; }
-
 .plan-features { list-style: none; flex: 1; margin-bottom: 32px; }
 .plan-features li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 14px; color: var(--white-60); }
 .plan-features li:last-child { border-bottom: none; }
@@ -283,13 +267,11 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
 @media(max-width:960px) {
   nav { padding: 0 20px; }
   .nav-right .nav-link { display: none; }
-  .nav-right .btn-nav { display: none; }
   .hamburger { display: flex !important; }
   .stats-row { grid-template-columns: 1fr; }
   .stat { border-right: none; border-bottom: 1px solid var(--border); }
   .stat:last-child { border-bottom: none; }
-  .compare-grid, .demo-layout { flex-direction: column; }
-  .compare-grid { grid-template-columns: 1fr; }
+  .demo-layout { flex-direction: column; }
   .steps-grid, .pricing-grid, .usecases-grid { grid-template-columns: 1fr; }
   .demo-layout { gap: 56px; }
 }
@@ -301,198 +283,75 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
 }
 
 /* USE CASE CARDS */
-.usecases-grid {
-  display: grid; grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
+.usecases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 .usecase-card {
-  background: var(--card);
-  border: 1px solid var(--border);
+  background: var(--card); border: 1px solid var(--border);
   border-radius: var(--r-lg); padding: 40px 40px 36px;
   transition: border-color .3s, transform .2s, background .3s;
   position: relative; overflow: hidden;
 }
 .usecase-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, transparent, rgba(139,92,246,.5), transparent);
   opacity: 0; transition: opacity .3s;
 }
 .usecase-card:hover { border-color: var(--border-2); transform: translateY(-4px); background: #101024; }
 .usecase-card:hover::before { opacity: 1; }
-.usecase-icon {
-  font-size: 22px; margin-bottom: 20px;
-  width: 52px; height: 52px; border-radius: 14px;
-  background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.2);
-  display: flex; align-items: center; justify-content: center;
-}
-.usecase-title {
-  font-size: 17px; font-weight: 700; color: var(--white);
-  margin-bottom: 12px; letter-spacing: -.3px;
-}
+.usecase-icon { font-size: 22px; margin-bottom: 20px; width: 52px; height: 52px; border-radius: 14px; background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.2); display: flex; align-items: center; justify-content: center; }
+.usecase-title { font-size: 17px; font-weight: 700; color: var(--white); margin-bottom: 12px; letter-spacing: -.3px; }
 .usecase-desc { font-size: 14px; color: var(--white-60); line-height: 1.7; }
 
 /* FOUNDER QUOTE */
-.founder-quote {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 56px 64px;
-  position: relative;
-  text-align: left;
-}
-.fq-mark {
-  font-size: 80px; font-weight: 800;
-  color: var(--purple); line-height: .8;
-  margin-bottom: 24px; font-family: Georgia, serif;
-  opacity: .6;
-}
-.fq-text {
-  font-size: 18px; color: var(--white);
-  line-height: 1.75; font-weight: 400;
-  margin-bottom: 36px; font-style: italic;
-  opacity: .9;
-}
-.fq-author {
-  display: flex; align-items: center; gap: 14px;
-}
-.fq-dot {
-  width: 40px; height: 40px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-3) 100%);
-  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 16px; font-weight: 800; color: #fff;
-}
+.founder-quote { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 56px 64px; position: relative; text-align: left; }
+.fq-mark { font-size: 80px; font-weight: 800; color: var(--purple); line-height: .8; margin-bottom: 24px; font-family: Georgia, serif; opacity: .6; }
+.fq-text { font-size: 18px; color: var(--white); line-height: 1.75; font-weight: 400; margin-bottom: 36px; font-style: italic; opacity: .9; }
+.fq-author { display: flex; align-items: center; gap: 14px; }
+.fq-dot { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--purple) 0%, var(--purple-3) 100%); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: #fff; }
 .fq-dot::after { content: "A"; }
 .fq-name { font-size: 15px; font-weight: 700; color: var(--white); }
 .fq-role { font-size: 13px; color: var(--white-60); margin-top: 2px; }
 
-@media(max-width:640px) {
-  .founder-quote { padding: 36px 28px; }
-  .fq-text { font-size: 16px; }
-}
+@media(max-width:640px) { .founder-quote { padding: 36px 28px; } .fq-text { font-size: 16px; } }
 
 /* PHONE LOADER */
-.phone-loader {
-  position: absolute; inset: 0; z-index: 5;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  background: #08080f; gap: 14px;
-}
-.loader-text {
-  font-size: 12px; font-weight: 600; color: var(--white-30);
-  letter-spacing: .08em; text-transform: uppercase;
-}
-.loader-dots {
-  display: flex; gap: 6px; align-items: center;
-}
-.loader-dots span {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--purple-2);
-  animation: dotpulse 1.4s ease-in-out infinite;
-}
+.phone-loader { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #08080f; gap: 14px; }
+.loader-text { font-size: 12px; font-weight: 600; color: var(--white-30); letter-spacing: .08em; text-transform: uppercase; }
+.loader-dots { display: flex; gap: 6px; align-items: center; }
+.loader-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--purple-2); animation: dotpulse 1.4s ease-in-out infinite; }
 .loader-dots span:nth-child(2) { animation-delay: .2s; }
 .loader-dots span:nth-child(3) { animation-delay: .4s; }
-@keyframes dotpulse {
-  0%, 80%, 100% { opacity: .15; transform: scale(.8); }
-  40% { opacity: 1; transform: scale(1); }
-}
+@keyframes dotpulse { 0%,80%,100%{opacity:.15;transform:scale(.8);} 40%{opacity:1;transform:scale(1);} }
 
 /* FAQ */
 .faq-list { display: flex; flex-direction: column; gap: 0; }
-
-.faq-item {
-  border-bottom: 1px solid var(--border);
-}
+.faq-item { border-bottom: 1px solid var(--border); }
 .faq-item:first-child { border-top: 1px solid var(--border); }
-
-.faq-q {
-  width: 100%; display: flex; align-items: center;
-  justify-content: space-between; gap: 16px;
-  padding: 22px 0; background: none; border: none;
-  cursor: pointer; text-align: left;
-  font-family: inherit; font-size: 16px; font-weight: 600;
-  color: var(--white); transition: color .2s;
-}
+.faq-q { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; background: none; border: none; cursor: pointer; text-align: left; font-family: inherit; font-size: 16px; font-weight: 600; color: var(--white); transition: color .2s; }
 .faq-q:hover { color: var(--purple-2); }
 .faq-q:hover .faq-icon { border-color: var(--purple); }
 .faq-q:hover .faq-icon svg { stroke: var(--purple-2); }
-
-.faq-icon {
-  flex-shrink: 0; width: 28px; height: 28px;
-  border-radius: 50%; border: 1px solid var(--border-2);
-  display: flex; align-items: center; justify-content: center;
-  transition: all .25s;
-}
-.faq-icon svg {
-  width: 12px; height: 12px; display: block;
-  stroke: var(--white-60); stroke-width: 2.5;
-  fill: none; overflow: visible;
-  transition: stroke .25s;
-}
-.faq-icon.open {
-  transform: rotate(45deg);
-  border-color: var(--purple);
-}
+.faq-icon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-2); display: flex; align-items: center; justify-content: center; transition: all .25s; }
+.faq-icon svg { width: 12px; height: 12px; display: block; stroke: var(--white-60); stroke-width: 2.5; fill: none; overflow: visible; transition: stroke .25s; }
+.faq-icon.open { transform: rotate(45deg); border-color: var(--purple); }
 .faq-icon.open svg { stroke: var(--purple-2); }
-
-.faq-a {
-  display: none; padding: 0 0 22px;
-}
-.faq-a p {
-  font-size: 15px; color: var(--white-60);
-  line-height: 1.75; font-weight: 400;
-}
+.faq-a { display: none; padding: 0 0 22px; }
+.faq-a p { font-size: 15px; color: var(--white-60); line-height: 1.75; font-weight: 400; }
 .faq-a.open { display: block; }
 
-/* ── Mobile Nav Drawer ─────────────────────────── */
-.hamburger {
-  display: none; flex-direction: column; justify-content: center;
-  gap: 5px; width: 36px; height: 36px; cursor: pointer;
-  background: none; border: none; padding: 4px; z-index: 1001;
-}
-.hamburger span {
-  display: block; width: 22px; height: 2px;
-  background: var(--white); border-radius: 2px;
-  transition: all .3s cubic-bezier(0.4,0,0.2,1);
-  transform-origin: center;
-}
+/* MOBILE DRAWER */
+.hamburger { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 36px; height: 36px; cursor: pointer; background: none; border: none; padding: 4px; z-index: 1001; }
+.hamburger span { display: block; width: 22px; height: 2px; background: var(--white); border-radius: 2px; transition: all .3s cubic-bezier(0.4,0,0.2,1); transform-origin: center; }
 .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
 .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-.drawer-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6); z-index: 999;
-  backdrop-filter: blur(4px);
-  opacity: 0; transition: opacity .3s ease;
-}
+.drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; backdrop-filter: blur(4px); opacity: 0; transition: opacity .3s ease; }
 .drawer-overlay.open { display: block; opacity: 1; }
-
-.drawer {
-  position: fixed; top: 0; right: -280px; width: 280px; height: 100vh;
-  background: #0f0f1a; border-left: 1px solid var(--border);
-  z-index: 1000; display: flex; flex-direction: column;
-  padding: 80px 32px 40px;
-  transition: right .35s cubic-bezier(0.4,0,0.2,1);
-  box-shadow: -20px 0 60px rgba(0,0,0,0.5);
-}
+.drawer { position: fixed; top: 0; right: -280px; width: 280px; height: 100vh; background: #0f0f1a; border-left: 1px solid var(--border); z-index: 1000; display: flex; flex-direction: column; padding: 80px 32px 40px; transition: right .35s cubic-bezier(0.4,0,0.2,1); box-shadow: -20px 0 60px rgba(0,0,0,0.5); }
 .drawer.open { right: 0; }
-
-.drawer-logo {
-  font-size: 22px; font-weight: 800; color: var(--white);
-  margin-bottom: 40px; letter-spacing: -0.5px;
-}
+.drawer-logo { font-size: 22px; font-weight: 800; color: var(--white); margin-bottom: 40px; letter-spacing: -0.5px; }
 .drawer-logo em { color: var(--purple-2); font-style: normal; }
-
-.drawer-links {
-  display: flex; flex-direction: column; gap: 4px; flex: 1;
-}
-.drawer-link {
-  font-size: 17px; font-weight: 500; color: var(--white-60);
-  text-decoration: none; padding: 12px 0;
-  border-bottom: 1px solid var(--border);
-  transition: color .2s;
-}
+.drawer-links { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.drawer-link { font-size: 17px; font-weight: 500; color: var(--white-60); text-decoration: none; padding: 12px 0; border-bottom: 1px solid var(--border); transition: color .2s; }
 .drawer-link:hover { color: var(--white); }
 .drawer-link:last-of-type { border-bottom: none; }
 
@@ -507,7 +366,6 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
 .format-badge.soon { opacity:.7; }
 .format-icon { font-size:32px; margin-bottom:12px; }
 .format-name { font-weight:600; font-size:15px; margin-bottom:6px; }
-.format-status.live-status { color:var(--purple-3); font-size:13px; }
 .format-status { color:var(--muted); font-size:13px; }
 .format-badge.live .format-status { color:#7C3AED; }
 
@@ -517,20 +375,16 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
 .testimonial-text { font-size:15px; line-height:1.7; color:var(--text); margin-bottom:16px; font-style:italic; }
 .testimonial-author { font-size:13px; color:var(--muted); }
 
-/* Plan price-sub */
+/* Plan extras */
 .price-sub { font-size:13px; color:var(--muted); margin-top:4px; margin-bottom:12px; }
-
-/* Coming soon feature */
 .coming-soon-feat { font-size:13px; color:var(--muted); font-style:italic; }
-
-/* Plan button as anchor */
 a.plan-btn { display:block; text-align:center; text-decoration:none; }
 
 /* Final CTA row */
 .final-cta-row { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin:32px 0 16px; }
 .btn-lg { padding:14px 32px; font-size:16px; }
 
-/* Footer restructure */
+/* Footer */
 .footer-top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px; }
 .footer-nav { display:flex; gap:24px; flex-wrap:wrap; }
 .footer-nav a { color:var(--muted); text-decoration:none; font-size:14px; }
@@ -540,13 +394,10 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
 .footer-social a { color:var(--muted); text-decoration:none; font-size:14px; }
 .footer-social a:hover { color:var(--text); }
 
-/* Ghost button */
+/* Buttons */
 .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--white); padding:13px 30px; border-radius:100px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; transition:all .2s; font-size:14.5px; }
 .btn-ghost:hover { border-color:var(--purple); color:var(--white); }
-
-/* Dim list item */
 .dim { color:var(--muted); }
-
 </style>
 </head>
 <body>
@@ -573,7 +424,6 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
     <a href="#demo" class="drawer-link" onclick="closeDrawer()">Demo</a>
     <a href="#pricing" class="drawer-link" onclick="closeDrawer()">Pricing</a>
     <a href="#faq" class="drawer-link" onclick="closeDrawer()">FAQ</a>
-
   </div>
   <a href="/sign-in" class="btn-ghost" onclick="closeDrawer()">Log In</a>
   <a href="/sign-up" class="btn-primary" onclick="closeDrawer()">Sign Up</a>
@@ -581,6 +431,7 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
 
 <!-- HERO -->
 <section class="hero" id="hero">
+  <canvas id="hero-canvas"></canvas>
   <div class="hero-inner">
     <h1>Your UI Kit. <span class="accent">Built in minutes.</span></h1>
     <p class="hero-sub">
@@ -602,7 +453,7 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
   <div class="wrap">
     <div class="label">Why UXLora</div>
     <h2>The numbers speak for themselves.</h2>
-    <p class="sub">A professional UI designer charges thousands and takes weeks. UXLora delivers in seconds, for a fraction of the cost.</p>
+    <p class="sub">A professional UI designer charges thousands and takes weeks. UXLora delivers in minutes, for a fraction of the cost.</p>
     <div class="stats-row">
       <div class="stat">
         <div class="stat-num">$5,000</div>
@@ -647,7 +498,7 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
       <div class="usecase-card">
         <div class="usecase-icon">🎨</div>
         <div class="usecase-title">UI Designers</div>
-        <p class="usecase-desc">Take on more clients without burning out. Use UXLora to generate the first complete draft in 60 seconds, then refine it with your expertise. Deliver faster. Bill more. Stay creative.</p>
+        <p class="usecase-desc">Take on more clients without burning out. Use UXLora to generate the first complete draft in minutes, then refine it with your expertise. Deliver faster. Bill more. Stay creative.</p>
       </div>
     </div>
   </div>
@@ -663,9 +514,7 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
         <div class="phone-glow"></div>
         <div class="phone">
           <div class="phone-loader" id="phone-loader">
-            <div class="loader-dots">
-              <span></span><span></span><span></span>
-            </div>
+            <div class="loader-dots"><span></span><span></span><span></span></div>
             <div class="loader-text">Loading demo</div>
           </div>
           <iframe src="https://www.uxlora.app/MonsterWar_UI.html" title="UXLora Demo" onload="document.getElementById('phone-loader').style.display='none'"></iframe>
@@ -777,46 +626,46 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
     <div class="pricing-grid">
       <div class="plan">
         <div class="plan-tier">Free</div>
-          <div class="price-now"><sup>$</sup>0<sub>/mo</sub></div>
-          <div class="price-sub">No credit card required</div>
-          <div class="plan-line"></div>
-          <ul class="plan-features">
-            <li><span class="chk">✓</span> 1 UI kit (view only)</li>
-            <li><span class="chk">✓</span> Game, mobile &amp; web UI support</li>
-            <li><span class="chk">✓</span> Full kit preview in browser</li>
-            <li><span class="dim">—</span> PNG export</li>
-            <li><span class="dim">—</span> Revisions</li>
-          </ul>
+        <div class="price-now"><sup>$</sup>0<sub>/mo</sub></div>
+        <div class="price-sub">No credit card required</div>
+        <div class="plan-line"></div>
+        <ul class="plan-features">
+          <li><span class="chk">✓</span> 1 UI kit (view only)</li>
+          <li><span class="chk">✓</span> Game, mobile &amp; web UI support</li>
+          <li><span class="chk">✓</span> Full kit preview in browser</li>
+          <li><span class="dim">—</span> PNG export</li>
+          <li><span class="dim">—</span> Revisions</li>
+        </ul>
         <a href="/sign-up" class="plan-btn">Start Free →</a>
       </div>
       <div class="plan">
         <div class="plan-tier">Starter</div>
-          <div class="price-now"><sup>$</sup>60<sub>/mo</sub></div>
-          <div class="price-sub">Billed monthly</div>
-          <div class="plan-line"></div>
-          <ul class="plan-features">
-            <li><span class="chk">✓</span> 5 UI kits per month</li>
-            <li><span class="chk">✓</span> High-resolution PNG export</li>
-            <li><span class="chk">✓</span> 1 revision per kit</li>
-            <li><span class="chk">✓</span> Game, mobile &amp; web UI support</li>
-            <li><span class="chk">✓</span> Extra kits from $4 each</li>
-          </ul>
+        <div class="price-now"><sup>$</sup>60<sub>/mo</sub></div>
+        <div class="price-sub">Billed monthly</div>
+        <div class="plan-line"></div>
+        <ul class="plan-features">
+          <li><span class="chk">✓</span> 5 UI kits per month</li>
+          <li><span class="chk">✓</span> High-resolution PNG export</li>
+          <li><span class="chk">✓</span> 1 revision per kit</li>
+          <li><span class="chk">✓</span> Game, mobile &amp; web UI support</li>
+          <li><span class="chk">✓</span> Extra kits from $4 each</li>
+        </ul>
         <a href="/sign-up" class="plan-btn">Get Started →</a>
       </div>
       <div class="plan hi">
         <div class="plan-badge">Most Popular</div>
-          <div class="plan-tier">Pro</div>
-          <div class="price-now"><sup>$</sup>150<sub>/mo</sub></div>
-          <div class="price-sub">Billed monthly</div>
-          <div class="plan-line"></div>
-          <ul class="plan-features">
-            <li><span class="chk">✓</span> 10 UI kits per month</li>
-            <li><span class="chk">✓</span> High-resolution PNG export</li>
-            <li><span class="chk">✓</span> 2 revisions per kit</li>
-            <li><span class="chk">✓</span> Priority generation queue</li>
-            <li><span class="chk">✓</span> Extra kits from $4 each</li>
-            <li><span class="coming-soon-feat">🔜 Figma export — coming soon</span></li>
-          </ul>
+        <div class="plan-tier">Pro</div>
+        <div class="price-now"><sup>$</sup>150<sub>/mo</sub></div>
+        <div class="price-sub">Billed monthly</div>
+        <div class="plan-line"></div>
+        <ul class="plan-features">
+          <li><span class="chk">✓</span> 10 UI kits per month</li>
+          <li><span class="chk">✓</span> High-resolution PNG export</li>
+          <li><span class="chk">✓</span> 2 revisions per kit</li>
+          <li><span class="chk">✓</span> Priority generation queue</li>
+          <li><span class="chk">✓</span> Extra kits from $4 each</li>
+          <li><span class="coming-soon-feat">🔜 Figma export — coming soon</span></li>
+        </ul>
         <a href="/sign-up" class="plan-btn">Get Started →</a>
       </div>
       <div class="plan">
@@ -847,57 +696,41 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
     <h2>Questions we get asked.</h2>
     <p class="sub" style="margin-bottom:56px">Everything you need to know before joining.</p>
     <div class="faq-list">
-
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
           <span>What exactly do I receive when I generate a UI kit?</span>
           <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
         </button>
-        <div class="faq-a">
-          <p>You receive a complete set of screens for your product — every view, every state, every component — all designed with a fully consistent visual language. Currently you export as high-resolution PNGs ready to hand directly to a developer. Figma and Unity UXML exports are in development and coming soon.</p>
-        </div>
+        <div class="faq-a"><p>You receive a complete set of screens for your product — every view, every state, every component — all designed with a fully consistent visual language. Currently you export as high-resolution PNGs ready to hand directly to a developer. Figma and Unity UXML exports are in development and coming soon.</p></div>
       </div>
-
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
           <span>What if the output doesn't match my style or vision?</span>
           <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
         </button>
-        <div class="faq-a">
-          <p>You can regenerate as many times as you need within your monthly kit allowance. The more detail you provide in your description — genre, tone, color preferences, reference products — the closer UXLora gets on the first attempt. Every kit is built specifically around your input, not from a generic template library.</p>
-        </div>
+        <div class="faq-a"><p>You can regenerate as many times as you need within your monthly kit allowance. The more detail you provide in your description — genre, tone, color preferences, reference products — the closer UXLora gets on the first attempt. Every kit is built specifically around your input, not from a generic template library.</p></div>
       </div>
-
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
           <span>Is this just for games or does it work for apps and web products too?</span>
           <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
         </button>
-        <div class="faq-a">
-          <p>UXLora works for mobile games, mobile apps, and web products equally. Whether you need a game HUD and inventory system, a mobile app onboarding flow, or a SaaS dashboard — UXLora understands the context and generates screens appropriate for that product type.</p>
-        </div>
+        <div class="faq-a"><p>UXLora works for mobile games, mobile apps, and web products equally. Whether you need a game HUD and inventory system, a mobile app onboarding flow, or a SaaS dashboard — UXLora understands the context and generates screens appropriate for that product type.</p></div>
       </div>
-
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
           <span>Do I need any design experience to use UXLora?</span>
           <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
         </button>
-        <div class="faq-a">
-          <p>None whatsoever. UXLora is built for developers and founders who are not designers. You describe what you are building in plain language. UXLora handles every design decision — layout, typography, colour, spacing, component states — and delivers something that looks like it came from a professional design studio.</p>
-        </div>
+        <div class="faq-a"><p>None whatsoever. UXLora is built for developers and founders who are not designers. You describe what you are building in plain language. UXLora handles every design decision — layout, typography, colour, spacing, component states — and delivers something that looks like it came from a professional design studio.</p></div>
       </div>
-
-    <div class="faq-item">
+      <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">
           <span>What export formats are available?</span>
           <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
         </button>
-        <div class="faq-a">
-          <p>Right now UXLora exports high-resolution PNG files — every screen at full resolution, ready to hand to a developer or use directly in your product. Figma export (editable component library) and Unity UXML export are both in active development and will be added to paid plans when ready.</p>
-        </div>
+        <div class="faq-a"><p>Right now UXLora exports high-resolution PNG files — every screen at full resolution, ready to hand to a developer or use directly in your product. Figma export (editable component library) and Unity UXML export are both in active development and will be added to paid plans when ready.</p></div>
       </div>
-
     </div>
   </div>
 </section>
@@ -934,13 +767,14 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
       <a href="/sign-up" class="btn-primary btn-lg">Start for Free →</a>
       <a href="/sign-in" class="btn-ghost btn-lg">Log In</a>
     </div>
-    <p class="final-note">Free plan available. Paid plans from $9/mo.</p>
+    <p class="final-note">Free plan available. Paid plans from $60/mo.</p>
   </div>
 </section>
+
 <footer>
   <div class="footer-top">
     <div class="footer-logo" style="display:flex;align-items:center;gap:10px;"><img src="/uxlora_logo.png" alt="UXLora" style="height:28px;width:28px;border-radius:50%;object-fit:contain;" /><span>UXLora — by Ard</span></div>
-          <div class="footer-nav">
+    <div class="footer-nav">
       <a href="/privacy">Privacy Policy</a>
       <a href="/terms">Terms of Service</a>
       <a href="mailto:hello@uxlora.app">Contact</a>
@@ -956,20 +790,176 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
 </footer>
 
 <script>
+// ── Hero Canvas Background ──
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  const ctx = canvas.getContext('2d');
+  const hero = canvas.parentElement;
+
+  function resize() {
+    canvas.width = hero.offsetWidth;
+    canvas.height = hero.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const CELL = 48;
+  let COLS, ROWS, dots;
+
+  function buildGrid() {
+    COLS = Math.ceil(canvas.width / CELL) + 1;
+    ROWS = Math.ceil(canvas.height / CELL) + 1;
+    dots = [];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        dots.push({ x: c * CELL, y: r * CELL, base: 0.08 + Math.random() * 0.06 });
+      }
+    }
+  }
+  buildGrid();
+  window.addEventListener('resize', buildGrid);
+
+  const pulses = [];
+
+  function spawnPulse() {
+    const idx = Math.floor(Math.random() * dots.length);
+    pulses.push({ idx, maxR: 3 + Math.floor(Math.random() * 4), strength: 0.7 + Math.random() * 0.3, age: 0 });
+  }
+
+  function gridDist(a, b) {
+    const dc = Math.abs((a % COLS) - (b % COLS));
+    const dr = Math.abs(Math.floor(a / COLS) - Math.floor(b / COLS));
+    return Math.sqrt(dc * dc + dr * dr);
+  }
+
+  let lastPulse = 0;
+  let mouseX = -999, mouseY = -999;
+  const HOVER_RADIUS = 96;
+
+  hero.addEventListener('mousemove', e => {
+    const rect = hero.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+  });
+  hero.addEventListener('mouseleave', () => { mouseX = -999; mouseY = -999; });
+
+  function draw(ts) {
+    if (ts - lastPulse > 2800 + Math.random() * 2400) {
+      spawnPulse();
+      lastPulse = ts;
+    }
+
+    const activations = new Float32Array(dots.length);
+    const hoverStr = new Float32Array(dots.length);
+
+    for (let i = pulses.length - 1; i >= 0; i--) {
+      const p = pulses[i];
+      p.age += 0.008;
+      const r = p.age * p.maxR;
+      for (let j = 0; j < dots.length; j++) {
+        const d = gridDist(p.idx, j);
+        const diff = Math.abs(d - r);
+        if (diff < 1.2) {
+          const fade = 1 - p.age;
+          activations[j] = Math.max(activations[j], p.strength * (1 - diff / 1.2) * Math.max(0, fade));
+        }
+      }
+      if (p.age >= 1) pulses.splice(i, 1);
+    }
+
+    for (let i = 0; i < dots.length; i++) {
+      const dx = dots[i].x - mouseX;
+      const dy = dots[i].y - mouseY;
+      const md = Math.sqrt(dx * dx + dy * dy);
+      if (md < HOVER_RADIUS) hoverStr[i] = 1 - md / HOVER_RADIUS;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // hover lines (drawn first, below dots)
+    for (let i = 0; i < dots.length; i++) {
+      const hs = hoverStr[i];
+      if (hs < 0.05) continue;
+      const col = i % COLS, row = Math.floor(i / COLS);
+      const neighbors = [];
+      if (col + 1 < COLS) neighbors.push(i + 1);
+      if (row + 1 < ROWS) neighbors.push(i + COLS);
+      if (col + 1 < COLS && row + 1 < ROWS) neighbors.push(i + COLS + 1);
+      if (col > 0 && row + 1 < ROWS) neighbors.push(i + COLS - 1);
+      for (const j of neighbors) {
+        const combined = Math.min(hs, hoverStr[j]);
+        if (combined < 0.05) continue;
+        ctx.beginPath();
+        ctx.moveTo(dots[i].x, dots[i].y);
+        ctx.lineTo(dots[j].x, dots[j].y);
+        ctx.strokeStyle = `rgba(167,139,250,${combined * 0.5})`;
+        ctx.lineWidth = combined * 1.2;
+        ctx.stroke();
+      }
+    }
+
+    // pulse lines
+    for (let i = 0; i < dots.length; i++) {
+      const ac = activations[i];
+      if (ac < 0.1) continue;
+      const col = i % COLS, row = Math.floor(i / COLS);
+      const neighbors = [];
+      if (col + 1 < COLS) neighbors.push(i + 1);
+      if (row + 1 < ROWS) neighbors.push(i + COLS);
+      for (const j of neighbors) {
+        const strength = Math.min(ac, activations[j]);
+        if (strength < 0.1) continue;
+        ctx.beginPath();
+        ctx.moveTo(dots[i].x, dots[i].y);
+        ctx.lineTo(dots[j].x, dots[j].y);
+        ctx.strokeStyle = `rgba(139,92,246,${strength * 0.4})`;
+        ctx.lineWidth = strength * 1.5;
+        ctx.stroke();
+      }
+    }
+
+    // dots
+    for (let i = 0; i < dots.length; i++) {
+      const d = dots[i];
+      const ac = activations[i];
+      const hs = hoverStr[i];
+      const alpha = Math.min(d.base + ac * 0.85 + hs * 0.7, 1);
+      const size = 1.5 + ac * 3 + hs * 2;
+      const r = Math.floor(139 + ac * 60 + hs * 40);
+      const g = Math.floor(92 + ac * 20);
+
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r},${g},246,${alpha})`;
+      ctx.fill();
+
+      if (ac > 0.3 || hs > 0.3) {
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, size + 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(167,139,250,${Math.max(ac, hs) * 0.2})`;
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+})();
+
+// ── FAQ ──
 function toggleFaq(btn) {
   const icon = btn.querySelector('.faq-icon');
   const answer = btn.nextElementSibling;
   const isOpen = answer.classList.contains('open');
   document.querySelectorAll('.faq-a.open').forEach(a => a.classList.remove('open'));
   document.querySelectorAll('.faq-icon.open').forEach(i => i.classList.remove('open'));
-  if (!isOpen) {
-    answer.classList.add('open');
-    icon.classList.add('open');
-  }
+  if (!isOpen) { answer.classList.add('open'); icon.classList.add('open'); }
 }
 
+// ── Scroll reveal ──
 const obs = new IntersectionObserver(entries => {
-  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); });
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
 }, { threshold: 0.08 });
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
@@ -979,8 +969,7 @@ const drawer = document.getElementById('drawer');
 const drawerOverlay = document.getElementById('drawerOverlay');
 
 hamburger.addEventListener('click', () => {
-  const isOpen = drawer.classList.contains('open');
-  if (isOpen) closeDrawer(); else openDrawer();
+  drawer.classList.contains('open') ? closeDrawer() : openDrawer();
 });
 
 function openDrawer() {
