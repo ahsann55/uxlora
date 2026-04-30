@@ -146,28 +146,6 @@ h2 {
 
 .sub { font-size: 17px; color: var(--white-60); font-weight: 400; line-height: 1.65; max-width: 520px; }
 
-/* STATS */
-.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 72px; }
-
-.stat {
-  padding: 52px 44px;
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg);
-  transition: background .3s, border-color .3s, transform .2s;
-  position: relative; overflow: hidden;
-}
-.stat::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139,92,246,.5), transparent);
-  opacity: 0; transition: opacity .3s;
-}
-.stat:hover { background: #101024; border-color: var(--border-2); transform: translateY(-4px); }
-.stat:hover::before { opacity: 1; }
-
-.stat-num { font-size: clamp(48px, 5vw, 64px); font-weight: 800; letter-spacing: -2.5px; color: var(--white); line-height: 1; margin-bottom: 8px; }
-.stat-unit { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--purple-2); margin-bottom: 16px; }
-.stat-title { font-size: 16px; font-weight: 600; color: var(--white); margin-bottom: 6px; }
-.stat-desc { font-size: 14px; color: var(--white-60); line-height: 1.55; }
-
 /* DEMO */
 .demo-layout { display: flex; align-items: center; gap: 96px; margin-top: 72px; }
 .demo-copy { flex: 1; }
@@ -398,6 +376,34 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
 .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--white); padding:13px 30px; border-radius:100px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; transition:all .2s; font-size:14.5px; }
 .btn-ghost:hover { border-color:var(--purple); color:var(--white); }
 .dim { color:var(--muted); }
+
+/* BENEFITS STRIP */
+.benefits-section { padding: 72px 24px; }
+.benefits-strip {
+  display: flex; align-items: center;
+  gap: 0; background: var(--card);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.benefit-item {
+  flex: 1; display: flex; align-items: flex-start;
+  gap: 20px; padding: 44px 40px;
+}
+.benefit-icon {
+  font-size: 28px; flex-shrink: 0;
+  width: 52px; height: 52px; border-radius: 14px;
+  background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.2);
+  display: flex; align-items: center; justify-content: center;
+}
+.benefit-divider { width: 1px; background: var(--border); align-self: stretch; flex-shrink: 0; }
+.benefit-title { font-size: 16px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
+.benefit-desc { font-size: 14px; color: var(--white-60); line-height: 1.6; }
+
+@media(max-width:960px) {
+  .benefits-strip { flex-direction: column; }
+  .benefit-divider { width: 100%; height: 1px; align-self: auto; }
+  .benefit-item { padding: 32px 28px; }
+}
 </style>
 </head>
 <body>
@@ -448,37 +454,45 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
 
 <div class="divider"></div>
 
-<!-- VALUE -->
+<!-- BENEFITS STRIP -->
+<section class="section benefits-section reveal">
+  <div class="wrap">
+    <div class="benefits-strip">
+      <div class="benefit-item">
+        <div class="benefit-icon">🎯</div>
+        <div class="benefit-text">
+          <div class="benefit-title">Describe once</div>
+          <div class="benefit-desc">Upload your GDD, ADD, or just type what you're building in plain text.</div>
+        </div>
+      </div>
+      <div class="benefit-divider"></div>
+      <div class="benefit-item">
+        <div class="benefit-icon">⚡</div>
+        <div class="benefit-text">
+          <div class="benefit-title">Generated in minutes</div>
+          <div class="benefit-desc">Every screen, every state, fully consistent design language. Built around your product.</div>
+        </div>
+      </div>
+      <div class="benefit-divider"></div>
+      <div class="benefit-item">
+        <div class="benefit-icon">📦</div>
+        <div class="benefit-text">
+          <div class="benefit-title">Download and ship</div>
+          <div class="benefit-desc">Production-ready PNGs handed straight to your developer. No tools. No designer.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- WHO IT'S FOR -->
 <section class="section reveal">
   <div class="wrap">
-    <div class="label">Why UXLora</div>
-    <h2>The numbers speak for themselves.</h2>
-    <p class="sub">A professional UI designer charges thousands and takes weeks. UXLora delivers in minutes, for a fraction of the cost.</p>
-    <div class="stats-row">
-      <div class="stat">
-        <div class="stat-num">$5,000</div>
-        <div class="stat-unit">average designer cost</div>
-        <div class="stat-title">What a designer charges</div>
-        <div class="stat-desc">That's for a mid-tier freelancer. Agencies charge two to three times more.</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">$60</div>
-        <div class="stat-unit">per month to start</div>
-        <div class="stat-title">What UXLora costs</div>
-        <div class="stat-desc">Start free, upgrade when you need more. A complete UI kit for a fraction of what a designer costs.</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">~15m</div>
-        <div class="stat-unit">to generate a complete UI kit</div>
-        <div class="stat-title">What UXLora takes</div>
-        <div class="stat-desc">Every screen, every state, fully consistent design language. A designer takes weeks. UXLora takes minutes.</div>
-      </div>
-    </div>
-    <div style="margin-top:72px">
-      <div class="label">Who It's For</div>
-      <h2>Built for anyone who ships UI.</h2>
-      <p class="sub" style="margin-bottom:48px">Whether you are a solo developer or a full studio, UXLora fits directly into your workflow.</p>
-    </div>
+    <div class="label">Who It's For</div>
+    <h2>Built for anyone who ships UI.</h2>
+    <p class="sub" style="margin-bottom:48px">Whether you are a solo developer or a full studio, UXLora fits directly into your workflow.</p>
     <div class="usecases-grid">
       <div class="usecase-card">
         <div class="usecase-icon">🎮</div>
