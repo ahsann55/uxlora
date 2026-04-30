@@ -147,30 +147,6 @@ h2 {
 
 .sub { font-size: 17px; color: var(--white-60); font-weight: 400; line-height: 1.65; max-width: 520px; }
 
-/* DEMO */
-.demo-layout { display: flex; align-items: center; gap: 96px; margin-top: 72px; }
-.demo-copy { flex: 1; }
-.demo-copy p { font-size: 16px; color: var(--white-60); line-height: 1.7; margin-bottom: 14px; }
-.demo-copy p strong { color: var(--white); font-weight: 600; }
-.demo-hint { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 13px; color: var(--purple-3); font-weight: 600; }
-
-.phone-outer { flex-shrink: 0; position: relative; }
-.phone-glow {
-  position: absolute; inset: -60px;
-  background: radial-gradient(ellipse at center, rgba(139,92,246,.22) 0%, transparent 65%);
-  pointer-events: none; border-radius: 50%;
-}
-.phone {
-  width: 270px; height: 585px; background: #08080f;
-  border-radius: 44px; border: 1.5px solid rgba(255,255,255,.1);
-  overflow: hidden; position: relative; z-index: 1;
-  box-shadow: 0 2px 0 rgba(255,255,255,.08) inset, 0 40px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.04);
-}
-.phone iframe {
-  width: 390px; height: 844px; border: none;
-  transform-origin: top left; transform: scale(0.6923);
-  pointer-events: all; display: block;
-}
 
 /* HOW IT WORKS */
 .steps-grid {
@@ -247,17 +223,10 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
   nav { padding: 0 20px; }
   .nav-right .nav-link { display: none; }
   .hamburger { display: flex !important; }
-  .stats-row { grid-template-columns: 1fr; }
-  .stat { border-right: none; border-bottom: 1px solid var(--border); }
-  .stat:last-child { border-bottom: none; }
-  .demo-layout { flex-direction: column; }
   .steps-grid, .pricing-grid, .audience-grid { grid-template-columns: 1fr; }
-  .demo-layout { gap: 56px; }
 }
 
 @media(max-width:540px) {
-  .phone { width: 240px; height: 519px; }
-  .phone iframe { transform: scale(0.6154); }
   footer { flex-direction: column; text-align: center; }
 }
 
@@ -272,15 +241,6 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
 .fq-role { font-size: 13px; color: var(--white-60); margin-top: 2px; }
 
 @media(max-width:640px) { .founder-quote { padding: 36px 28px; } .fq-text { font-size: 16px; } }
-
-/* PHONE LOADER */
-.phone-loader { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #08080f; gap: 14px; }
-.loader-text { font-size: 12px; font-weight: 600; color: var(--white-30); letter-spacing: .08em; text-transform: uppercase; }
-.loader-dots { display: flex; gap: 6px; align-items: center; }
-.loader-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--purple-2); animation: dotpulse 1.4s ease-in-out infinite; }
-.loader-dots span:nth-child(2) { animation-delay: .2s; }
-.loader-dots span:nth-child(3) { animation-delay: .4s; }
-@keyframes dotpulse { 0%,80%,100%{opacity:.15;transform:scale(.8);} 40%{opacity:1;transform:scale(1);} }
 
 /* FAQ */
 .faq-list { display: flex; flex-direction: column; gap: 0; }
@@ -319,22 +279,6 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
 .hero-cta-row { display:flex; gap:16px; flex-wrap:wrap; margin-top:32px; justify-content:center; align-items:center; }
 .hero-note { font-size:13px; color:var(--muted); margin-top:12px; }
 
-/* Formats row */
-.formats-row { display:flex; gap:24px; justify-content:center; flex-wrap:wrap; margin-top:40px; }
-.format-badge { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px 32px; min-width:160px; text-align:center; }
-.format-badge.live { border-color:rgba(139,92,246,.4); }
-.format-badge.soon { opacity:.7; }
-.format-icon { font-size:32px; margin-bottom:12px; }
-.format-name { font-weight:600; font-size:15px; margin-bottom:6px; }
-.format-status { color:var(--muted); font-size:13px; }
-.format-badge.live .format-status { color:#7C3AED; }
-
-/* Testimonials */
-.testimonials-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:24px; margin-top:16px; text-align:left; }
-.testimonial-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px; }
-.testimonial-text { font-size:15px; line-height:1.7; color:var(--text); margin-bottom:16px; font-style:italic; }
-.testimonial-author { font-size:13px; color:var(--muted); }
-
 /* Plan extras */
 .price-sub { font-size:13px; color:var(--muted); margin-top:4px; margin-bottom:12px; }
 .coming-soon-feat { font-size:13px; color:var(--muted); font-style:italic; }
@@ -358,6 +302,47 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
 .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--white); padding:13px 30px; border-radius:100px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; transition:all .2s; font-size:14.5px; }
 .btn-ghost:hover { border-color:var(--purple); color:var(--white); }
 .dim { color:var(--muted); }
+
+/* OUTPUT GALLERY MARQUEE */
+.marquee-outer {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+.marquee-track {
+  display: flex; gap: 20px;
+  width: max-content;
+  animation: marquee-scroll 32s linear infinite;
+}
+.marquee-track:hover { animation-play-state: paused; }
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.kit-card {
+  flex-shrink: 0; width: 260px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); overflow: hidden;
+  transition: border-color .25s, transform .2s;
+  cursor: pointer;
+}
+.kit-card:hover { border-color: var(--border-2); transform: translateY(-4px); }
+.kit-thumb {
+  width: 100%; height: 180px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.kit-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.kit-placeholder {
+  font-size: 13px; font-weight: 600;
+  color: rgba(139,92,246,0.4); letter-spacing: .05em;
+}
+.kit-info { padding: 16px 18px; }
+.kit-name { font-size: 14px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+.kit-tag {
+  font-size: 11px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--purple-2);
+}
 
 /* AUDIENCE GRID */
 .audience-grid {
@@ -427,7 +412,7 @@ body::before {
 <nav>
   <a href="#hero" style="display:flex;align-items:center;text-decoration:none;"><img src="/uxlora_logo.png" alt="UXLora" style="height:38px;width:38px;object-fit:contain;border-radius:50%;" /></a>
   <div class="nav-right">
-    <a href="#demo" class="nav-link">Demo</a>
+    <a href="#gallery" class="nav-link">Gallery</a>
     <a href="#pricing" class="nav-link">Pricing</a>
     <a href="#faq" class="nav-link">FAQ</a>
     <a href="/sign-in" class="btn-ghost nav-cta">Log In</a>
@@ -443,7 +428,7 @@ body::before {
 <div class="drawer" id="drawer">
   <div class="drawer-logo" style="display:flex;align-items:center;gap:10px;"><img src="/uxlora_logo.png" alt="UXLora" style="height:36px;width:36px;border-radius:50%;object-fit:contain;" /><span>UX<em>Lora</em></span></div>
   <div class="drawer-links">
-    <a href="#demo" class="drawer-link" onclick="closeDrawer()">Demo</a>
+    <a href="#gallery" class="drawer-link" onclick="closeDrawer()">Gallery</a>
     <a href="#pricing" class="drawer-link" onclick="closeDrawer()">Pricing</a>
     <a href="#faq" class="drawer-link" onclick="closeDrawer()">FAQ</a>
   </div>
@@ -473,8 +458,8 @@ body::before {
 <!-- BENEFITS STRIP -->
 <section class="section benefits-section reveal">
   <div class="wrap">
-    <div class="label">How It Works</div>
-    <div class="benefits-strip">
+    <div class="label">From Idea to Kit</div>
+<div class="benefits-strip">
       <div class="benefit-item">
         <div class="benefit-icon">🎯</div>
         <div class="benefit-text">
@@ -537,29 +522,88 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- DEMO -->
-<section class="section alt reveal" id="demo">
-  <div class="wrap">
-    <div class="demo-layout">
-      <div class="phone-outer">
-        <div class="phone-glow"></div>
-        <div class="phone">
-          <div class="phone-loader" id="phone-loader">
-            <div class="loader-dots"><span></span><span></span><span></span></div>
-            <div class="loader-text">Loading demo</div>
-          </div>
-          <iframe src="https://www.uxlora.app/MonsterWar_UI.html" title="UXLora Demo" onload="document.getElementById('phone-loader').style.display='none'"></iframe>
+<!-- OUTPUT GALLERY -->
+<section class="section reveal" id="gallery">
+  <div class="wrap" style="text-align:center; margin-bottom:48px;">
+    <div class="label">Real Output</div>
+    <h2>Built by UXLora.</h2>
+    <p class="sub" style="margin:0 auto;">Every kit below was generated from a plain text description. No designer. No templates.</p>
+  </div>
+  <div class="marquee-outer">
+    <div class="marquee-track" id="marqueeTrack">
+
+      <!-- ============================================
+           MARQUEE KITS — easy to manage
+           To add a kit:    copy one .kit-card block, update image src, name, tag
+           To remove a kit: delete its .kit-card block
+           To reorder:      move .kit-card blocks up/down
+           Replace kit-placeholder div with <img src="..."> once you have screenshots
+           ============================================ -->
+
+      <div class="kit-card">
+        <div class="kit-thumb" style="background:#1a0a2e;">
+          <div class="kit-placeholder">MonsterWar</div>
+        </div>
+        <div class="kit-info">
+          <div class="kit-name">MonsterWar</div>
+          <div class="kit-tag">Mobile Game</div>
         </div>
       </div>
-      <div class="demo-copy">
-        <div class="label">Live Demo</div>
-        <h2>Real output. Zero designer.</h2>
-        <p><strong>This is not a mockup. This is not a concept. This is actual AI output</strong> — generated entirely by UXLora from a single written description.</p>
-        <p>What you see on the left is a complete UI kit for a mobile zombie survival game. 13 screens. Fully consistent design language. Production-ready. No designer involved at any stage.</p>
-        <p>Whether you are building a <strong>mobile game</strong>, a <strong>mobile app</strong>, or a <strong>web product</strong> — UXLora generates every screen your product needs, in one go.</p>
-        <div class="demo-hint">→ Interact with all 13 screens on the left</div>
+
+      <div class="kit-card">
+        <div class="kit-thumb" style="background:#0a1a2e;">
+          <div class="kit-placeholder">Space Explorer</div>
+        </div>
+        <div class="kit-info">
+          <div class="kit-name">Space Explorer</div>
+          <div class="kit-tag">Mobile Game</div>
+        </div>
       </div>
+
+      <div class="kit-card">
+        <div class="kit-thumb" style="background:#0a2e1a;">
+          <div class="kit-placeholder">FitTrack</div>
+        </div>
+        <div class="kit-info">
+          <div class="kit-name">FitTrack</div>
+          <div class="kit-tag">Mobile App</div>
+        </div>
+      </div>
+
+      <div class="kit-card">
+        <div class="kit-thumb" style="background:#2e1a0a;">
+          <div class="kit-placeholder">TaskFlow</div>
+        </div>
+        <div class="kit-info">
+          <div class="kit-name">TaskFlow</div>
+          <div class="kit-tag">Web Product</div>
+        </div>
+      </div>
+
+      <div class="kit-card">
+        <div class="kit-thumb" style="background:#1a2e0a;">
+          <div class="kit-placeholder">DungeonQuest</div>
+        </div>
+        <div class="kit-info">
+          <div class="kit-name">DungeonQuest</div>
+          <div class="kit-tag">Mobile Game</div>
+        </div>
+      </div>
+
+      <div class="kit-card">
+        <div class="kit-thumb" style="background:#2e0a1a;">
+          <div class="kit-placeholder">FinanceHub</div>
+        </div>
+        <div class="kit-info">
+          <div class="kit-name">FinanceHub</div>
+          <div class="kit-tag">Web Product</div>
+        </div>
+      </div>
+
     </div>
+  </div>
+  <div style="text-align:center; margin-top:40px;">
+    <a href="/gallery" class="btn-ghost">View all kits →</a>
   </div>
 </section>
 
@@ -1015,6 +1059,12 @@ function closeDrawer() {
   hamburger.classList.remove('open');
   document.body.style.overflow = '';
 }
+// ── Marquee infinite loop ──
+(function() {
+  const track = document.getElementById('marqueeTrack');
+  if (!track) return;
+  track.innerHTML += track.innerHTML;
+})();
 </script>
 </body>
 </html>
