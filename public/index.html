@@ -151,9 +151,6 @@ h2 {
 .final {
   text-align: center; padding: 80px 24px;
   position: relative; overflow: hidden;
-  background: var(--bg-2);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
 }
 .final::before {
   content: ''; position: absolute; top: 50%; left: 50%;
@@ -168,9 +165,6 @@ h2 {
 .final p { font-size: 17px; color: var(--white-60); line-height: 1.65; margin-bottom: 36px; }
 .final-note { margin-top: 18px; font-size: 13px; color: var(--white-30); }
 
-footer { padding: 36px 48px; border-top: 1px solid var(--border); }
-.footer-logo { font-size: 15px; font-weight: 700; color: var(--white-60); }
-.footer-right { font-size: 13px; color: var(--white-30); }
 
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity .65s ease, transform .65s ease; }
 .reveal.in { opacity: 1; transform: translateY(0); }
@@ -183,7 +177,8 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
 }
 
 @media(max-width:540px) {
-  footer { flex-direction: column; text-align: center; }
+  footer { padding: 20px 24px; }
+  .footer-row { flex-direction: column; align-items: flex-start; gap: 16px; }
 }
 
 
@@ -217,15 +212,30 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
 .final-cta-row { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin:32px 0 16px; }
 .btn-lg { padding:14px 32px; font-size:16px; }
 
-/* Footer */
-.footer-top { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px; }
-.footer-nav { display:flex; gap:24px; flex-wrap:wrap; }
-.footer-nav a { color:var(--muted); text-decoration:none; font-size:14px; }
-.footer-nav a:hover { color:var(--text); }
-.footer-bottom { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid var(--border); padding-top:20px; }
-.footer-social { display:flex; gap:20px; }
-.footer-social a { color:var(--muted); text-decoration:none; font-size:14px; }
-.footer-social a:hover { color:var(--text); }
+
+footer {
+  padding: 20px 48px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-2);
+}
+.footer-row {
+  display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  max-width: 1080px; margin: 0 auto;
+}
+.footer-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 600; color: var(--white-60);
+}
+.footer-copy { color: var(--muted); font-weight: 400; }
+.footer-links {
+  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+}
+.footer-links a {
+  font-size: 13px; color: var(--muted);
+  text-decoration: none; transition: color .2s;
+}
+.footer-links a:hover { color: var(--white); }
 
 /* Buttons */
 .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--white); padding:13px 30px; border-radius:100px; font-weight:600; cursor:pointer; text-decoration:none; display:inline-block; transition:all .2s; font-size:14.5px; }
@@ -417,9 +427,9 @@ body::before {
 <div class="divider"></div>
 
 <!-- WHO IT'S FOR -->
-<section class="section alt reveal">
+<section class="section reveal">
   <div class="wrap">
-    <div class="label">Who It's For</div>
+    <div class="label">Who It's For</div> 
     <h2>Built for anyone who ships UI.</h2>
     <p class="sub" style="margin-bottom:48px">Whether you are a solo developer or a full studio, UXLora fits directly into your workflow.</p>
     <div class="audience-grid">
@@ -537,7 +547,7 @@ body::before {
 <!-- FINAL CTA -->
 <section class="final reveal" id="final">
   <div class="final-inner">
-    <h2>Your UI kit. <em>Built in minutes.</em></h2>
+    <h2>Ready to <em>ship your UI?</em></h2>
     <p>Start free. No credit card required. Upgrade when you need more.</p>
     <div class="final-cta-row">
       <a href="/sign-up" class="btn-primary btn-lg">Start for Free →</a>
@@ -548,18 +558,17 @@ body::before {
 </section>
 
 <footer>
-  <div class="footer-top">
-    <div class="footer-logo" style="display:flex;align-items:center;gap:10px;"><img src="/uxlora_logo.png" alt="UXLora" style="height:28px;width:28px;border-radius:50%;object-fit:contain;" /><span>UXLora — by Ard</span></div>
-    <div class="footer-nav">
-      <a href="/privacy">Privacy Policy</a>
-      <a href="/terms">Terms of Service</a>
-      <a href="mailto:hello@uxlora.app">Contact</a>
+  <div class="footer-row">
+    <div class="footer-brand">
+      <img src="/uxlora_logo.png" alt="UXLora" style="height:24px;width:24px;border-radius:50%;object-fit:contain;" />
+      <span>UXLora by Ard</span>
+      <span class="footer-copy">© 2026</span>
     </div>
-  </div>
-  <div class="footer-bottom">
-    <div class="footer-right">© 2026 Ard. All rights reserved.</div>
-    <div class="footer-social">
-      <a href="https://x.com/uxlora" target="_blank" rel="noopener">X / Twitter</a>
+    <div class="footer-links">
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="mailto:hello@uxlora.app">Contact</a>
+      <a href="https://x.com/uxlora" target="_blank" rel="noopener">X</a>
       <a href="https://linkedin.com/company/uxlora" target="_blank" rel="noopener">LinkedIn</a>
     </div>
   </div>
