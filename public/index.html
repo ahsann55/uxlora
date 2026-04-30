@@ -29,8 +29,6 @@ html { scroll-behavior: smooth; }
   --white:     #FAFAFA;
   --white-60:  rgba(250,250,250,0.6);
   --white-30:  rgba(250,250,250,0.3);
-  --green:     #34D399;
-  --red:       #F87171;
   --muted:     rgba(250,250,250,0.3);
   --text:      #FAFAFA;
   --r:         20px;
@@ -132,7 +130,6 @@ h1 .accent {
 /* SECTIONS */
 .divider { height: 1px; background: var(--border); }
 .section { padding: 72px 24px; }
-.section.alt { background: var(--bg-2); }
 .wrap { max-width: 1080px; margin: 0 auto; }
 
 .label {
@@ -202,11 +199,6 @@ h2 {
 /* Hero CTA row */
 .hero-cta-row { display:flex; gap:16px; flex-wrap:wrap; margin-top:32px; justify-content:center; align-items:center; }
 .hero-note { font-size:13px; color:var(--muted); margin-top:12px; }
-
-/* Plan extras */
-.price-sub { font-size:13px; color:var(--muted); margin-top:4px; margin-bottom:12px; }
-.coming-soon-feat { font-size:13px; color:var(--muted); font-style:italic; }
-a.plan-btn { display:block; text-align:center; text-decoration:none; }
 
 /* Final CTA row */
 .final-cta-row { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin:32px 0 16px; }
@@ -544,6 +536,8 @@ body::before {
   </div>
 </section>
 
+<div class="divider"></div>
+
 <!-- FINAL CTA -->
 <section class="final reveal" id="final">
   <div class="final-inner">
@@ -568,7 +562,6 @@ body::before {
       <a href="/privacy">Privacy</a>
       <a href="/terms">Terms</a>
       <a href="mailto:hello@uxlora.app">Contact</a>
-      <a href="https://x.com/uxlora" target="_blank" rel="noopener">X</a>
       <a href="https://linkedin.com/company/uxlora" target="_blank" rel="noopener">LinkedIn</a>
     </div>
   </div>
