@@ -251,7 +251,7 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
   .stat { border-right: none; border-bottom: 1px solid var(--border); }
   .stat:last-child { border-bottom: none; }
   .demo-layout { flex-direction: column; }
-  .steps-grid, .pricing-grid, .usecases-grid { grid-template-columns: 1fr; }
+  .steps-grid, .pricing-grid, .audience-grid { grid-template-columns: 1fr; }
   .demo-layout { gap: 56px; }
 }
 
@@ -260,25 +260,6 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
   .phone iframe { transform: scale(0.6154); }
   footer { flex-direction: column; text-align: center; }
 }
-
-/* USE CASE CARDS */
-.usecases-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-.usecase-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--r-lg); padding: 28px 32px 24px;
-  transition: border-color .3s, transform .2s, background .3s;
-  position: relative; overflow: hidden;
-}
-.usecase-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(139,92,246,.5), transparent);
-  opacity: 0; transition: opacity .3s;
-}
-.usecase-card:hover { border-color: var(--border-2); transform: translateY(-4px); background: #101024; }
-.usecase-card:hover::before { opacity: 1; }
-.usecase-icon { font-size: 22px; margin-bottom: 14px; width: 52px; height: 52px; border-radius: 14px; background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.2); display: flex; align-items: center; justify-content: center; }
-.usecase-title { font-size: 17px; font-weight: 700; color: var(--white); margin-bottom: 8px; letter-spacing: -.3px; }
-.usecase-desc { font-size: 14px; color: var(--white-60); line-height: 1.7; }
 
 /* FOUNDER QUOTE */
 .founder-quote { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 56px 64px; position: relative; text-align: left; }
@@ -378,6 +359,28 @@ a.plan-btn { display:block; text-align:center; text-decoration:none; }
 .btn-ghost:hover { border-color:var(--purple); color:var(--white); }
 .dim { color:var(--muted); }
 
+/* AUDIENCE GRID */
+.audience-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 16px;
+}
+.audience-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 28px 24px;
+  transition: border-color .25s, transform .2s;
+}
+.audience-card:hover { border-color: var(--border-2); transform: translateY(-3px); }
+.audience-icon {
+  font-size: 20px; width: 40px; height: 40px; border-radius: 10px;
+  background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.2);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+.audience-title { font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 8px; letter-spacing: -.2px; }
+.audience-desc { font-size: 13px; color: var(--white-60); line-height: 1.6; }
+
+@media(max-width:960px) { .audience-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:540px) { .audience-grid { grid-template-columns: 1fr; } }
+
 /* Wireframe screen background */
 body::before {
   content: '';
@@ -470,6 +473,7 @@ body::before {
 <!-- BENEFITS STRIP -->
 <section class="section benefits-section reveal">
   <div class="wrap">
+    <div class="label">How It Works</div>
     <div class="benefits-strip">
       <div class="benefit-item">
         <div class="benefit-icon">🎯</div>
@@ -501,31 +505,31 @@ body::before {
 <div class="divider"></div>
 
 <!-- WHO IT'S FOR -->
-<section class="section reveal">
+<section class="section alt reveal">
   <div class="wrap">
     <div class="label">Who It's For</div>
     <h2>Built for anyone who ships UI.</h2>
     <p class="sub" style="margin-bottom:48px">Whether you are a solo developer or a full studio, UXLora fits directly into your workflow.</p>
-    <div class="usecases-grid">
-      <div class="usecase-card">
-        <div class="usecase-icon">🎮</div>
-        <div class="usecase-title">Indie Game Developers</div>
-        <p class="usecase-desc">Building a game solo or with a small team? Get your complete in-game UI — HUD, inventory, menus, shop screens — without hiring a UI designer. Works with Unity UI Toolkit out of the box.</p>
+    <div class="audience-grid">
+      <div class="audience-card">
+        <div class="audience-icon">🎮</div>
+        <div class="audience-title">Indie Game Developers</div>
+        <p class="audience-desc">Complete in-game UI — HUD, inventory, menus, shop screens — without a designer.</p>
       </div>
-      <div class="usecase-card">
-        <div class="usecase-icon">📱</div>
-        <div class="usecase-title">Mobile App Developers</div>
-        <p class="usecase-desc">Launch faster. Describe your app and get every screen — onboarding, dashboard, settings, profile — production-ready in seconds. Hand high-resolution PNGs straight to your developer.</p>
+      <div class="audience-card">
+        <div class="audience-icon">📱</div>
+        <div class="audience-title">Mobile App Developers</div>
+        <p class="audience-desc">Every screen your app needs — onboarding, dashboard, settings — production-ready in minutes.</p>
       </div>
-      <div class="usecase-card">
-        <div class="usecase-icon">🖥️</div>
-        <div class="usecase-title">Web Product Studios</div>
-        <p class="usecase-desc">From SaaS dashboards to landing pages, UXLora generates fully consistent web UI kits that match your product's brand, tone, and structure — ready to hand off directly to your developer.</p>
+      <div class="audience-card">
+        <div class="audience-icon">🖥️</div>
+        <div class="audience-title">Web Product Studios</div>
+        <p class="audience-desc">Fully consistent web UI kits matched to your brand, tone, and structure.</p>
       </div>
-      <div class="usecase-card">
-        <div class="usecase-icon">🎨</div>
-        <div class="usecase-title">UI Designers</div>
-        <p class="usecase-desc">Take on more clients without burning out. Use UXLora to generate the first complete draft in minutes, then refine it with your expertise. Deliver faster. Bill more. Stay creative.</p>
+      <div class="audience-card">
+        <div class="audience-icon">🎨</div>
+        <div class="audience-title">UI Designers</div>
+        <p class="audience-desc">Generate the first complete draft in minutes. Refine with your expertise. Bill more.</p>
       </div>
     </div>
   </div>
