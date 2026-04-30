@@ -147,57 +147,6 @@ h2 {
 
 .sub { font-size: 17px; color: var(--white-60); font-weight: 400; line-height: 1.65; max-width: 520px; }
 
-
-/* HOW IT WORKS */
-.steps-grid {
-  display: grid; grid-template-columns: repeat(3,1fr);
-  gap: 2px; background: var(--border); border-radius: var(--r-lg);
-  overflow: hidden; border: 1px solid var(--border); margin-top: 72px;
-}
-.step { background: var(--bg-2); padding: 52px 44px; transition: background .25s; }
-.step:hover { background: var(--bg-3); }
-.step-n { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--purple); margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
-.step-n::after { content: ''; flex: 1; height: 1px; background: var(--border-2); }
-.step h3 { font-size: 20px; font-weight: 700; letter-spacing: -.4px; margin-bottom: 12px; }
-.step p { font-size: 14.5px; color: var(--white-60); line-height: 1.65; }
-
-/* PRICING */
-.pricing-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
-
-.plan {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg);
-  padding: 40px 36px 36px; position: relative;
-  transition: border-color .25s, transform .2s; display: flex; flex-direction: column;
-}
-.plan:hover { transform: translateY(-4px); border-color: var(--border-2); }
-.plan.hi { border-color: var(--purple); background: linear-gradient(160deg, rgba(139,92,246,.1) 0%, var(--card) 60%); }
-
-.plan-badge {
-  position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
-  background: var(--purple); color: #fff; font-size: 11px; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase; padding: 4px 18px; border-radius: 100px; white-space: nowrap;
-}
-
-.plan-tier { font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--white-60); margin-bottom: 28px; }
-.price-now { font-size: 52px; font-weight: 800; letter-spacing: -2.5px; line-height: 1; color: var(--white); margin-bottom: 6px; }
-.price-now sup { font-size: 22px; font-weight: 700; vertical-align: top; margin-top: 10px; display: inline-block; color: var(--white-60); }
-.price-now sub { font-size: 15px; font-weight: 400; vertical-align: baseline; color: var(--white-60); letter-spacing: 0; }
-
-.plan-line { height: 1px; background: var(--border); margin: 24px 0; }
-.plan-features { list-style: none; flex: 1; margin-bottom: 32px; }
-.plan-features li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.04); font-size: 14px; color: var(--white-60); }
-.plan-features li:last-child { border-bottom: none; }
-.chk { width: 18px; height: 18px; flex-shrink: 0; background: rgba(139,92,246,.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--purple-2); }
-
-.plan-btn {
-  width: 100%; padding: 14px; border-radius: 12px;
-  font-family: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer;
-  transition: all .2s; border: 1px solid var(--border-2); background: transparent; color: var(--white);
-}
-.plan-btn:hover { background: rgba(255,255,255,.05); border-color: var(--purple); }
-.plan.hi .plan-btn { background: var(--purple); border-color: transparent; box-shadow: 0 8px 24px rgba(139,92,246,.3); }
-.plan.hi .plan-btn:hover { background: var(--purple-2); box-shadow: 0 12px 32px rgba(139,92,246,.5); }
-
 /* FINAL CTA */
 .final { text-align: center; padding: 140px 24px; position: relative; overflow: hidden; }
 .final::before {
@@ -223,40 +172,13 @@ footer { padding: 36px 48px; border-top: 1px solid var(--border); }
   nav { padding: 0 20px; }
   .nav-right .nav-link { display: none; }
   .hamburger { display: flex !important; }
-  .steps-grid, .pricing-grid, .audience-grid { grid-template-columns: 1fr; }
+  .audience-grid { grid-template-columns: 1fr; }
 }
 
 @media(max-width:540px) {
   footer { flex-direction: column; text-align: center; }
 }
 
-/* FOUNDER QUOTE */
-.founder-quote { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 56px 64px; position: relative; text-align: left; }
-.fq-mark { font-size: 80px; font-weight: 800; color: var(--purple); line-height: .8; margin-bottom: 24px; font-family: Georgia, serif; opacity: .6; }
-.fq-text { font-size: 18px; color: var(--white); line-height: 1.75; font-weight: 400; margin-bottom: 36px; font-style: italic; opacity: .9; }
-.fq-author { display: flex; align-items: center; gap: 14px; }
-.fq-dot { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--purple) 0%, var(--purple-3) 100%); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; color: #fff; }
-.fq-dot::after { content: "A"; }
-.fq-name { font-size: 15px; font-weight: 700; color: var(--white); }
-.fq-role { font-size: 13px; color: var(--white-60); margin-top: 2px; }
-
-@media(max-width:640px) { .founder-quote { padding: 36px 28px; } .fq-text { font-size: 16px; } }
-
-/* FAQ */
-.faq-list { display: flex; flex-direction: column; gap: 0; }
-.faq-item { border-bottom: 1px solid var(--border); }
-.faq-item:first-child { border-top: 1px solid var(--border); }
-.faq-q { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; background: none; border: none; cursor: pointer; text-align: left; font-family: inherit; font-size: 16px; font-weight: 600; color: var(--white); transition: color .2s; }
-.faq-q:hover { color: var(--purple-2); }
-.faq-q:hover .faq-icon { border-color: var(--purple); }
-.faq-q:hover .faq-icon svg { stroke: var(--purple-2); }
-.faq-icon { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-2); display: flex; align-items: center; justify-content: center; transition: all .25s; }
-.faq-icon svg { width: 12px; height: 12px; display: block; stroke: var(--white-60); stroke-width: 2.5; fill: none; overflow: visible; transition: stroke .25s; }
-.faq-icon.open { transform: rotate(45deg); border-color: var(--purple); }
-.faq-icon.open svg { stroke: var(--purple-2); }
-.faq-a { display: none; padding: 0 0 22px; }
-.faq-a p { font-size: 15px; color: var(--white-60); line-height: 1.75; font-weight: 400; }
-.faq-a.open { display: block; }
 
 /* MOBILE DRAWER */
 .hamburger { display: none; flex-direction: column; justify-content: center; gap: 5px; width: 36px; height: 36px; cursor: pointer; background: none; border: none; padding: 4px; z-index: 1001; }
@@ -412,9 +334,8 @@ body::before {
 <nav>
   <a href="#hero" style="display:flex;align-items:center;text-decoration:none;"><img src="/uxlora_logo.png" alt="UXLora" style="height:38px;width:38px;object-fit:contain;border-radius:50%;" /></a>
   <div class="nav-right">
-    <a href="#gallery" class="nav-link">Gallery</a>
-    <a href="#pricing" class="nav-link">Pricing</a>
-    <a href="#faq" class="nav-link">FAQ</a>
+    <a href="/gallery" class="nav-link">Gallery</a>
+    <a href="/pricing" class="nav-link">Pricing</a>
     <a href="/sign-in" class="btn-ghost nav-cta">Log In</a>
     <a href="/sign-up" class="btn-primary nav-cta">Sign Up</a>
     <button class="hamburger" id="hamburger" aria-label="Open menu">
@@ -428,9 +349,8 @@ body::before {
 <div class="drawer" id="drawer">
   <div class="drawer-logo" style="display:flex;align-items:center;gap:10px;"><img src="/uxlora_logo.png" alt="UXLora" style="height:36px;width:36px;border-radius:50%;object-fit:contain;" /><span>UX<em>Lora</em></span></div>
   <div class="drawer-links">
-    <a href="#gallery" class="drawer-link" onclick="closeDrawer()">Gallery</a>
-    <a href="#pricing" class="drawer-link" onclick="closeDrawer()">Pricing</a>
-    <a href="#faq" class="drawer-link" onclick="closeDrawer()">FAQ</a>
+    <a href="/gallery" class="drawer-link" onclick="closeDrawer()">Gallery</a>
+    <a href="/pricing" class="drawer-link" onclick="closeDrawer()">Pricing</a>
   </div>
   <a href="/sign-in" class="btn-ghost" onclick="closeDrawer()">Log In</a>
   <a href="/sign-up" class="btn-primary" onclick="closeDrawer()">Sign Up</a>
@@ -609,230 +529,6 @@ body::before {
 
 <div class="divider"></div>
 
-<!-- HOW IT WORKS -->
-<section class="section reveal">
-  <div class="wrap">
-    <div class="label">How It Works</div>
-    <h2>Three steps. One complete UI kit.</h2>
-    <p class="sub">No design experience needed. No tools to learn. Just describe what you are building.</p>
-    <div class="steps-grid">
-      <div class="step">
-        <div class="step-n">Step 01</div>
-        <h3>Describe Your App</h3>
-        <p>Tell UXLora about your app or game. Upload your design document, or answer a focused set of questions. The more detail you provide, the more precise your output.</p>
-      </div>
-      <div class="step">
-        <div class="step-n">Step 02</div>
-        <h3>UXLora Builds Your UI Kit</h3>
-        <p>Our AI builds your complete UI kit — every screen, every state, every component — with a fully consistent design language tailored specifically to your product. Not generic templates. A custom kit built around your product's genre, platform, and tone.</p>
-      </div>
-      <div class="step">
-        <div class="step-n">Step 03</div>
-        <h3>Download and Ship</h3>
-        <p>Export as high-resolution PNGs ready to hand straight to your developer. Figma and Unity UXML exports are coming soon.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- FORMATS -->
-<section class="section reveal">
-  <div class="wrap" style="text-align:center">
-    <div class="label">Export Formats</div>
-    <h2>What you get out of UXLora.</h2>
-    <p class="sub" style="margin-bottom:48px">Start with production-ready PNGs today. More export formats are on the way.</p>
-    <div class="formats-row">
-      <div class="format-badge live">
-        <div class="format-icon">🖼️</div>
-        <div class="format-name">PNG Export</div>
-        <div class="format-status">Available now</div>
-      </div>
-      <div class="format-badge soon">
-        <div class="format-icon">🎨</div>
-        <div class="format-name">Figma Export</div>
-        <div class="format-status">Coming soon</div>
-      </div>
-      <div class="format-badge soon">
-        <div class="format-icon">🎮</div>
-        <div class="format-name">Unity UXML</div>
-        <div class="format-status">Coming soon</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- TESTIMONIALS -->
-<section class="section alt reveal" id="testimonials">
-  <div class="wrap" style="text-align:center">
-    <div class="label">Early Users</div>
-    <h2>What people are saying.</h2>
-    <p class="sub" style="margin-bottom:48px">We are just getting started. Real feedback from real users coming soon.</p>
-    <div class="testimonials-grid">
-      <div class="testimonial-card">
-        <p class="testimonial-text">"Generated a complete game UI in under two minutes. It would have taken my team a week."</p>
-        <div class="testimonial-author">— Indie Game Developer, Early Access</div>
-      </div>
-      <div class="testimonial-card">
-        <p class="testimonial-text">"Finally a tool built for developers, not designers. The output quality surprised me."</p>
-        <div class="testimonial-author">— Mobile App Developer, Early Access</div>
-      </div>
-      <div class="testimonial-card">
-        <p class="testimonial-text">"I pitched a client concept the same day I signed up. Closed the deal."</p>
-        <div class="testimonial-author">— UI Designer, Early Access</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- PRICING -->
-<section class="section alt reveal" id="pricing">
-  <div class="wrap">
-    <div style="margin-bottom:72px">
-      <div class="label">Pricing</div>
-      <h2>Simple pricing. No surprises.</h2>
-      <p class="sub">Start free. Upgrade when you need more kits. Cancel any time.</p>
-    </div>
-    <div class="pricing-grid">
-      <div class="plan">
-        <div class="plan-tier">Free</div>
-        <div class="price-now"><sup>$</sup>0<sub>/mo</sub></div>
-        <div class="price-sub">No credit card required</div>
-        <div class="plan-line"></div>
-        <ul class="plan-features">
-          <li><span class="chk">✓</span> 1 UI kit (view only)</li>
-          <li><span class="chk">✓</span> Game, mobile &amp; web UI support</li>
-          <li><span class="chk">✓</span> Full kit preview in browser</li>
-          <li><span class="dim">—</span> PNG export</li>
-          <li><span class="dim">—</span> Revisions</li>
-        </ul>
-        <a href="/sign-up" class="plan-btn">Start Free →</a>
-      </div>
-      <div class="plan">
-        <div class="plan-tier">Starter</div>
-        <div class="price-now"><sup>$</sup>60<sub>/mo</sub></div>
-        <div class="price-sub">Billed monthly</div>
-        <div class="plan-line"></div>
-        <ul class="plan-features">
-          <li><span class="chk">✓</span> 5 UI kits per month</li>
-          <li><span class="chk">✓</span> High-resolution PNG export</li>
-          <li><span class="chk">✓</span> 1 revision per kit</li>
-          <li><span class="chk">✓</span> Game, mobile &amp; web UI support</li>
-          <li><span class="chk">✓</span> Extra kits from $4 each</li>
-        </ul>
-        <a href="/sign-up" class="plan-btn">Get Started →</a>
-      </div>
-      <div class="plan hi">
-        <div class="plan-badge">Most Popular</div>
-        <div class="plan-tier">Pro</div>
-        <div class="price-now"><sup>$</sup>150<sub>/mo</sub></div>
-        <div class="price-sub">Billed monthly</div>
-        <div class="plan-line"></div>
-        <ul class="plan-features">
-          <li><span class="chk">✓</span> 10 UI kits per month</li>
-          <li><span class="chk">✓</span> High-resolution PNG export</li>
-          <li><span class="chk">✓</span> 2 revisions per kit</li>
-          <li><span class="chk">✓</span> Priority generation queue</li>
-          <li><span class="chk">✓</span> Extra kits from $4 each</li>
-          <li><span class="coming-soon-feat">🔜 Figma export — coming soon</span></li>
-        </ul>
-        <a href="/sign-up" class="plan-btn">Get Started →</a>
-      </div>
-      <div class="plan">
-        <div class="plan-tier">Studio</div>
-        <div class="price-now"><sup>$</sup>350<sub>/mo</sub></div>
-        <div class="price-sub">Billed monthly</div>
-        <div class="plan-line"></div>
-        <ul class="plan-features">
-          <li><span class="chk">✓</span> 20 UI kits per month</li>
-          <li><span class="chk">✓</span> High-resolution PNG export</li>
-          <li><span class="chk">✓</span> 3 revisions per kit</li>
-          <li><span class="chk">✓</span> Extra packs available</li>
-          <li><span class="coming-soon-feat">🔜 Figma export — coming soon</span></li>
-          <li><span class="coming-soon-feat">🔜 Unity UXML — coming soon</span></li>
-        </ul>
-        <a href="/sign-up" class="plan-btn">Get Started →</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- FAQ -->
-<section id="faq" class="section reveal">
-  <div class="wrap" style="max-width:720px">
-    <div class="label" style="font-size:13.5px">FAQ</div>
-    <h2>Questions we get asked.</h2>
-    <p class="sub" style="margin-bottom:56px">Everything you need to know before joining.</p>
-    <div class="faq-list">
-      <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">
-          <span>What exactly do I receive when I generate a UI kit?</span>
-          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
-        </button>
-        <div class="faq-a"><p>You receive a complete set of screens for your product — every view, every state, every component — all designed with a fully consistent visual language. Currently you export as high-resolution PNGs ready to hand directly to a developer. Figma and Unity UXML exports are in development and coming soon.</p></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">
-          <span>What if the output doesn't match my style or vision?</span>
-          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
-        </button>
-        <div class="faq-a"><p>You can regenerate as many times as you need within your monthly kit allowance. The more detail you provide in your description — genre, tone, color preferences, reference products — the closer UXLora gets on the first attempt. Every kit is built specifically around your input, not from a generic template library.</p></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">
-          <span>Is this just for games or does it work for apps and web products too?</span>
-          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
-        </button>
-        <div class="faq-a"><p>UXLora works for mobile games, mobile apps, and web products equally. Whether you need a game HUD and inventory system, a mobile app onboarding flow, or a SaaS dashboard — UXLora understands the context and generates screens appropriate for that product type.</p></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">
-          <span>Do I need any design experience to use UXLora?</span>
-          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
-        </button>
-        <div class="faq-a"><p>None whatsoever. UXLora is built for developers and founders who are not designers. You describe what you are building in plain language. UXLora handles every design decision — layout, typography, colour, spacing, component states — and delivers something that looks like it came from a professional design studio.</p></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q" onclick="toggleFaq(this)">
-          <span>What export formats are available?</span>
-          <span class="faq-icon"><svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg"><line x1="6" y1="0" x2="6" y2="12"/><line x1="0" y1="6" x2="12" y2="6"/></svg></span>
-        </button>
-        <div class="faq-a"><p>Right now UXLora exports high-resolution PNG files — every screen at full resolution, ready to hand to a developer or use directly in your product. Figma export (editable component library) and Unity UXML export are both in active development and will be added to paid plans when ready.</p></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- FOUNDER QUOTE -->
-<section class="section reveal" style="padding: 80px 24px;">
-  <div class="wrap" style="max-width:720px; text-align:center;">
-    <div class="founder-quote">
-      <div class="fq-mark">"</div>
-      <p class="fq-text">In 7 years of building mobile apps, web products, and games, the one problem that never went away was UI. Not the skill to design it — the time, the cost, and the dependency on someone else to get it done. Every indie developer I have ever worked with or spoken to has faced the exact same wall. It is not a niche problem. It is the most common blocker in product development, and it has been quietly killing great ideas for years.</p>
-      <p class="fq-text" style="margin-top:20px">When generative AI arrived, I was certain someone would solve this. A tool purpose-built for developers — one that understands your product, generates every screen consistently, and hands you something developer-ready. I waited. Nothing came. The tools that existed were either generic image generators with no understanding of UI structure, or design tools that still required a designer to operate them.</p>
-      <p class="fq-text" style="margin-top:20px">So we built it ourselves. UXLora is the product I spent seven years wishing existed. We are not solving a $5,000 problem. We are solving the reason thousands of products ship with bad UI, miss their deadlines, or never ship at all.</p>
-      <div class="fq-author">
-        <div class="fq-dot"></div>
-        <div>
-          <div class="fq-name">Ahsan Raza</div>
-          <div class="fq-role">Founder, UXLora &amp; Ard</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
 <!-- FINAL CTA -->
 <section class="final reveal" id="final">
   <div class="final-inner">
@@ -842,7 +538,7 @@ body::before {
       <a href="/sign-up" class="btn-primary btn-lg">Start for Free →</a>
       <a href="/sign-in" class="btn-ghost btn-lg">Log In</a>
     </div>
-    <p class="final-note">Free plan available. Paid plans from $60/mo.</p>
+    <p class="final-note">Free plan available. <a href="/pricing" style="color:var(--purple-3);text-decoration:none;">See pricing →</a></p>
   </div>
 </section>
 
@@ -1021,16 +717,6 @@ body::before {
 
   requestAnimationFrame(draw);
 })();
-
-// ── FAQ ──
-function toggleFaq(btn) {
-  const icon = btn.querySelector('.faq-icon');
-  const answer = btn.nextElementSibling;
-  const isOpen = answer.classList.contains('open');
-  document.querySelectorAll('.faq-a.open').forEach(a => a.classList.remove('open'));
-  document.querySelectorAll('.faq-icon.open').forEach(i => i.classList.remove('open'));
-  if (!isOpen) { answer.classList.add('open'); icon.classList.add('open'); }
-}
 
 // ── Scroll reveal ──
 const obs = new IntersectionObserver(entries => {
