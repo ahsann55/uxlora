@@ -148,17 +148,24 @@ h2 {
 .sub { font-size: 17px; color: var(--white-60); font-weight: 400; line-height: 1.65; max-width: 520px; }
 
 /* FINAL CTA */
-.final { text-align: center; padding: 140px 24px; position: relative; overflow: hidden; }
+.final {
+  text-align: center; padding: 80px 24px;
+  position: relative; overflow: hidden;
+  background: var(--bg-2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
 .final::before {
-  content: ''; position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
-  width: 700px; height: 700px;
-  background: radial-gradient(ellipse at center, rgba(139,92,246,.14) 0%, transparent 65%);
+  content: ''; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse at center, rgba(139,92,246,.12) 0%, transparent 65%);
   pointer-events: none;
 }
 .final-inner { position: relative; z-index: 1; max-width: 660px; margin: 0 auto; }
 .final h2 { font-size: clamp(38px, 5.5vw, 64px); letter-spacing: -2.5px; margin-bottom: 20px; }
 .final h2 em { font-style: normal; background: linear-gradient(120deg, var(--purple-2), var(--purple-3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-.final p { font-size: 17px; color: var(--white-60); line-height: 1.65; margin-bottom: 52px; }
+.final p { font-size: 17px; color: var(--white-60); line-height: 1.65; margin-bottom: 36px; }
 .final-note { margin-top: 18px; font-size: 13px; color: var(--white-30); }
 
 footer { padding: 36px 48px; border-top: 1px solid var(--border); }
@@ -526,8 +533,6 @@ body::before {
     <a href="/gallery" class="btn-ghost">View all kits →</a>
   </div>
 </section>
-
-<div class="divider"></div>
 
 <!-- FINAL CTA -->
 <section class="final reveal" id="final">
